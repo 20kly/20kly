@@ -1,0 +1,33 @@
+20,000 Light-Years Into Space
+version 1.4  
+
+
+This official version of Light Years continues to be managed by Jack 
+Whitham, but it now includes code contributions and suggestions from a 
+number of other people: 
+
+* Cris Grada, who drew up some new graphics for the game,
+* Siegfried-A. Gevatter, who maintains the Debian package, wrote the man 
+  page, and contributed code to make the game suitable for Debian distribution. 
+* Tom Dalton, who suggested the steam flow visualisation and a number 
+  of other improvements, 
+* Matthew Marshall, who contributed a patch for a different version 
+  of the same visualisation feature, 
+* Alexandru Toma, Terrence Brannon, Andrew Wilkinson, Neil Mitchell, 
+  James Wells and Jillian who tested the game and provided bug reports. 
+* Ivo Anjo, Enrico Zini, Denilson Sa, Matthew Scheffel and Jan Niemeyer 
+  who sent in feature suggestions,
+* Josh Holland, who suggested peaceful mode and provided a patch,
+* Richard Jones, who organised the competition that inspired this game.
+
+The following people have written patches which are not yet included,
+but they deserve thanks nonetheless for their efforts:
+
+* David M. Marti, 
+* Anne Archibald, 
+* Christoph Lucking.
+
+
+Jack Whitham
+20/07/11
+
