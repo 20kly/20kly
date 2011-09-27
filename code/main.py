@@ -126,7 +126,7 @@ def Main_Menu_Loop():
 
     main_menu = current_menu = menu.Menu([ 
                 (None, None, []),
-                (MENU_TUTORIAL, "Play Tutorial", []),
+                #(MENU_TUTORIAL, "Play Tutorial", []),
                 (MENU_NEW_GAME, "Play New Game", []),
                 (MENU_LOAD, "Restore Game", []),
                 (None, None, []),
@@ -138,8 +138,8 @@ def Main_Menu_Loop():
                     [ K_ESCAPE , K_F10 ])])
     difficulty_menu = menu.Menu( 
                 [(None, None, []),
-                (MENU_TUTORIAL, "Tutorial", []),
-                (None, None, []),
+                #(MENU_TUTORIAL, "Tutorial", []),
+                #(None, None, []),
                 (MENU_BEGINNER, "Beginner", []),
                 (MENU_INTERMEDIATE, "Intermediate", []),
                 (MENU_EXPERT, "Expert", []),

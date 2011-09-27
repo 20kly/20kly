@@ -1,16 +1,18 @@
                     
 20,000 Light-Years Into Space
-version 1.4
+development version
 
-Instructions:
+WARNING. This version is not yet ready for general release. It is 
+not a complete game. Please only play the stable version from 
+http://www.jwhitham.org/20kly/ unless you have a particular
+interest in the incomplete, development version.
+
+You will now need to install either the GNU Linear Programming Kit
+(glpk) or lp_solve in order to run the game. "apt-get install glpk" 
+on typical Debian/Ubuntoid distributions. 
+
+
     
-    Please refer to the HTML documents in the game directory.
-    For game updates, please see http://www.jwhitham.org/
-
-    If your configuration file gets screwed up somehow, run Lightyears with
-    the --safe parameter to reset the configuration. This will not affect
-    saved games.
-
 License:
 
     20,000 Light-Years Into Space, a computer game
