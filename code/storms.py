@@ -114,6 +114,7 @@ class Storm:
                         if (( not pipe.Is_Destroyed() )
                         and ( pipe.Take_Damage(dmg) )):
                             self.net.Destroy(pipe, "storms")
+                            global storm_sound
                             storm_sound.Set(1)
 
                 if ( self.net.ground_grid.has_key( key ) ):
