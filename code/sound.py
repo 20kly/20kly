@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
 
@@ -46,6 +46,7 @@ class Persisting_Sound:
             or ( not ( self.schan.get_sound() 
                             in [ self.sobj , self.sobj2 ] ))):
                 self.schan = self.sobj.play()
+
             if self.schan:
                 self.schan.queue(self.sobj2)
 
@@ -57,5 +58,6 @@ class Persisting_Sound:
 
         self.schan.queue(self.sobj2)
         self.sobj2.fadeout(200)
+
 
 

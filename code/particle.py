@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 #
 # A generator for particle animations of various types (pick an appropriate
@@ -8,7 +8,7 @@
 # Particle animations are precomputed and put onto colour-keyed surfaces.
 # 
 
-import pygame , random , math
+import pygame, random, math
 
 import resource
 from primitives import *
@@ -55,7 +55,7 @@ class Steam_Particle:
 class Storm_Particle:
     def __init__(self):
         self.radius = 4.0 + ( random.random() * 1.8 ) # eye of storm radius = 4.
-        self.angle = random.random() * TWO_PI
+        self.angle = random.random() * math.pi * 2.0
         self.dr = abs(random.Random().normalvariate(0.0,0.15)) + 0.01
 
         # Colour comes from an authentic set of alien storm colours.

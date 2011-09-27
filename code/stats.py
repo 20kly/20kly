@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
 
@@ -9,15 +9,11 @@ from pygame.locals import *
 
 import resource
 
-__font_objects = dict()
-__font_scale = 0
-
+from font import Get_Font
 
 def Draw_Stats_Window(output, stats_tuple_list):
     y = 5
     w = output.get_rect().width 
-
-    global __font_objects
 
     for (colour, size, text) in stats_tuple_list:
         if ( size == None ):
@@ -54,20 +50,4 @@ def Draw_Bar_Meter(output, items, centre_pos, width, item_height):
         y += item_height
 
     return r1 # bounding box
-
-def Get_Font(size):
-    size += __font_scale
-    if ( size < 10 ): 
-        size = 10
-
-    if ( not __font_objects.has_key(size) ):
-        __font_objects[ size ] = resource.Load_Font(size)
-    return __font_objects[ size ]
-
-def Set_Font_Scale(fs):
-    global __font_scale
-    __font_scale = fs - 4
-
-
-
 

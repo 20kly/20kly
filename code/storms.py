@@ -1,9 +1,9 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-import math , pygame , random
+import pygame
 from pygame.locals import *
 
 import extra , particle , sound
@@ -63,7 +63,7 @@ class Storm:
         self.storm_frame = 0
 
         [a, b] = extra.Make_Quake_SF_Points(5)
-        if ( random.randint(0,1) == 0 ):
+        if ( self.net.random(2) == 0 ):
             (a, b) = (b, a) # flip - ensures start point is not always on top or left
 
         (self.pos, dest) = (a, b)
@@ -73,10 +73,10 @@ class Storm:
         dx = tx - sx
         dy = ty - sy
        
-        speed = (( random.random() * 1.5 ) + 0.6 ) * self.difficulty
+        speed = (self.net.random((3 * FPX) / 2) + (FPX / 2)) * self.difficulty
 
         # Convert the overall displacement vector (dx,dy) into a velocity.
-        distance = math.hypot(dx,dy)
+        distance = trig.Distance(dx, dy)
         self.velocity = extra.Partial_Vector((0, 0), (dx, dy), (speed, distance))
 
         # How long does this storm live?
@@ -109,14 +109,12 @@ class Storm:
             for y in range(cy - 1, cy + 2):
                 key = (x,y)
 
-                global storm_sound
-
                 if ( self.net.pipe_grid.has_key( key ) ):
                     for pipe in self.net.pipe_grid[ key ]:
                         if (( not pipe.Is_Destroyed() )
                         and ( pipe.Take_Damage(dmg) )):
                             self.net.Destroy(pipe, "storms")
-                            storm_sound.Set(1.0)
+                            storm_sound.Set(1)
 
                 if ( self.net.ground_grid.has_key( key ) ):
                     node = self.net.ground_grid[ key ]
@@ -124,7 +122,8 @@ class Storm:
                     if (( not node.Is_Destroyed() )
                     and ( node.Take_Damage(dmg) )):
                         self.net.Destroy(node, "storms")
-                        storm_sound.Set(1.0)
+                        global storm_sound
+                        storm_sound.Set(1)
 
         # Move
         (x,y) = self.pos

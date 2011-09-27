@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 #
 # Game statistics review.. no RTS game would be complete without one!
@@ -9,7 +9,7 @@
 import pygame , random , sys , math , time , pickle
 from pygame.locals import *
 
-import extra , resource , stats , menu
+import extra , resource , stats , menu , game
 from primitives import *
 
 class Historical_Record:
@@ -22,22 +22,25 @@ def Analyse_Network(game_object):
     g = game_object
 
     hr.day = g.game_time.Get_Day()
-    hr.supply = g.net.hub.Get_Steam_Supply()
-    hr.demand = g.net.hub.Get_Steam_Demand()
+    hr.supply = g.net.city1.Get_Steam_Supply()
+    hr.demand = g.net.city1.Get_Steam_Demand()
     hr.num_nodes = len(g.net.node_list)
     hr.num_pipes = len([ p for p in g.net.pipe_list if not p.Is_Destroyed() ])
-    hr.tech_level = g.net.hub.tech_level
+    hr.tech_level = g.net.city1.tech_level
     hr.work_units_used = g.work_units_used
-    hr.work_units_avail = g.net.hub.Get_Avail_Work_Units()
-    hr.city_pressure = g.net.hub.Get_Pressure()
+    hr.work_units_avail = g.net.city1.Get_Avail_Work_Units()
+    hr.city_pressure = g.net.city1.Get_Pressure()
 
     return hr
 
 # Called at the end of the game, to display statistics:
-def Review(screen, (width, height), game_object, historian):
+def Review():
 
-    g = game_object
-    extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
+    g = game.game
+    historian = game.game.historian
+    (width, height) = screen.surface.get_rect().size
+    extra.Tile_Texture(screen.surface, "006metal.jpg", 
+                screen.surface.get_rect())
 
     def Text(str, size, (x,y), justify):
         img = stats.Get_Font(size).render(str, True, (255, 255, 255))
@@ -47,7 +50,7 @@ def Review(screen, (width, height), game_object, historian):
         elif ( justify < 0 ): # right
             x -= img.get_rect().width
 
-        screen.blit(img, (x,y))
+        screen.surface.blit(img, (x,y))
         y += img.get_rect().height
         return y + 5
 
@@ -65,20 +68,19 @@ def Review(screen, (width, height), game_object, historian):
     lev[ MENU_TUTORIAL ] = lev[ MENU_BEGINNER ] = "Beginner"
     lev[ MENU_INTERMEDIATE ] = "Intermediate"
     lev[ MENU_EXPERT ] = "Expert"
-    lev[ MENU_PEACEFUL ] = "Peaceful"
     if ( not lev.has_key( g.challenge ) ):
         level = "??"
     else:
         level = lev[ g.challenge ]
 
-    score = float(g.net.hub.total_steam) / float(g.game_time.Get_Day())
+    score = float(g.net.city1.total_steam) / float(g.game_time.Get_Day())
     if ( g.win ):
         score *= 8
 
     score = int(score)
 
     l = [ ( "Game length", "%u days" % g.game_time.Get_Day() ),
-        ( "Steam used", "%1.1f U" % g.net.hub.total_steam ),
+        ( "Steam used", "%1.1f U" % g.net.city1.total_steam ),
         ( "Unused work units", "%u" % g.wu_integral ),
         ( "Game level", level ),
         ( "Your " + level + " Score", "%u" % score ) ]
@@ -92,7 +94,7 @@ def Review(screen, (width, height), game_object, historian):
 
     r.height = y - r.top
     r = r.inflate(10,10)
-    pygame.draw.rect(screen, (128, 128, 128), r, 2)
+    pygame.draw.rect(screen.surface, (128, 128, 128), r, 2)
 
     y = r.bottom + ( height / 10 )
 
@@ -110,8 +112,8 @@ def Review(screen, (width, height), game_object, historian):
         ( "City Steam Pressure", "city_pressure", (0,0,255) ) ]
 
     def Regraph((heading, attribute, colour)):
-        pygame.draw.rect(screen, (0, 0, 0), graph_window)
-        pygame.draw.rect(screen, (128, 128, 128), graph_window, 2)
+        pygame.draw.rect(screen.surface, (0, 0, 0), graph_window)
+        pygame.draw.rect(screen.surface, (128, 128, 128), graph_window, 2)
 
         graph_subwin = graph_window.inflate(-25,-25)
         (x,y) = graph_subwin.center
@@ -168,20 +170,20 @@ def Review(screen, (width, height), game_object, historian):
         # Vertical divisions
         for gt in range(0, max_gt, step_gt):
             x = int( gt * t_scale ) + graph_subwin.left
-            pygame.draw.line(screen, (55,55,55), 
+            pygame.draw.line(screen.surface, (55,55,55), 
                     (x, graph_subwin.bottom), 
                     (x, graph_subwin.top))
-            pygame.draw.line(screen, (255,255,255), 
+            pygame.draw.line(screen.surface, (255,255,255), 
                     (x, graph_subwin.bottom), 
                     (x, graph_subwin.bottom - 2))
 
         # Horizontal divisions
         for gy in range(0, max_gy, step_gy):
             y = int( gy * y_scale ) + graph_subwin.bottom
-            pygame.draw.line(screen, (75,75,75), 
+            pygame.draw.line(screen.surface, (75,75,75), 
                     (graph_subwin.left, y), 
                     (graph_subwin.right, y))
-            pygame.draw.line(screen, (75,75,75), 
+            pygame.draw.line(screen.surface, (75,75,75), 
                     (graph_subwin.left, y), 
                     (graph_subwin.left + 2, y))
 
@@ -191,13 +193,13 @@ def Review(screen, (width, height), game_object, historian):
         for (gt, gy) in values:
             x = int( gt * t_scale ) + graph_subwin.left
             y = int( gy * y_scale ) + graph_subwin.bottom
-            pygame.draw.line(screen, colour, (x1, y1), (x,y))
+            pygame.draw.line(screen.surface, colour, (x1, y1), (x,y))
             (x1, y1) = (x, y)
            
         # Graph border    
-        pygame.draw.line(screen, (255,255,255), 
+        pygame.draw.line(screen.surface, (255,255,255), 
                 graph_subwin.topleft, graph_subwin.bottomleft)
-        pygame.draw.line(screen, (255,255,255), 
+        pygame.draw.line(screen.surface, (255,255,255), 
                 graph_subwin.bottomright, graph_subwin.bottomleft)
 
 
@@ -215,7 +217,7 @@ def Review(screen, (width, height), game_object, historian):
 
     quit = False
     while ( not quit ):
-        (quit, cmd) = extra.Simple_Menu_Loop(screen, 
+        (quit, cmd) = extra.Simple_Menu_Loop(
                     proceed, (( width * 3 ) / 4, height / 2 ))
 
         if ( cmd == MENU_MENU ):

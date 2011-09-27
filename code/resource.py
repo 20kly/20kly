@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
 
@@ -9,41 +9,19 @@ from pygame.locals import *
 
 from mail import New_Mail
 from primitives import *
+import config
 
 __img_cache = dict()
 __snd_cache = dict()
 __snd_disabled = False
 
-if not pygame.mixer or not pygame.mixer.get_init():
-	__snd_disabled = True
-
-DATA_DIR = os.path.abspath(os.path.join(
-                os.path.dirname(sys.argv[ 0 ]), "data"))
-
-AUDIO_TRANS_TBL = {
-    "bamboo" : "ack1",          # ack 1
-    "bamboo1" : "ack2",         # ack 2
-    "bamboo2" : "ack3",         # ack 3
-    "crisp" : "ack4",           # ack 4
-    "destroy" : "ack5",         # ack 5
-    "double" : "ack6",          # ack 6
-    "mechanical_1" : "ack7",    # ack 7
-    "ring" : "ack8",            # ack 8
-    "whoosh1" : "ack9",         # ack 9
-    "applause" : "dack1",       # double ack 1
-    "computer" : "dack2",       # double ack 2
-    "emergency" : "alert1",     # emergency tone 1
-    "firealrm" : "alert3",      # emergency tone 2
-    "stormbeeps" : "alert2",    # emergency tone 3
-    "clicker" : "aliens",       # alien noise
-}
-
+DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
 
 def Path(name, audio=False):
     if ( audio ):
-        return os.path.join(DATA_DIR,"..","audio",name)
+        return os.path.join(config.DATA_DIR, os.path.pardir, "audio", name)
     else:
-        return os.path.join(DATA_DIR,name)
+        return os.path.join(config.DATA_DIR, name)
 
 def Load_Image(name):
     global __img_cache
@@ -52,7 +30,7 @@ def Load_Image(name):
 
     if ( __img_cache.has_key(key) ):
         return __img_cache[ key ]
-    
+
     fname = Path(name)
     try:
         img = pygame.image.load(fname)
@@ -69,22 +47,23 @@ def Load_Image(name):
     return i
 
 
-DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
 def Load_Font(size):
-    # ----------------------------------------------------------
-    # This function was modified by Siegfried Gevatter, the
-    # maintainer of "lighyears" in Debian, to let lightyears
-    # use the font from package "ttf-dejavu-core" instead of
-    # it's own copy of it.
-    #
-    # Note: pygame.font.Font is used instead of pygame.font.SysFont
-    # because with this last one the size of the text changed unexpectedly
-    # ----------------------------------------------------------
-
     if os.path.isfile(DEB_FONT):
+        # Siegfried Gevatter's recommendation - use font from
+        # ttf-dejavu-core package if available
         return pygame.font.Font(DEB_FONT, size)
 
-    return pygame.font.Font(Path("Vera.ttf"), size)
+    # Otherwise use my own copy
+    fname = Path("DejaVuSans.ttf")
+    try:
+        f = pygame.font.Font(fname, size)
+    except Exception, x:
+        # And if that fails...
+        print ""
+        print "ERROR: Error loading custom font"
+        sys.exit(1)
+
+    return f
 
 def Load_Sound(name):
     global __snd_cache, __snd_disabled
@@ -96,14 +75,12 @@ def Load_Sound(name):
         return __snd_cache[ name ]
 
     #print "Caching new sound:",name
-    fname = AUDIO_TRANS_TBL.get(name, name)
-    fname = Path(fname + ".ogg", True)
+    fname = Path(name + ".wav", True)
     try:
         f = pygame.mixer.Sound(fname)
     except Exception, x:
         print ""
         print "WARNING: Error loading sound effect " + fname
-        print "Real name: " + name
         print repr(x) + " " + str(x)
         print ""
         f = None
@@ -119,6 +96,5 @@ def No_Sound():
 
 def Has_Sound():
     global __snd_disabled
-    return not __snd_disabled
-
+    return not __snd_disabled 
 

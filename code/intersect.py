@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
 
@@ -41,43 +41,4 @@ def Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2))):
     return (x,y)
 
 
-
-def Test():
-    import random , math
-
-    def BT(xp, line1, line2):
-        assert Intersect(line1, line2) == xp
-        assert Intersect(line2, line1) == xp
-
-    def Rnd():
-        def RP():
-            return (random.random(), random.random())
-
-        (x,y) = RP() # choose intersection point.
-        (xa1,ya1) = RP() # line 1 source
-        (xb1,yb1) = RP() # line 2 source
-
-        aang = math.atan2( y - ya1 , x - xa1 ) # line 1 angle
-        bang = math.atan2( y - yb1 , x - xb1 ) # line 2 angle
-
-        xa2 = xa1 + ( math.cos(aang) * 10.0 )
-        xb2 = xb1 + ( math.cos(bang) * 10.0 )
-        ya2 = ya1 + ( math.sin(aang) * 10.0 )
-        yb2 = yb1 + ( math.sin(bang) * 10.0 )
-
-        z = Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2))) 
-        (xi, yi) = z
-        assert math.hypot(xi - x, yi - y) < 0.0001
-
-    BT((3,2),((3,1),(3,5)),((2,2),(4,2)))   # cross
-    BT(None,((3,1),(3,5)),((1,1),(1,5)))    # parallel lines
-    BT((2,2),((1,1),(3,3)),((1,3),(3,1)))   # X
-    BT(None,((1,1),(3,3)),((2,2),(4,4)))    # parallel lines, on top of each other
-
-    for i in xrange(10000):
-        Rnd()
-
-if ( __name__ == "__main__" ):
-    Test() 
-            
 

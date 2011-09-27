@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 # 4 hours remaining.
 # For a new player, the game is confusing and difficult to understand.
@@ -276,7 +276,7 @@ def Examine_Game(g):
         All_Nodes_Finished()
 
     # test 2 - has the city begun an upgrade?
-    if ( g.net.hub.city_upgrade != 0 ):
+    if ( g.net.city1.city_upgrade != 0 ):
         City_Upgrade_Running()
 
     # test 3 - number of pipes.
@@ -304,11 +304,11 @@ def Message(previous_msg_name, this_msg_name,
         t.Add_Message((previous_msg_name, this_msg_name,
                 title, text, sf))
 
-def Draw(screen, g):
+def Draw(surf, g):
     global __tutor
     t = __tutor
     if ( t != None ):
-        t.Draw(screen, g)
+        t.Draw(surf, g)
 
 def Permit_Season_Change():
     global __tutor
@@ -358,11 +358,11 @@ class Tutor_Memory:
     def Permit_Season_Change(self):
         return self.permit_season_change
 
-    def Draw(self, screen, g):
+    def Draw(self, surf, g):
         if ( self.current_msg_popup ):
             r = self.current_msg_surf.get_rect()
             r.top = r.left = 30
-            screen.blit(self.current_msg_surf, r)
+            surf.blit(self.current_msg_surf, r)
 
     def __Draw(self, title, text):
         height = 10

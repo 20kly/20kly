@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 # 
 # Here you can find full version of Quake, rewritten in pure Python
@@ -8,7 +8,7 @@
 #
 # Well, not quite...
 
-import math , pygame , random
+import pygame , random
 from pygame.locals import *
 
 import extra , intersect , sound
@@ -53,7 +53,7 @@ class Quake_Season(Quiet_Season):
 
         if ( ( self.QUAKE - 1 ) <= self.state < self.QUAKE_AFTERMATH ):
             global quake_sound
-            quake_sound.Set(1.0)
+            quake_sound.Set(1)
         elif ( self.state == self.QUAKE_AFTERMATH ):
             quake_sound.Fade_Out()
 
@@ -63,7 +63,7 @@ class Quake_Season(Quiet_Season):
 
         # Split line, repeatedly, at random locations.
         for i in range(6,1,-1):
-            split = random.randint(0,len(line) - 2)
+            split = self.net.random(len(line) - 1)
             (x3, y3) = extra.Partial_Vector(line[ split ], line[ split + 1 ], 
                     (random.random(), 1.0) )
             # New vertex gets moved about a bit.

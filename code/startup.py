@@ -3,16 +3,17 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-# Version check. This file can be much shorter for Debian.
+# Version check. Python 2.6.x or higher is required.
+# Pygame 1.8.x or higher is required.
 
 import sys 
 
-def Check_Version():
+def Check_Version(win32_kicker):
     fault = False
     if ( sys.__dict__.has_key("version_info" ) ):
         (major, minor, micro, releaselevel, serial) = sys.version_info
         if (( major < 2 )
-        or (( major == 2 ) and ( minor < 4 ))):
+        or (( major == 2 ) and ( minor < 6 ))):
             fault = True
     else:
         major = 1
@@ -21,7 +22,7 @@ def Check_Version():
 
     if ( fault ):
         print ""
-        print "Python 2 version 2.4 or higher is required."
+        print "Python 2 version 2.6 or higher is required."
         print "You appear to be using version",(str(major) + "." + str(minor))
         sys.exit(1)
     
@@ -51,12 +52,27 @@ def Check_Version():
         print "Please install the latest version from http://www.pygame.org/"
         sys.exit(1)
 
+    if win32_kicker:
+        try:
+            import lpsolve55
+        except:
+            print ""
+            print "Where is lpsolve55.dll? Please reinstall the game."
+            sys.exit(1)
 
 def Get_Game_Version():
-    return "1.3"
+    # Used for savegames. Be sure to update this.
+    return "2.0"
 
-def Main(data_dir, ignore = None):
-    Check_Version()
+def Main(data_dir, win32_kicker = False):
+    if "--log" in sys.argv:
+        import time
+        sys.stdout = sys.stderr = file("log.txt", "at", 0)
+        print '-----------------'
+        print 'start', time.asctime()
+        print ''
+
+    Check_Version(win32_kicker)
     import main
     main.Main(data_dir)
 
