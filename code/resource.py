@@ -15,7 +15,7 @@ __snd_cache = dict()
 __snd_disabled = False
 
 if not pygame.mixer or not pygame.mixer.get_init():
-	__snd__disabled = True
+	__snd_disabled = True
 
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
