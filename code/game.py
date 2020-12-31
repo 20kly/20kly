@@ -12,6 +12,7 @@ from pygame.locals import *
 import bresenham , intersect , extra , stats , mail , gametime
 import menu , startup , save_menu , save_game , config , resource
 import review , sound , tutor
+from game_random import game_random, ui_random
 from primitives import *
 from quiet_season import Quiet_Season
 from alien_invasion import Alien_Season
@@ -112,6 +113,9 @@ def Main_Loop(screen, clock, (width, height),
     g = Game_Data()
     g.version = startup.Get_Game_Version()
     g.sysinfo = extra.Get_System_Info()
+    g.seed = ui_random.randint(1, 1 << 31)
+    g.random = game_random
+    game_random.reset(g.seed)
 
     # Steam network initialisation
     g.net = Network(teaching)
