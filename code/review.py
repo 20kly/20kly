@@ -65,6 +65,7 @@ def Review(screen, (width, height), game_object, historian):
     lev[ MENU_TUTORIAL ] = lev[ MENU_BEGINNER ] = "Beginner"
     lev[ MENU_INTERMEDIATE ] = "Intermediate"
     lev[ MENU_EXPERT ] = "Expert"
+    lev[ MENU_PEACEFUL ] = "Peaceful"
     if ( not lev.has_key( g.challenge ) ):
         level = "??"
     else:

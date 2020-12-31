@@ -198,7 +198,8 @@ def City_Selected_2():
         "your network. They'll try to destroy your Nodes and Pipes: " +
         "they'll only be able to put your Nodes out of action, but " +
         "they can destroy your Pipes.\n" +
-        "The attack will last for two minutes. You will hear an alarm " +
+        "The attack will last for two minutes. If sound is enabled, " +
+        "you will hear an alarm " +
         "before each wave of alien attackers.\n" +
         "When you're ready for them, " +
         "click on the planet's surface.", False)

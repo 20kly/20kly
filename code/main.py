@@ -11,36 +11,49 @@ import game , stats , storms , extra , save_menu , resource , menu
 import config , startup , sound , alien_invasion , quakes
 from primitives import *
 
+DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
+DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
+                
 
 def Main(data_dir):
 
     n = "20,000 Light-Years Into Space"
     print ""
     print n
-    print "Copyright (C) Jack Whitham 2006-07"
-    print "Version",startup.Get_Game_Version()
+    print "Copyright (C) Jack Whitham 2006-11"
+    print "Version", config.CFG_VERSION
     print ""
 
     resource.DATA_DIR = data_dir
 
-    config.Initialise()
+    config.Initialise("--safe" in sys.argv)
 
     # Pygame things
-    default_flags = 0
-    flags = default_flags
-    if ( config.cfg.fullscreen
-    and ( not "--window" in sys.argv )):
+    flags = 0
+    if ("--fullscreen" in sys.argv):
         flags |= FULLSCREEN
 
     bufsize = 2048
 
     no_sound = ( "--no-sound" in sys.argv )
-    if ( not no_sound ):
-        pygame.mixer.pre_init(22050,-16,2,bufsize)
+    if not no_sound:
+        try:
+            pygame.mixer.pre_init(22050, -16, 2, bufsize)
+            pygame.mixer.init()
+        except pygame.error, message:
+            print 'Sound initialization failed. %s' % message
+            no_sound = True
 
     pygame.init()
     pygame.font.init()
 
+    if flags & FULLSCREEN:
+        # Ensure that all resolutions are supported by the system
+        for resolution in RESOLUTIONS:
+            if resolution[:2] not in pygame.display.list_modes():
+                RESOLUTIONS.remove(resolution)
+
+        
     if ( no_sound ):
         resource.No_Sound()
     else:
@@ -52,8 +65,12 @@ def Main(data_dir):
     width = screen.get_rect().width
 
     # Icon
-    pygame.display.set_icon(resource.Load_Image("32.png"))
-
+    # The icon provided in the Debian package is different than the original one
+    # (size and location changed)
+    if os.path.isfile(DEB_ICON):
+        pygame.display.set_icon(resource.Load_Image(DEB_ICON))
+    else:
+        pygame.display.set_icon(resource.Load_Image("32.png"))
 
     # Game begins.. show loading image
     screen.fill((0,0,0))
@@ -66,10 +83,6 @@ def Main(data_dir):
     quit = False
     while ( not quit ):
         if ( config.cfg.resolution != (width, height) ):
-
-            flags = default_flags
-            if ( config.cfg.fullscreen ):
-                flags |= FULLSCREEN
 
             # As the toggle mode thing doesn't work outside of Unix, 
             # the fallback strategy is to do set_mode again.
@@ -98,10 +111,6 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
 
     stats.Set_Font_Scale(config.cfg.font_scale)
 
-    fs = "Fullscreen"
-    if ( config.cfg.fullscreen ):
-        fs = "Windowed"
-
     main_menu = current_menu = menu.Menu([ 
                 (None, None, []),
                 (MENU_TUTORIAL, "Play Tutorial", []),
@@ -109,14 +118,15 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                 (MENU_LOAD, "Restore Game", []),
                 (None, None, []),
                 (MENU_RES, "Set Graphics Resolution", []),
-                (MENU_FULLSCREEN, fs + " Mode", []),
+                (MENU_MUTE, "Toggle Sound", []),
                 (MENU_MANUAL, "View Manual", []),
+                (MENU_UPDATES, "Check for Updates", []),
                 (None, None, []),
                 (MENU_QUIT, "Exit to " + extra.Get_OS(), 
                     [ K_ESCAPE , K_F10 ])])
     resolution_menu = menu.Menu( 
                 [(None, None, [])] + [
-                (w, "%u x %u Mode" % (w,h), [])
+                (w, "%u x %u" % (w,h), [])
                     for (w, h, fs) in RESOLUTIONS ] +
                 [(None, None, []),
                 (-1, "Cancel", [])])
@@ -128,23 +138,14 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                 (MENU_INTERMEDIATE, "Intermediate", []),
                 (MENU_EXPERT, "Expert", []),
                 (None, None, []),
-                (-1, "Cancel", [])])
-    updates_menu = menu.Menu(
-                [(None, None, []),
-                (MENU_WEBSITE, "Visit Website", []),
-                (MENU_UPDATES, "Check for Updates", []),
+                (MENU_PEACEFUL, "Peaceful", []),
+                (None, None, []),
                 (-1, "Cancel", [])])
 
     copyright = [ name,
-            "Copyright (C) Jack Whitham 2006-07 - website: www.jwhitham.org.uk",
-            "Special thanks to Acidd_UK for many key improvements.",
+            "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
             None,
-            "Game version " + startup.Get_Game_Version() ]
-
-    if ( screen.get_rect().height > 700 ):
-        copyright += [
-            "Thanks to andrew_j_w, Jillyanthrax, newsbot3, "
-            "nmitchell, and the pyweek organisers." ]
+            "Game version " + config.CFG_VERSION ]
 
     # off we go.
 
@@ -174,32 +175,49 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
         if ( current_menu == main_menu ):
             if ( cmd == MENU_NEW_GAME ):
                 current_menu = difficulty_menu
+
             elif ( cmd == MENU_TUTORIAL ):
                 quit = game.Main_Loop(screen, clock, 
                         (width,height), None, MENU_TUTORIAL)
+
             elif ( cmd == MENU_LOAD ):
                 current_menu = save_menu.Save_Menu(False)
+
             elif ( cmd == MENU_QUIT ):
                 quit = True
-            elif ( cmd == MENU_FULLSCREEN ):
-                config.cfg.fullscreen = not config.cfg.fullscreen
 
-                # This only works in Unix:
-                pygame.display.toggle_fullscreen()
-
-                return False # set mode
+            elif ( cmd == MENU_MUTE ):
+                config.cfg.mute = not config.cfg.mute
+                return False # update menu
 
             elif ( cmd == MENU_RES ):
                 current_menu = resolution_menu
 
             elif ( cmd == MENU_UPDATES ):
-                current_menu = updates_menu
+                if Update_Feature(screen, menu_image):
+                    url = ( CGISCRIPT + "v=" +
+                            startup.Get_Game_Version() )
+
+                    pygame.display.iconify()
+                    try:
+                        webbrowser.open(url, True, True)
+                    except:
+                        pass
 
             elif ( cmd == MENU_MANUAL ):
                 pygame.display.iconify()
-                url = os.path.abspath(os.path.join(resource.DATA_DIR, '..',
-                            'manual', 'index.html'))
-                url = 'file://' + url
+                if os.path.isfile(DEB_MANUAL):
+                    # Debian manual present
+                    url = 'file://' + DEB_MANUAL
+                else:
+                    base = os.path.abspath(resource.Path(os.path.join("..", 
+                            "manual", "index.html")))
+                    if os.path.isfile(base):
+                        # Upstream package manual present
+                        url = 'file://' + base
+                    else:
+                        # No manual? Redirect to website.
+                        url = 'http://www.jwhitham.org/20kly/'
 
                 try:
                     webbrowser.open(url, True, True)
@@ -221,25 +239,6 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                     quit = game.Main_Loop(screen, clock, 
                             (width,height), None, cmd)
 
-            elif ( current_menu == updates_menu ):
-                website = False
-
-                if ( cmd == MENU_UPDATES ):
-                    website = Update_Feature(screen, menu_image)
-
-                elif ( cmd == MENU_WEBSITE ):
-                    website = True
-
-                if ( website ):
-                    url = ( CGISCRIPT + "v=" +
-                            startup.Get_Game_Version() )
-
-                    pygame.display.iconify()
-                    try:
-                        webbrowser.open(url, True, True)
-                    except:
-                        pass
-                
             else: # Load menu
                 if ( cmd >= 0 ):
                     # Start game from saved position
@@ -327,7 +326,6 @@ def Update_Feature(screen, menu_image):
             "Opening website..."])
     Finish(None)
     return True
-
 
 
 

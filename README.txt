@@ -1,17 +1,20 @@
                     
 20,000 Light-Years Into Space
-version 1.3a
-
+version 1.4
 
 Instructions:
     
     Please refer to the HTML documents in the game directory.
-    For game updates, please see http://www.jwhitham.org.uk/
+    For game updates, please see http://www.jwhitham.org/
+
+    If your configuration file gets screwed up somehow, run Lightyears with
+    the --safe parameter to reset the configuration. This will not affect
+    saved games.
 
 License:
 
     20,000 Light-Years Into Space, a computer game
-    Copyright (C) 2006-07 Jack Whitham
+    Copyright (C) 2006-11 Jack Whitham
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2,
@@ -30,14 +33,12 @@ License:
 
 List of files, with associated copyrights:
 
-    Files that are (c) 2006-07 by Jack Whitham:
+    Files that are (c) 2006-11 by Jack Whitham:
     ./README.txt
     ./audio/* except earthquake.ogg
     ./code/*
     ./data/32.png
     ./data/bolt.png
-    ./data/city1.png
-    ./data/destroy.png
     ./data/header.jpg
     ./data/headersm.jpg
     ./data/html1.jpg
@@ -46,13 +47,7 @@ List of files, with associated copyrights:
     ./data/html4.jpg
     ./data/html5.jpg
     ./data/mainmenu.jpg
-    ./data/maker.png
-    ./data/maker_u.png
-    ./data/node.png
-    ./data/node_u.png
     ./data/stormsample.png
-    ./data/upgrade.png
-    ./data/well.png
     ./manual/*
 
     Files that are copyright (c) 2003 by Bitstream, Inc.:
@@ -64,8 +59,6 @@ List of files, with associated copyrights:
 
     Files that are copyright (c) Accustudio:
     ./data/006metal.jpg
-    ./data/bricks.png
-    ./data/bricks2.png
     ./data/greenrust.jpg
     ./data/rivets.jpg
     (source: http://www.accustudio.com/)
@@ -80,7 +73,20 @@ List of files, with associated copyrights:
     (source: 
     http://simplythebest.net/sounds/WAV/sound_effects_WAV/nature_wavs.html)
 
-    
+    Files that are copyright (C) 2011 Cris Grada
+    ./data/bricks.png
+    ./data/bricks2.png
+    ./data/city1.png
+    ./data/destroy.png
+    ./data/maker.png
+    ./data/maker_u.png
+    ./data/node.png
+    ./data/node_u.png
+    ./data/upgrade.png
+    ./data/well.png
+
+
+
 
 
 

@@ -46,6 +46,8 @@ MENU_NEXT = 215
 MENU_UPDATES = 216
 MENU_WEBSITE = 217
 MENU_MANUAL = 218
+MENU_MUTE = 219
+MENU_PEACEFUL = 220
 
 # Mathematical constants
 HALF_PI = math.pi * 0.5
@@ -91,11 +93,15 @@ GRID_SIZE = (50,50)
 # misc:
 CITY_BOX_SIZE = 10
 CITY_COLOUR = (192,128,0)
-RESOLUTIONS = [ (800, 600, -4), 
-        (1024, 768, 4), 
-        (1280, 1024, 4), 
-        (1600, 1200, 8) ]
-CGISCRIPT = "http://www.jwhitham.org.uk/cgi-bin/LYU.cgi?"
+RESOLUTIONS = [
+        (800, 600, -4),
+        (960, 720, 0),
+        (1120, 840, 2),
+        (1280, 1024, 4),
+        (1440, 1080, 6),
+        (1600, 1200, 8),
+            ]
+CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
 
 # things that are set by the difficulty mode:
 class Difficulty:
@@ -111,7 +117,7 @@ class Difficulty:
             self.BASIC_STEAM_PRODUCTION = 10
             self.STEAM_PRODUCTION_PER_LEVEL = 6
 
-        elif ( level == MENU_INTERMEDIATE ):
+        elif ( level in [ MENU_INTERMEDIATE, MENU_PEACEFUL ] ):
             self.DAMAGE_FACTOR = 1.4
             self.CITY_UPGRADE_WORK_PER_LEVEL = 3
             self.GRACE_TIME = 10

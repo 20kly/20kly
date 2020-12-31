@@ -14,6 +14,9 @@ __img_cache = dict()
 __snd_cache = dict()
 __snd_disabled = False
 
+if not pygame.mixer or not pygame.mixer.get_init():
+	__snd__disabled = True
+
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
 
@@ -66,18 +69,22 @@ def Load_Image(name):
     return i
 
 
+DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
 def Load_Font(size):
-    fname = Path("Vera.ttf")
-    try:
-        f = pygame.font.Font(fname, size)
-    except Exception, x:
-        print ""
-        print "WARNING: Error loading custom font - falling back to system font"
-        print repr(x) + " " + str(x)
-        print ""
-        f = pygame.font.SysFont(None, size)
-    
-    return f
+    # ----------------------------------------------------------
+    # This function was modified by Siegfried Gevatter, the
+    # maintainer of "lighyears" in Debian, to let lightyears
+    # use the font from package "ttf-dejavu-core" instead of
+    # it's own copy of it.
+    #
+    # Note: pygame.font.Font is used instead of pygame.font.SysFont
+    # because with this last one the size of the text changed unexpectedly
+    # ----------------------------------------------------------
+
+    if os.path.isfile(DEB_FONT):
+        return pygame.font.Font(DEB_FONT, size)
+
+    return pygame.font.Font(Path("Vera.ttf"), size)
 
 def Load_Sound(name):
     global __snd_cache, __snd_disabled
@@ -109,5 +116,9 @@ def Load_Sound(name):
 def No_Sound():
     global __snd_disabled
     __snd_disabled = True
+
+def Has_Sound():
+    global __snd_disabled
+    return not __snd_disabled
 
 

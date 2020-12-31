@@ -145,9 +145,10 @@ def Main_Loop(screen, clock, (width, height),
         save_available = []
 
     in_game_menu = menu.Menu([
+        (None, None, []),
+        (MENU_MUTE, "Toggle Sound", []),
         (None, None, [])] +
         save_available + [
-        #(MENU_FULLSCREEN, "Fullscreen Mode", []),
         (MENU_HIDE, "Return to Game", [ K_ESCAPE ])] + exit_options)
 
     current_menu = in_game_menu
@@ -192,6 +193,7 @@ def Main_Loop(screen, clock, (width, height),
         lev[ MENU_BEGINNER ] = "a Beginner"
         lev[ MENU_INTERMEDIATE ] = "an Intermediate"
         lev[ MENU_EXPERT ] = "an Expert"
+        lev[ MENU_PEACEFUL ] = "a Peaceful"
     
         assert g.challenge != None
         assert lev.has_key( g.challenge )
@@ -263,11 +265,18 @@ def Main_Loop(screen, clock, (width, height),
         #if ( flash ):
         #ui.Draw_Selection(picture_surf)
 
+        if ( g.challenge == MENU_TUTORIAL ):
+            until_next = []
+        elif ( g.challenge == MENU_PEACEFUL ):
+            until_next = [ ((128,128,128), 12, "Peaceful mode") ]
+        else:
+            until_next = [ ((128,128,128), 12, "(%d days until next season)" %
+                        (( g.season_ends - cur_time ) + 1 )) ]
+
         ui.Draw_Stats(stats_surf, [
               ((128,0,128), 18, "Day %u" % g.game_time.Get_Day()),
-              ((128,128,0), 18, g.season_fx.name + " season"),
-              ((128,128,128), 12, "(%d days until next season)" %
-                        (( g.season_ends - cur_time ) + 1 )) ] +
+              ((128,128,0), 18, g.season_fx.name + " season") ] +
+              until_next + 
                 g.season_fx.Get_Extra_Info())
         ui.Draw_Controls(controls_surf)
 
@@ -365,8 +374,9 @@ def Main_Loop(screen, clock, (width, height),
             g.season_effect = cur_time + g.season_fx.Get_Period()
             g.season_fx.Per_Period()
         
-        if (( not tutor.Permit_Season_Change() )
-        and ( g.season == SEASON_QUIET )):
+        if ((( not tutor.Permit_Season_Change() )
+        and ( g.season == SEASON_QUIET ))
+        or ( g.challenge == MENU_PEACEFUL )):
             g.season_ends = cur_time + 2
 
         if ( g.season_ends <= cur_time ):
@@ -393,7 +403,10 @@ def Main_Loop(screen, clock, (width, height),
                 assert False
             g.season_ends = cur_time + LENGTH_OF_SEASON
             g.season_effect = cur_time + ( g.season_fx.Get_Period() / 2 )
-            New_Mail("The " + g.season_fx.name + " season has started.", (200,200,200))
+
+            if ( g.challenge != MENU_PEACEFUL ):
+                New_Mail("The " + g.season_fx.name + 
+                                " season has started.", (200,200,200))
 
         just_ended = False
         if (( g.game_ends_at != None )
@@ -499,9 +512,8 @@ def Main_Loop(screen, clock, (width, height),
                 elif ( cmd == MENU_LOAD ):
                     current_menu = save_menu.Save_Menu(False)
 
-                elif ( cmd == MENU_FULLSCREEN ):
-                    config.cfg.fullscreen = not config.cfg.fullscreen
-                    pygame.display.toggle_fullscreen()
+                elif ( cmd == MENU_MUTE ):
+                    config.cfg.mute = not config.cfg.mute
                     ui.Reset()
 
                 elif ( cmd == MENU_REVIEW ):
