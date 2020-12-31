@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 
@@ -45,6 +45,7 @@ MENU_PREV = 214
 MENU_NEXT = 215
 MENU_UPDATES = 216
 MENU_WEBSITE = 217
+MENU_MANUAL = 218
 
 # Mathematical constants
 HALF_PI = math.pi * 0.5

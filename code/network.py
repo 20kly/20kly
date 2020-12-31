@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 # Sorry, this isn't anything to do with IP: the Network is 

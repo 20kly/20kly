@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 
@@ -17,10 +17,28 @@ __snd_disabled = False
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
 
+AUDIO_TRANS_TBL = {
+    "bamboo" : "ack1",          # ack 1
+    "bamboo1" : "ack2",         # ack 2
+    "bamboo2" : "ack3",         # ack 3
+    "crisp" : "ack4",           # ack 4
+    "destroy" : "ack5",         # ack 5
+    "double" : "ack6",          # ack 6
+    "mechanical_1" : "ack7",    # ack 7
+    "ring" : "ack8",            # ack 8
+    "whoosh1" : "ack9",         # ack 9
+    "applause" : "dack1",       # double ack 1
+    "computer" : "dack2",       # double ack 2
+    "emergency" : "alert1",     # emergency tone 1
+    "firealrm" : "alert3",      # emergency tone 2
+    "stormbeeps" : "alert2",    # emergency tone 3
+    "clicker" : "aliens",       # alien noise
+}
+
 
 def Path(name, audio=False):
     if ( audio ):
-        return os.path.join(DATA_DIR,"audio",name)
+        return os.path.join(DATA_DIR,"..","audio",name)
     else:
         return os.path.join(DATA_DIR,name)
 
@@ -49,7 +67,7 @@ def Load_Image(name):
 
 
 def Load_Font(size):
-    fname = Path("font.ttf")
+    fname = Path("Vera.ttf")
     try:
         f = pygame.font.Font(fname, size)
     except Exception, x:
@@ -71,12 +89,14 @@ def Load_Sound(name):
         return __snd_cache[ name ]
 
     #print "Caching new sound:",name
-    fname = Path(name + ".wav", True)
+    fname = AUDIO_TRANS_TBL.get(name, name)
+    fname = Path(fname + ".ogg", True)
     try:
         f = pygame.mixer.Sound(fname)
     except Exception, x:
         print ""
         print "WARNING: Error loading sound effect " + fname
+        print "Real name: " + name
         print repr(x) + " " + str(x)
         print ""
         f = None

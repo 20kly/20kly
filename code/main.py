@@ -1,10 +1,10 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 
-import pygame , random , sys , math , time , webbrowser , urllib
+import pygame , random , sys , math , time , webbrowser , urllib , os
 from pygame.locals import *
 
 import game , stats , storms , extra , save_menu , resource , menu
@@ -12,13 +12,16 @@ import config , startup , sound , alien_invasion , quakes
 from primitives import *
 
 
-def Main():
+def Main(data_dir):
+
     n = "20,000 Light-Years Into Space"
     print ""
     print n
-    print "Copyright (C) Jack Whitham 2006"
+    print "Copyright (C) Jack Whitham 2006-07"
     print "Version",startup.Get_Game_Version()
     print ""
+
+    resource.DATA_DIR = data_dir
 
     config.Initialise()
 
@@ -53,35 +56,12 @@ def Main():
 
 
     # Game begins.. show loading image
-    loading_image = resource.Load_Image("bg.jpg")
     screen.fill((0,0,0))
-    waiting = time.time()
-    if ( not config.cfg.seen_before ):
-        config.cfg.seen_before = True
-        waiting += 4
-    else:
-        waiting += 2
-
-    r = loading_image.get_rect()
-    r.center = screen.get_rect().center
-    screen.blit(loading_image, r)
-
-    img = stats.Get_Font(12).render("Starting...", True, (128, 128, 128))
-    screen.blit(img, (( width - img.get_rect().width ) / 2,
-                ( height * 7 ) / 8 ))
-
     pygame.display.flip()
     pygame.display.set_caption(n)
     storms.Init_Storms()
     alien_invasion.Init_Aliens()
     quakes.Init_Quakes()
-
-    while ( waiting > time.time() ):
-        e = pygame.event.poll()
-        while ( e.type != NOEVENT ):
-            e = pygame.event.poll()
-
-        pygame.time.wait( 40 )
 
     quit = False
     while ( not quit ):
@@ -130,7 +110,7 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                 (None, None, []),
                 (MENU_RES, "Set Graphics Resolution", []),
                 (MENU_FULLSCREEN, fs + " Mode", []),
-                (MENU_UPDATES, "Online Updates", []),
+                (MENU_MANUAL, "View Manual", []),
                 (None, None, []),
                 (MENU_QUIT, "Exit to " + extra.Get_OS(), 
                     [ K_ESCAPE , K_F10 ])])
@@ -156,16 +136,15 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                 (-1, "Cancel", [])])
 
     copyright = [ name,
-            "A Biscuit Games Production for Pyweek",
-            "Copyright (C) Jack Whitham 2006 - website: www.jwhitham.org.uk",
+            "Copyright (C) Jack Whitham 2006-07 - website: www.jwhitham.org.uk",
             "Special thanks to Acidd_UK for many key improvements.",
             None,
             "Game version " + startup.Get_Game_Version() ]
 
     if ( screen.get_rect().height > 700 ):
         copyright += [
-            "Thanks to andrew_j_w, Jillyanthrax, newsbot3 and nmitchell",
-            "for feature suggestions and testing, and shouts to " + "#pyweek"]
+            "Thanks to andrew_j_w, Jillyanthrax, newsbot3, "
+            "nmitchell, and the pyweek organisers." ]
 
     # off we go.
 
@@ -215,6 +194,17 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
 
             elif ( cmd == MENU_UPDATES ):
                 current_menu = updates_menu
+
+            elif ( cmd == MENU_MANUAL ):
+                pygame.display.iconify()
+                url = os.path.abspath(os.path.join(resource.DATA_DIR, '..',
+                            'manual', 'index.html'))
+                url = 'file://' + url
+
+                try:
+                    webbrowser.open(url, True, True)
+                except:
+                    pass
                 
                 
         elif ( cmd != None ):

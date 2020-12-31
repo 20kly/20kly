@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 import math , pygame , random
@@ -109,6 +109,8 @@ class Storm:
             for y in range(cy - 1, cy + 2):
                 key = (x,y)
 
+                global storm_sound
+
                 if ( self.net.pipe_grid.has_key( key ) ):
                     for pipe in self.net.pipe_grid[ key ]:
                         if (( not pipe.Is_Destroyed() )
@@ -122,7 +124,6 @@ class Storm:
                     if (( not node.Is_Destroyed() )
                     and ( node.Take_Damage(dmg) )):
                         self.net.Destroy(node, "storms")
-                        global storm_sound
                         storm_sound.Set(1.0)
 
         # Move

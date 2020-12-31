@@ -1,36 +1,17 @@
-                     
-                       20,000 Light-Years Into Space
-
-                 A Biscuit Games production for Pyweek '06
-
-                             by Jack Whitham 
-
-Credits:
-
-    All code copyright (C) Jack Whitham 2006
-    Lunar texture (C) NASA, taken from:
-        http://www.apolloexplorer.co.uk/hires/lunar_surface/default.htm
-    Rivets, greenrust, brick and 006metal textures from Accustudio:
-        http://www.accustudio.com/
-    Floppy disk icon from XSane:
-        http://www.xsane.org/
-    Sound files that don't include speech are from various public
-    domain sources on the WWW.
-    Other data files (C) Jack Whitham 2006
-
-    For game updates, please see http://www.jwhitham.org.uk/
-    For information about Pyweek, see http://www.pyweek.org/
+                    
+20,000 Light-Years Into Space
+version 1.3a
 
 
 Instructions:
     
     Please refer to the HTML documents in the game directory.
-
+    For game updates, please see http://www.jwhitham.org.uk/
 
 License:
 
     20,000 Light-Years Into Space, a computer game
-    Copyright (C) 2006 Jack Whitham
+    Copyright (C) 2006-07 Jack Whitham
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2,
@@ -45,5 +26,61 @@ License:
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, 
     Boston, MA  02110-1301  USA
+
+
+List of files, with associated copyrights:
+
+    Files that are (c) 2006-07 by Jack Whitham:
+    ./README.txt
+    ./audio/* except earthquake.ogg
+    ./code/*
+    ./data/32.png
+    ./data/bolt.png
+    ./data/city1.png
+    ./data/destroy.png
+    ./data/header.jpg
+    ./data/headersm.jpg
+    ./data/html1.jpg
+    ./data/html2.jpg
+    ./data/html3.jpg
+    ./data/html4.jpg
+    ./data/html5.jpg
+    ./data/mainmenu.jpg
+    ./data/maker.png
+    ./data/maker_u.png
+    ./data/node.png
+    ./data/node_u.png
+    ./data/stormsample.png
+    ./data/upgrade.png
+    ./data/well.png
+    ./manual/*
+
+    Files that are copyright (c) 2003 by Bitstream, Inc.:
+    ./data/Vera.ttf
+
+    Files that are copyright (c) by NASA:
+    ./data/back.jpg
+    (source: http://www.apolloexplorer.co.uk/hires/lunar_surface/default.htm)
+
+    Files that are copyright (c) Accustudio:
+    ./data/006metal.jpg
+    ./data/bricks.png
+    ./data/bricks2.png
+    ./data/greenrust.jpg
+    ./data/rivets.jpg
+    (source: http://www.accustudio.com/)
+
+    Files that are copyright (C) 1998-2007 Oliver Rauch
+    ./data/menuicon.png
+    (source: http://www.xsane.org/)
+
+    Files that come from public domain sound archives and 
+    are not copyrighted:
+    ./audio/earthquake.ogg
+    (source: 
+    http://simplythebest.net/sounds/WAV/sound_effects_WAV/nature_wavs.html)
+
+    
+
 
 

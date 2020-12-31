@@ -1,6 +1,6 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
 # Python version check. 2.4.x or higher is required.
@@ -60,9 +60,9 @@ def Check_Version():
 
 def Get_Game_Version():
     # Used for savegames. Be sure to update this.
-    return "1.2"
+    return "1.3"
 
-def Main():
+def Main(data_dir):
     print "Now checking your Python environment:"
     Check_Version()
 
@@ -78,6 +78,6 @@ def Main():
     import main
 
     print "Game booting - have fun!"
-    main.Main()
+    main.Main(data_dir)
 
 
