@@ -5,398 +5,389 @@
 
 # Do you believe in the users?
 
-import pygame 
+import pygame , random
 from pygame.locals import *
 
 import stats , menu , draw_obj , mail , particle , tutor
 from map_items import *
 from primitives import *
-from colours import *
 
-[ STATE_MOUSE_UP, STATE_MOUSE_DOWN, STATE_POPUP_MENU ] = "xyz"
 
 class User_Interface:
-    """User interface provides both the view of the game
-    and the means to interact with it."""
-    def __init__(self, net, (width, height), bg_number):
-        """The user interface will be recreated whenever the
-        window is resized. It is not part of a saved game."""
+    def __init__(self, net, (width, height)):
         self.net = net
+        self.control_menu = None
+
 
         self.Reset()
         self.blink = 0xff
 
-        self.screen_rect = Rect(0, 0, width, height)
+        img = resource.Load_Image("back.jpg").convert() # convert destroys a-channel
 
-        img = resource.Load_Image("back.jpg").convert() 
-        # (convert destroys a-channel)
         # Although there is only one base image, it is flipped and
         # rotated on startup to create one of eight possible backdrops.
+        # (Note: These don't get saved, as they're part of the UI. That's bad.)
 
-        img = pygame.transform.rotate(img, 90 * (bg_number & 3))
-        if bg_number & 4:
+        img = pygame.transform.rotate(img, 90 * random.randint(0,3))
+        if ( random.randint(0,1) == 0 ):
             img = pygame.transform.flip(img, True, False)
             
         self.background = pygame.transform.scale(img, (width, height))
 
-        self.steam_effect = particle.Make_Particle_Effect(
-                        particle.Steam_Particle)
+        self.steam_effect = particle.Make_Particle_Effect(particle.Steam_Particle)
         self.steam_effect_frame = 0
 
-    # PUBLIC. Top-level drawing function.
-    def Draw_Game(self, output, season_fx):
-        """Top-level drawing function; game is drawn on the output surface."""
 
+    def Update_Area(self, area):
+        if ( area != None ):
+            self.partial_update = True
+
+            # pygame.Rect is rather good.
+
+            if ( len(self.update_area_list) == 0 ):
+                self.update_area_list = [area]
+            else:
+                ci = area.collidelist(self.update_area_list)
+                if ( ci < 0 ):
+                    # New area!
+                    self.update_area_list.append(area)
+                else:
+                    # Area overlaps an existing area, which gets expanded.
+                    self.update_area_list[ ci ].union_ip(area)
+
+    def Update_All(self):
+        self.full_update = True
+
+    def Draw_Game(self, output, season_fx):
         blink = self.blink
 
-        if season_fx.Is_Shaking():
+        if ( season_fx.Is_Shaking() and not self.Is_Menu_Open() ):
             # Earthquake effect
             m = 6
             r = output.get_rect()
-            r.left += self.net.random(2 * m) - m
-            r.top += self.net.random(2 * m) - m
+            r.left += random.randint(-m, m)
+            r.top += random.randint(-m, m)
             r = output.get_rect().clip(r)
             output = output.subsurface(r)
+            self.Update_All()
 
-        # Drawing with painters algorithm
-        output.blit(self.background,(0,0))
+        if ( self.net.dirty ):
+            self.Update_All()
+            self.net.dirty = False
 
-        # Wells
-        for w in self.net.well_list:
-            w.Draw(output)
-            self.Draw_Steam_Effect(output, w.pos)
+        if ( mail.Has_New_Mail() or tutor.Has_Changed() ):
+            self.Update_All() # force update
 
-        # Selection layers
-        if ((self.mouse_over_selection != None)
-        and (self.mouse_over_selection != self.selection)):
-            x = blink / 2
-            self.mouse_over_selection.Draw_Selected(output, (x, x, x))
+        # These things may not need to be redrawn
+        # as they are never animated and can't be selected.
 
-        if self.selection != None:
-            self.selection.Draw_Selected(output, (blink, blink, 0))
+        if ( self.full_update ):
+            output.blit(self.background,(0,0))
 
-        # Work units
-        for unit in self.net.work_queue:
-            unit.Draw(output)
+            self.__Update_Reset()
 
-        # Pipes
+            for w in self.net.well_list:
+                w.Draw(output)
+                self.Add_Steam_Effect(output, w.pos)
+
+        else:
+            if ( DEBUG_UPDATES ):
+                x = output.get_rect().width
+                for y in range(0,output.get_rect().height,2):
+                    pygame.draw.line(output, (0,0,0),
+                        (0,y), (x,y))
+            
+            for u in self.update_area_list:
+                output.blit(self.background, u.topleft, u)
+
+            self.__Update_Reset()
+
+            for w in self.net.well_list:
+                w.Draw(output)
+                self.Add_Steam_Effect(output, w.pos)
+
+
+        # Everything else needs to be redrawn every turn.
+
+        if ( self.selection != None ):
+            # highlight selection
+            r = self.selection.Draw_Selected(output, (blink, blink, 0))
+            self.Update_Area(r)
+
         for p in self.net.pipe_list:
             p.Draw(output)
 
-        # Nodes
         for n in self.net.node_list:
             n.Draw(output)
-            if n.emits_steam:
-                self.Draw_Steam_Effect(output, n.pos)
+            if ( n.emits_steam ):
+                self.Add_Steam_Effect(output, n.pos)
 
-        # Seasons
-        def Ignore(rect): pass
-        season_fx.Draw(output, Ignore)
+                
+        season_fx.Draw(output, self.Update_Area)
+
+
+        gpos = self.mouse_pos
+        if ( gpos != None ):
+            if ( self.mode == BUILD_NODE ):
+                # could put a node here.
+                r = Grid_To_Scr_Rect(gpos)
+                self.Update_Area(r)
+                pygame.draw.rect(output, (120,120,50), r, 1)
+
+            elif (( self.mode == BUILD_PIPE )
+            and ( self.selection != None )
+            and ( isinstance(self.selection, Node) )):
+                # pipe route illustrated
+
+                sp = Grid_To_Scr(self.selection.pos)
+                ep = Grid_To_Scr(gpos)
+                colour = (80,80,50)
+
+                if ( not self.net.Pipe_Possible(self.selection.pos, gpos) ):
+                    colour = (100,0,0)
+
+                r = Rect(sp,(2,2)).union(Rect(ep,(2,2)))
+                self.Update_Area(r)
+
+                pygame.draw.line(output, colour, sp, ep, 2)
     
-        # Whatever the user is currently doing
-        if self.do_drawing != None:
-            self.do_drawing(output)
+        for item in self.net.popups:
+            r = item.Draw_Popup(output)
+            self.Update_Area(r)
 
-        # Mail messages
         mail.Draw_Mail(output)
 
-        self.blink = 0x80 | ( 0xff & ( self.blink + 0x10 ))
-        self.steam_effect_frame = ( 
-            self.steam_effect_frame + 1 ) % len(self.steam_effect)
+        if ( not self.Is_Menu_Open () ):
+            self.blink = 0x80 | ( 0xff & ( self.blink + 0x10 ))
+            self.steam_effect_frame = ( 
+                self.steam_effect_frame + 1 ) % len(self.steam_effect)
 
-        # Debugging 
-        if DEBUG_GRID:
-            self.Draw_Debug_Grid(output)
+        if ( DEBUG_GRID ):
+            self.Debug_Grid(output)
 
-        # This concludes drawing
+    def Draw_Selection(self, output):
+        output.fill((20,0,0))
+        if ( self.selection != None ):
+            r = output.get_rect()
+            r.center = Grid_To_Scr(self.selection.pos)
 
-    # PUBLIC. 
-    def Frame_Advance(self):
-        """Advance the game animations."""
-        for p in self.net.pipe_list:
-            p.Frame_Advance()
+            for p in self.net.pipe_list:
+                p.Draw_Mini(output, r.topleft)
 
-    def Reset(self):
-        """Reset status of selection."""
-        self.selection = self.target = None
-        self.mouse_over_selection = None
-        self.state = STATE_MOUSE_UP
-        self.selection_spos = self.target_spos = (-100, -100)
-        self.popup_menu = None
-        self.do_drawing = None
+            for n in self.net.node_list:
+                n.Draw_Mini(output, r.topleft)
 
-    # PRIVATE. Search operations.
-    def Get_Item(self, gpos, commit):
-        """Identify the item at the given grid position. May be a Well,
-        a Well_Node, a Pipe, a City_Node, a Node, or None. If commit == True
-        then this may reorder the items at that location."""
-
-        node = self.net.ground_grid.get(gpos, None)
-        if node != None:
-            return node
-
-        return self.net.Get_Pipe(gpos, commit)
-
-    def Get_Popup_Menu(self):
-        """Obtain the contents of the popup menu for the current
-        selection. This will be a newui.Popup_Menu object or None."""
-
-        if self.selection == None:
-            return None
-
-        return self.selection.Get_Popup_Menu()
-
-    # PUBLIC. Action functions, executed on a mouse event.
-    def Game_Mouse_Down(self, spos):
-        """Mouse button down at given screen position."""
-
-        if ((self.state == STATE_POPUP_MENU)
-        and (self.popup_menu.rect.collidepoint(spos))):
-            # Click on popup menu
-            self.Game_Mouse_Activity(spos, True)
+    def Draw_Stats(self, output, default_stats):
+        if ( self.selection == None ):
+            l = default_stats
         else:
-            self.target = self.selection = None
-            self.selection_spos = spos
+            l = self.selection.Get_Information()
+            if ( not self.net.Is_Connected(self.selection) ):
+                l += [ ((255,0,0), 15, "Not connected to network") ]
 
-            gpos = Scr_To_Grid(spos)
-            self.state = STATE_MOUSE_DOWN
-            self.selection = self.Get_Item(gpos, True)
-            tutor.Notify_Select(self.selection)
-            self.Game_Mouse_Activity(spos, False)
+        h = hash(str(l))
+        if ( h != self.stats_hash ):
+            # Stats have changed.
+            output.fill((0,0,0))
+            stats.Draw_Stats_Window(output, l)
+            self.stats_hash = h
 
-            if self.selection != None:
-                self.selection.Debug()
+        
+    def Draw_Controls(self, output):
+        if ( self.control_menu == None ):
+            self.__Make_Control_Menu(output.get_rect().width)
+        self.control_menu.Draw(output)
 
-    def Game_Mouse_Move(self, spos):
-        """Mouse motion to given screen position."""
-        self.Game_Mouse_Activity(spos, False)
+    def Control_Mouse_Move(self, spos):
+        if ( self.control_menu != None ):
+            self.control_menu.Mouse_Move(spos)
 
-    def Game_Mouse_Up(self, spos):
-        """Mouse button up at given screen position."""
-        self.Game_Mouse_Activity(spos, True)
+    def Control_Mouse_Down(self, spos):
+        if ( self.control_menu != None ):
+            self.control_menu.Mouse_Down(spos)
+            self.mode = self.control_menu.Get_Command()
+
+            if ( self.selection != None ):
+                if ( self.mode == DESTROY ):
+                    self.net.Destroy(self.selection)
+                    self.__Clear_Control_Selection()
+                    self.selection = None
+                    self.Update_All()
+
+                elif ( self.mode == UPGRADE ):
+                    self.selection.Begin_Upgrade()
+                    self.__Clear_Control_Selection()
+
+    def Key_Press(self, k):
+        if ( self.control_menu != None ):
+            self.control_menu.Key_Press(k)
+            self.mode = self.control_menu.Get_Command()
 
     def Right_Mouse_Down(self):
-        """Right mouse button events are used as a universal
-        'cancel' command. RMB resets the selection state."""
-
-        self.Reset()
-
-    # PUBLIC. Action function for key event
-    def Key_Press(self, k):
-        """Register key press."""
-        if k == K_ESCAPE:
-            if self.selection != None:
-                self.Reset()
-            else:
-                # Open menu
-                pass
-
-    # PRIVATE. Mouse activity handlers
-    def Game_Mouse_Activity(self, spos, commit):
-        """Register some mouse activity at the given screen position.
-        If commit == False then the activity is merely illustrated
-        on screen. If commit == True then the activity is made final."""
-
-        gpos = Scr_To_Grid(spos)
-        self.target_spos = spos
-        self.do_drawing = None
-
-        pointing_at = self.Get_Item(gpos, False)
-        self.mouse_over_selection = pointing_at
-
-        if self.state == STATE_POPUP_MENU:
-            # Popup menu on screen
-            self.do_drawing = self.popup_menu.Draw
-
-        if ((self.state == STATE_MOUSE_DOWN)
-        and (self.selection != None)
-        and (isinstance(self.selection, Node))):
-            # Mouse clicked on a node
-            self.target = pointing_at
-
-            if self.target == self.selection:
-                # Mouse on initial node
-                if commit:
-                    self.Popup_Menu_Appears(spos)
-
-            elif ((self.target != None)
-            and isinstance(self.target, Well)):
-                # Mouse clicked on a well
-                self.do_drawing = self.Draw_New_Pipe_And_New_Well
-                if commit:
-                    self.Create_Activity(Well_Node, gpos, 
-                            [self.selection, self.target])
-
-            elif ((self.target != None)
-            and isinstance(self.target, Node)):
-                # Mouse on another existing node
-                self.do_drawing = self.Draw_New_Pipe
-                if commit:
-                    if self.net.Add_Pipe(self.selection, self.target):
-                        tutor.Notify_Add_Pipe()
-
-                    self.selection = None
-
-            elif ((self.target != None)
-            and isinstance(self.target, Pipe)):
-                # Mouse on an existing pipe, try to create joint
-                self.do_drawing = self.Draw_New_Pipe_And_New_Node
-                is_possible = self.net.Is_Pipe_Possible(   
-                                Scr_To_Grid(self.selection_spos), gpos, 
-                                [self.selection], True)
-
-                if commit:
-                    if is_possible:
-                        n = Node(gpos)
-                        if self.net.Add_Node_Pipe_Split(n):
-                            tutor.Notify_Add_Node(n)
-                            if self.net.Add_Pipe(self.selection, n):
-                                tutor.Notify_Add_Pipe()
-
-                    self.selection = None
-
-                elif not is_possible:
-                    # Invalid target here
-                    self.do_drawing = self.Draw_New_Pipe
-                    self.target = None
-
-            else:
-                # Mouse in free space, try to create node
-                self.do_drawing = self.Draw_New_Pipe_And_New_Node
-                if commit:
-                    self.Create_Activity(Node, gpos, [self.selection])
-
-        elif ((self.state == STATE_MOUSE_DOWN)
-        and (self.selection != None)
-        and (isinstance(self.selection, Pipe))):
-            # Mouse clicked on a pipe
-
-            if pointing_at == self.selection:
-                # Pipe selected
-                if commit:
-                    self.Popup_Menu_Appears(spos)
-
-        elif ((self.state == STATE_POPUP_MENU)
-        and (self.popup_menu.rect.collidepoint(spos))):
-            # Mouse over popup menu
-            self.Popup_Mouse_Activity(spos, commit)
-
-        elif ((self.state == STATE_MOUSE_DOWN)
-        and (self.selection == None)):
-            # Mouse over free space; nothing selected
-            # Javascript-style map scrolling
-            (x1, y1) = spos
-            (x2, y2) = self.selection_spos
-
-            # scrolling here
-
-        if commit and (self.state == STATE_MOUSE_DOWN):
-            self.state = STATE_MOUSE_UP
-
-
-    def Create_Activity(self, node_class, gpos, allowed):
-        """Create a Node at the specified grid position using
-        the specified class. A Pipe is also created from the
-        initial selection."""
-
-        if self.net.Is_Pipe_Possible(gpos, 
-                    Scr_To_Grid(self.selection_spos),
-                    allowed, False):
-
-            n = node_class(gpos)
-            if self.net.Add_Grid_Item(n):
-                tutor.Notify_Add_Node(n)
-
-                if self.net.Add_Pipe(self.selection, n):
-                    tutor.Notify_Add_Pipe()
-
         self.selection = None
+        self.mouse_pos = None
+        self.__Clear_Control_Selection()
 
-    def Popup_Mouse_Activity(self, spos, commit):
-        """Mouse activity for a popup menu.
-        If commit == False then the activity is merely illustrated
-        on screen. If commit == True then the activity is made final."""
-    
-        kill = True
-        if (self.selection != None) and (self.popup_menu != None):
-            # popup menu has valid state
-            self.popup_menu.Mouse_Move(spos)
+    def __Clear_Control_Selection(self):
+        self.mode = NEUTRAL
+        if ( self.control_menu != None ):
+            self.control_menu.Select(NEUTRAL)
 
-            if commit:
-                self.popup_menu.Mouse_Down()
+    def Reset(self):
+        self.selection = None
+        self.mouse_pos = None
+        self.__Clear_Control_Selection()
+        self.stats_hash = 0
+        self.__Update_Reset()
+        self.Update_All() # after a reset...
 
-            else:
-                kill = False
+    def __Update_Reset(self):
+        self.full_update = False
+        self.partial_update = False
+        self.update_area_list = []
 
-        if kill:
-            self.state = STATE_MOUSE_UP
-            self.popup_menu = None
+    def Is_Menu_Open(self):
+        return ( self.mode == OPEN_MENU )
+
+    def Game_Mouse_Down(self, spos):
+        gpos = Scr_To_Grid(spos)
+
+        if (( self.selection != None )
+        and ( self.selection.Is_Destroyed() )):
             self.selection = None
 
-    # PRIVATE. Unclassified (internal) drawing functions
-    def Draw_Debug_Grid(self, output):
+        if ( DEBUG ):
+            print 'Selection:',self.selection
+            for (i,n) in enumerate(self.net.node_list):
+                if ( n == self.selection ):
+                    print 'Found: node',i
+            for (i,p) in enumerate(self.net.pipe_list):
+                if ( p == self.selection ):
+                    print 'Found: pipe',i
+            print 'End'
+
+
+        if ( not self.net.ground_grid.has_key(gpos) ):
+            self.selection = self.net.Get_Pipe(gpos)
+
+            # empty (may contain pipes)
+            if ( self.mode == BUILD_NODE ):
+                # create new node!
+                n = Node(gpos)
+                n.Sound_Effect()
+                self.selection = None
+                if ( self.net.Add_Grid_Item(n) ):
+                    self.selection = n
+                    tutor.Notify_Add_Node(n)
+
+            elif ( self.mode == DESTROY ):
+                # I presume you are referring to a pipe?
+                pipe = self.selection
+                if ( pipe != None ):
+                    self.net.Destroy(pipe)
+                    self.__Clear_Control_Selection()
+                    self.Update_All()
+                self.selection = None
+
+            elif ( self.mode == UPGRADE ):
+                if ( self.selection != None ):
+
+                    self.selection.Begin_Upgrade()
+                    self.__Clear_Control_Selection()
+
+            elif ( self.selection != None ):
+                self.selection.Sound_Effect()
+                
+        elif ( isinstance(self.net.ground_grid[ gpos ], Node)):
+            # Contains node
+
+            n = self.net.ground_grid[ gpos ]
+            if ( self.mode == BUILD_PIPE ):
+                if (( self.selection == None )
+                or ( isinstance(self.selection, Pipe))):
+                    # start a new pipe here
+                    self.selection = n
+                    n.Sound_Effect()
+
+                elif (( isinstance(n, Node) )
+                and ( isinstance(self.selection, Node) )
+                and ( n != self.selection )):
+                    # end pipe here
+                    if ( self.net.Add_Pipe(self.selection, n) ):
+                        tutor.Notify_Add_Pipe()
+                        self.selection = None
+
+            elif ( self.mode == DESTROY ):
+                self.net.Destroy(n)
+                self.selection = None
+                self.__Clear_Control_Selection()
+                self.Update_All()
+
+            elif ( self.mode == UPGRADE ):
+                n.Begin_Upgrade()
+                self.selection = n
+                self.__Clear_Control_Selection()
+
+            else:
+                self.selection = n
+                n.Sound_Effect()
+
+        elif ( isinstance(self.net.ground_grid[ gpos ], Well)):
+            # Contains well (unimproved)
+            w = self.net.ground_grid[ gpos ]
+            if ( self.mode == BUILD_NODE ):
+                # A node is planned on top of the well.
+                self.selection = None
+                n = Well_Node(gpos)
+                if ( self.net.Add_Grid_Item(n) ):
+                    self.selection = n
+                    self.selection.Sound_Effect()
+
+
+        self.net.Popup(self.selection)
+        tutor.Notify_Select(self.selection)
+
+    def Game_Mouse_Move(self, spos):
+        self.mouse_pos = Scr_To_Grid(spos)
+        if ( self.control_menu != None ):
+            self.control_menu.Mouse_Move(None)
+
+    def Debug_Grid(self, output):
         (mx, my) = GRID_SIZE
         for y in xrange(my):
             for x in xrange(mx):
                 if ( self.net.pipe_grid.has_key( (x,y) ) ):
                     r = Grid_To_Scr_Rect((x,y))
-                    pygame.draw.rect(output, DARK_GREY, r, 1)
+                    pygame.draw.rect(output, (55,55,55), r, 1)
                     r.width = len(self.net.pipe_grid[ (x,y) ]) + 1
-                    pygame.draw.rect(output, RED, r)
+                    pygame.draw.rect(output, (255,0,0), r)
 
-    def Draw_Steam_Effect(self, output, pos):
+    def Add_Steam_Effect(self, output, pos):
         sfx = self.steam_effect[ self.steam_effect_frame ]
         r = sfx.get_rect()
         r.midbottom = Grid_To_Scr(pos)
         output.blit(sfx, r.topleft)
+        self.Update_Area(r)
 
-    # PRIVATE. Drawing functions that are used when state != STATE_MOUSE_UP
-    def Draw_New_Pipe(self, output):
-        gpos1 = Scr_To_Grid(self.selection_spos)
-        gpos2 = Scr_To_Grid(self.target_spos)
-        r1 = Grid_To_Scr_Rect(gpos1)
-        r2 = Grid_To_Scr_Rect(gpos2)
+    def __Make_Control_Menu(self, width):
+        pictures = dict()
+        pictures[ BUILD_NODE ] = "bricks.png"
+        pictures[ BUILD_PIPE ] = "bricks2.png"
+        pictures[ DESTROY ] = "destroy.png"
+        pictures[ UPGRADE ] = "upgrade.png"
+        pictures[ OPEN_MENU ] = "menuicon.png"
 
-        allowed = [self.selection]
+        self.control_menu = menu.Enhanced_Menu([
+                (BUILD_NODE, "Build &Node", [ K_n ]),
+                (BUILD_PIPE, "Build &Pipe", [ K_p ]),
+                (DESTROY, "&Destroy", [ K_d , K_BACKSPACE ]),
+                (UPGRADE, "&Upgrade", [ K_u ]),
+                (None, None, None),
+                (OPEN_MENU, "Menu", [ K_ESCAPE ])], 
+                pictures, width)
 
-        if ((self.target != None)
-        and isinstance(self.target, Well)):
-            allowed.append(self.target)
-            
-
-        colour = VALID_PIPE
-        if not self.net.Is_Pipe_Possible(gpos1, gpos2, allowed, True):
-            colour = INVALID_PIPE
-
-        pygame.draw.line(output, colour, r1.center, r2.center, 2)
-
-    def Draw_New_Pipe_And_New_Node(self, output):
-        self.Draw_New_Pipe(output)
-
-        gpos = Scr_To_Grid(self.target_spos)
-        r = Grid_To_Scr_Rect(gpos)
-        pygame.draw.rect(output, HIGHLIGHT_GRID, r, 2)
-
-    def Draw_New_Pipe_And_New_Well(self, output):
-        self.Draw_New_Pipe(output)
-
-        gpos = Scr_To_Grid(self.target_spos)
-        r = Grid_To_Scr_Rect(gpos)
-        pygame.draw.rect(output, HIGHLIGHT_GRID, r, 2)
-
-    def Popup_Menu_Appears(self, spos):
-        """Setup for popup menu (whenever it appears)."""
-        # State change
-        self.popup_menu = self.selection.Get_Popup_Menu(self.net)
-        self.do_drawing = None
-
-        if self.popup_menu == None:
-            # No popup menu available
-            return None
-
-        # Decide on location and setup drawing
-        self.popup_menu.Place_Menu(spos, self)
-        self.state = STATE_POPUP_MENU
-        self.do_drawing = self.popup_menu.Draw
+    def Frame_Advance(self, frame_time):
+        for p in self.net.pipe_list:
+            p.Frame_Advance(frame_time)
 
 

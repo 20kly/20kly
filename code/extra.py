@@ -7,9 +7,9 @@
 # don't merit their own modules.
 
 
-import pygame , sys , time , random , os
+import pygame , sys , time , random
 
-import intersect , bresenham , resource , screen
+import intersect , bresenham , resource
 from primitives import *
 
 # The function returns (x,y), a point on the line between
@@ -64,9 +64,9 @@ def Edge_Effect(output, rect):
         for y in [ rect.top + margin , rect.bottom - ( margin + 3 ) ]:
             output.blit(bolt, (x,y))
 
-def Line_Edging(surf, r, deflate):
+def Line_Edging(screen, r, deflate):
     for c in [ (75, 63, 31), (125, 99, 30), (160, 120, 40), (75, 63, 31), (0, 0, 0) ]:
-        pygame.draw.rect(surf, c, r, 1)
+        pygame.draw.rect(screen, c, r, 1)
         if ( deflate ):
             r = r.inflate(-2,-2)
         else:
@@ -101,16 +101,15 @@ def Make_Quake_SF_Points(off):
     return [start, finish]
 
 
-def Simple_Menu_Loop(current_menu, (x,y)):
+def Simple_Menu_Loop(screen, current_menu, (x,y)):
     cmd = None
     quit = False
-    resize = False
 
     while (( cmd == None ) and not quit ):
-        current_menu.Draw(screen.surface, (x,y))
+        current_menu.Draw(screen, (x,y))
         pygame.display.flip()
 
-        e = screen.Get_Event(True)
+        e = pygame.event.wait()
         while ( e.type != NOEVENT ):
             if e.type == QUIT:
                 quit = True
@@ -120,16 +119,10 @@ def Simple_Menu_Loop(current_menu, (x,y)):
                 current_menu.Mouse_Move(e.pos)
             elif e.type == KEYDOWN:
                 current_menu.Key_Press(e.key)
-            elif e.type == VIDEORESIZE:
-                resize = True
-                
-            e = screen.Get_Event(False)
+            e = pygame.event.poll()
 
-        if resize:
-            cmd = MENU_RESIZE_EVENT
-        else:
-            cmd = current_menu.Get_Command()
-            current_menu.Select(None) # consume 
+        cmd = current_menu.Get_Command()
+        current_menu.Select(None) # consume 
 
     return (quit, cmd)
 
@@ -155,13 +148,3 @@ def Get_System_Info():
     return repr([time.asctime(), sys.platform, sys.version, 
             pygame.version.ver, sys.path, sys.prefix, sys.executable])
 
-def Get_Home():
-    for i in [ "HOME", "APPDATA" ]:
-        home = os.getenv(i)
-        if (home != None) and (len(home) != 0) and os.path.isdir(home):
-            return home
-    return None
-
-
-
-    

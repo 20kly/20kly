@@ -198,8 +198,7 @@ def City_Selected_2():
         "your network. They'll try to destroy your Nodes and Pipes: " +
         "they'll only be able to put your Nodes out of action, but " +
         "they can destroy your Pipes.\n" +
-        "The attack will last for two minutes. If sound is enabled, " +
-        "you will hear an alarm " +
+        "The attack will last for two minutes. You will hear an alarm " +
         "before each wave of alien attackers.\n" +
         "When you're ready for them, " +
         "click on the planet's surface.", False)
@@ -276,7 +275,7 @@ def Examine_Game(g):
         All_Nodes_Finished()
 
     # test 2 - has the city begun an upgrade?
-    if ( g.net.city1.city_upgrade != 0 ):
+    if ( g.net.hub.city_upgrade != 0 ):
         City_Upgrade_Running()
 
     # test 3 - number of pipes.
@@ -304,11 +303,11 @@ def Message(previous_msg_name, this_msg_name,
         t.Add_Message((previous_msg_name, this_msg_name,
                 title, text, sf))
 
-def Draw(surf, g):
+def Draw(screen, g):
     global __tutor
     t = __tutor
     if ( t != None ):
-        t.Draw(surf, g)
+        t.Draw(screen, g)
 
 def Permit_Season_Change():
     global __tutor
@@ -358,11 +357,11 @@ class Tutor_Memory:
     def Permit_Season_Change(self):
         return self.permit_season_change
 
-    def Draw(self, surf, g):
+    def Draw(self, screen, g):
         if ( self.current_msg_popup ):
             r = self.current_msg_surf.get_rect()
             r.top = r.left = 30
-            surf.blit(self.current_msg_surf, r)
+            screen.blit(self.current_msg_surf, r)
 
     def __Draw(self, title, text):
         height = 10

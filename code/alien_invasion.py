@@ -6,7 +6,7 @@
 # Mysterious alien attackers.
 # Look away now, unless you want to understand how the aliens work.
 
-import pygame
+import math , pygame , random
 from pygame.locals import *
 
 import extra , sound
@@ -14,7 +14,6 @@ from quiet_season import Quiet_Season
 from primitives import *
 from map_items import *
 
-"""
 
 
 class Alien_Season(Quiet_Season):
@@ -86,13 +85,14 @@ class Alien_Season(Quiet_Season):
                 self.t2_announced = True
 
         # Make a wave of bug-eyed monsters. Here's where they start:
-        num_aliens = self.net.random(self.alien_tech_level + 1) + 2
-        alien_angle = self.net.random(360)
+        num_aliens = random.randint(2,2 + int(self.alien_tech_level))
+        alien_angle = random.random() * TWO_PI
         (cx,cy) = GRID_CENTRE
         alien_radius = cx + cy
 
         # Here's where they end up
-        (x, y) = trig.Angle(alien_angle, alien_radius, (cx, cy))
+        x = cx + ( alien_radius * math.cos(alien_angle + math.pi) )
+        y = cy + ( alien_radius * math.sin(alien_angle + math.pi) )
         dest = Item("alien destination")
         dest.pos = (x,y)
 
@@ -107,10 +107,12 @@ class Alien_Season(Quiet_Season):
             return
 
         for i in xrange(num_aliens):
-            (x, y) = trig.Angle(alien_angle, alien_radius, (cx, cy))
-            a = Alien(self.net)
+            x = cx + ( alien_radius * math.cos(alien_angle) )
+            y = cy + ( alien_radius * math.sin(alien_angle) )
+            a = Alien()
             a.pos = (x,y)
             a.targets = [ item for item in alien_targets ]
+            a.net = self.net
             a.alien_tech_level = self.alien_tech_level
             a.colour1 = (128, 0, 0)
             a.colour2 = (255, 100, 0)
@@ -119,7 +121,7 @@ class Alien_Season(Quiet_Season):
                 a.colour1 = (128, 128, 0)
                 a.colour2 = (255, 200, 0)
 
-            alien_angle += 9
+            alien_angle += 0.15
             self.alien_list.append(a)
 
             self.new_aliens = True
@@ -154,10 +156,10 @@ class Alien_Season(Quiet_Season):
             return []
 
 class Alien:
-    def __init__(self, net):
+    def __init__(self):
         self.pos = None             # set externally
         self.targets = []           # ditto
-        self.net = net              # ditto
+        self.net = None             # ditto
         self.alien_tech_level = 1   # ditto
         self.colour1 = self.colour2 = None
 
@@ -169,7 +171,7 @@ class Alien:
         self.attack_angle = 0
         self.points = [ (-1,-1) for i in xrange(3) ]
         self.countdown = 0
-        self.rotation = self.net.random(3) + 3
+        self.rotation = 0.05 + ( random.random() * 0.05 )
         self.bbox = None
 
 
@@ -268,10 +270,7 @@ class Alien:
         update_area(self.bbox)
 
 
-"""
-
 def Init_Aliens():
     global alien_firing_sound
     alien_firing_sound = sound.Persisting_Sound("clicker")
-
 

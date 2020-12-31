@@ -8,7 +8,7 @@
 #
 # Well, not quite...
 
-import pygame , random
+import math , pygame , random
 from pygame.locals import *
 
 import extra , intersect , sound
@@ -53,7 +53,7 @@ class Quake_Season(Quiet_Season):
 
         if ( ( self.QUAKE - 1 ) <= self.state < self.QUAKE_AFTERMATH ):
             global quake_sound
-            quake_sound.Set(1)
+            quake_sound.Set(1.0)
         elif ( self.state == self.QUAKE_AFTERMATH ):
             quake_sound.Fade_Out()
 
@@ -63,7 +63,7 @@ class Quake_Season(Quiet_Season):
 
         # Split line, repeatedly, at random locations.
         for i in range(6,1,-1):
-            split = self.net.random(len(line) - 1)
+            split = random.randint(0,len(line) - 2)
             (x3, y3) = extra.Partial_Vector(line[ split ], line[ split + 1 ], 
                     (random.random(), 1.0) )
             # New vertex gets moved about a bit.

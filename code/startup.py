@@ -3,17 +3,19 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-# Version check. Python 2.6.x or higher is required.
-# Pygame 1.8.x or higher is required.
+# Python version check. 2.4.x or higher is required.
+# This also checks your Pygame version (after Python)
+# Earlier versions *might* work but I haven't tested them...
+# 2.4 is certainly required for built-in set() support.
 
 import sys 
 
-def Check_Version(win32_kicker):
+def Check_Version():
     fault = False
     if ( sys.__dict__.has_key("version_info" ) ):
         (major, minor, micro, releaselevel, serial) = sys.version_info
         if (( major < 2 )
-        or (( major == 2 ) and ( minor < 6 ))):
+        or (( major == 2 ) and ( minor < 4 ))):
             fault = True
     else:
         major = 1
@@ -22,8 +24,9 @@ def Check_Version(win32_kicker):
 
     if ( fault ):
         print ""
-        print "Python 2 version 2.6 or higher is required."
+        print "Python version 2.4 or higher is required."
         print "You appear to be using version",(str(major) + "." + str(minor))
+        print "Please install the latest version from http://www.python.org/"
         sys.exit(1)
     
     try:
@@ -52,28 +55,29 @@ def Check_Version(win32_kicker):
         print "Please install the latest version from http://www.pygame.org/"
         sys.exit(1)
 
-    if win32_kicker:
-        try:
-            import lpsolve55
-        except:
-            print ""
-            print "Where is lpsolve55.dll? Please reinstall the game."
-            sys.exit(1)
+    print "Python version",sys.version,"- good"
+    print "Pygame version",pygame.version.ver,"- good"
 
 def Get_Game_Version():
     # Used for savegames. Be sure to update this.
-    return "2.0"
+    return "1.2"
 
-def Main(data_dir, win32_kicker = False):
-    if "--log" in sys.argv:
-        import time
-        sys.stdout = sys.stderr = file("log.txt", "at", 0)
-        print '-----------------'
-        print 'start', time.asctime()
-        print ''
+def Main():
+    print "Now checking your Python environment:"
+    Check_Version()
 
-    Check_Version(win32_kicker)
+    # Psyco is optional, but recommended :)
+    if ( True ):
+        try:
+            import psyco
+            psyco.profile()
+        except Exception, r:
+            print 'Psyco not found. If the game runs too slowly, '
+            print 'install Psyco from http://psyco.sf.net/'
+
     import main
-    main.Main(data_dir)
+
+    print "Game booting - have fun!"
+    main.Main()
 
 

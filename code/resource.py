@@ -4,24 +4,23 @@
 # 
 
 
-import pygame, os, sys
+import pygame , os
 from pygame.locals import *
 
 from mail import New_Mail
 from primitives import *
-import config
 
 __img_cache = dict()
 __snd_cache = dict()
 __snd_disabled = False
 
-DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
+
 
 def Path(name, audio=False):
     if ( audio ):
-        return os.path.join(config.DATA_DIR, os.path.pardir, "audio", name)
+        return os.path.join("data","audio",name)
     else:
-        return os.path.join(config.DATA_DIR, name)
+        return os.path.join("data",name)
 
 def Load_Image(name):
     global __img_cache
@@ -30,7 +29,7 @@ def Load_Image(name):
 
     if ( __img_cache.has_key(key) ):
         return __img_cache[ key ]
-
+    
     fname = Path(name)
     try:
         img = pygame.image.load(fname)
@@ -48,21 +47,16 @@ def Load_Image(name):
 
 
 def Load_Font(size):
-    if os.path.isfile(DEB_FONT):
-        # Siegfried Gevatter's recommendation - use font from
-        # ttf-dejavu-core package if available
-        return pygame.font.Font(DEB_FONT, size)
-
-    # Otherwise use my own copy
-    fname = Path("DejaVuSans.ttf")
+    fname = Path("font.ttf")
     try:
         f = pygame.font.Font(fname, size)
     except Exception, x:
-        # And if that fails...
         print ""
-        print "ERROR: Error loading custom font"
-        sys.exit(1)
-
+        print "WARNING: Error loading custom font - falling back to system font"
+        print repr(x) + " " + str(x)
+        print ""
+        f = pygame.font.SysFont(None, size)
+    
     return f
 
 def Load_Sound(name):
@@ -94,7 +88,4 @@ def No_Sound():
     global __snd_disabled
     __snd_disabled = True
 
-def Has_Sound():
-    global __snd_disabled
-    return not __snd_disabled 
 

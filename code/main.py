@@ -4,42 +4,36 @@
 # 
 
 
-import pygame , sys , time , webbrowser , urllib , os
+import pygame , random , sys , math , time , webbrowser , urllib
 from pygame.locals import *
 
-import game , storms , extra , save_menu , resource , menu , screen , review
-import config , startup , sound , alien_invasion , quakes , font , save_game
-import trig, lp
+import game , stats , storms , extra , save_menu , resource , menu
+import config , startup , sound , alien_invasion , quakes
 from primitives import *
-from colours import *
-
-NAME = "20,000 Light-Years Into Space"
-
-DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
-DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
 
 
-def Main(data_dir):
+def Main():
+    n = "20,000 Light-Years Into Space"
     print ""
-    print NAME 
-    print "Copyright (C) Jack Whitham 2006-2011"
-    print "Version", startup.Get_Game_Version()
+    print n
+    print "Copyright (C) Jack Whitham 2006"
+    print "Version",startup.Get_Game_Version()
     print ""
 
-    config.Initialise(data_dir, "--safe" in sys.argv)
-    trig.Initialise()
-    lp.Initialise()
+    config.Initialise()
 
     # Pygame things
+    default_flags = 0
+    flags = default_flags
+    if ( config.cfg.fullscreen
+    and ( not "--window" in sys.argv )):
+        flags |= FULLSCREEN
+
     bufsize = 2048
 
     no_sound = ( "--no-sound" in sys.argv )
     if ( not no_sound ):
-        try:
-            pygame.mixer.pre_init(22050,-16,2,bufsize)
-        except pygame.error, message:
-            print 'Sound initialisation failed. %s' % message
-            no_sound = True
+        pygame.mixer.pre_init(22050,-16,2,bufsize)
 
     pygame.init()
     pygame.font.init()
@@ -47,60 +41,66 @@ def Main(data_dir):
     if ( no_sound ):
         resource.No_Sound()
     else:
-        try:
-            pygame.mixer.init(22050,-16,2,bufsize)
-        except pygame.error, message:
-            no_sound = True
+        pygame.mixer.init(22050,-16,2,bufsize)
 
-    screen.Initialise()
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode(config.cfg.resolution, flags)
+    height = screen.get_rect().height
+    width = screen.get_rect().width
 
-    # Icon & window title
-    if os.path.isfile(DEB_ICON):
-        icon = resource.Load_Image(DEB_ICON)
-    else:
-        icon = resource.Load_Image("lightyears.png")
+    # Icon
+    pygame.display.set_icon(resource.Load_Image("32.png"))
 
-    pygame.display.set_icon(icon)
-    pygame.display.set_caption(NAME)
 
     # Game begins.. show loading image
-    screen.surface.fill(BLACK)
+    loading_image = resource.Load_Image("bg.jpg")
+    screen.fill((0,0,0))
+    waiting = time.time()
+    if ( not config.cfg.seen_before ):
+        config.cfg.seen_before = True
+        waiting += 4
+    else:
+        waiting += 2
 
-    img = font.Get_Font(12).render("Starting...", True, GREY)
-    r = img.get_rect()
-    r.center = screen.surface.get_rect().center
-    screen.surface.blit(img, r.topleft)
+    r = loading_image.get_rect()
+    r.center = screen.get_rect().center
+    screen.blit(loading_image, r)
+
+    img = stats.Get_Font(12).render("Starting...", True, (128, 128, 128))
+    screen.blit(img, (( width - img.get_rect().width ) / 2,
+                ( height * 7 ) / 8 ))
 
     pygame.display.flip()
+    pygame.display.set_caption(n)
     storms.Init_Storms()
     alien_invasion.Init_Aliens()
     quakes.Init_Quakes()
 
-    cmd = None
-    while cmd != MENU_QUIT:
-        cmd = Main_Menu_Loop()
-        while cmd == MENU_RESIZE_EVENT:
-            cmd = Main_Menu_Loop()
+    while ( waiting > time.time() ):
+        e = pygame.event.poll()
+        while ( e.type != NOEVENT ):
+            e = pygame.event.poll()
 
-        if cmd in [ MENU_TUTORIAL, MENU_BEGINNER,
-                MENU_INTERMEDIATE, MENU_EXPERT ]:
-            # New game
-            game.Create_Game(cmd)
-            cmd = game.Main_Loop(None)
+        pygame.time.wait( 40 )
 
-        elif 0 <= cmd < save_game.NUM_SLOTS:
-            # Restore game
-            game.Create_Game(MENU_INTERMEDIATE)
-            cmd = game.Main_Loop(cmd)
+    quit = False
+    while ( not quit ):
+        if ( config.cfg.resolution != (width, height) ):
 
-        while cmd in (MENU_CONTINUE, MENU_RESIZE_EVENT):
-            # Game continues
-            cmd = game.Main_Loop(None)
+            flags = default_flags
+            if ( config.cfg.fullscreen ):
+                flags |= FULLSCREEN
 
-        if cmd == MENU_REVIEW:
-            # End of game review screen
-            review.Review()
-    
+            # As the toggle mode thing doesn't work outside of Unix, 
+            # the fallback strategy is to do set_mode again.
+            # But if you set the same mode, then nothing happens.
+            # So:
+            screen = pygame.display.set_mode((640,480), flags)  # not the right mode
+            screen = pygame.display.set_mode(config.cfg.resolution, flags) # right mode!
+            height = screen.get_rect().height
+            width = screen.get_rect().width
+
+        quit = Main_Menu_Loop(n, clock, screen, (width, height))
 
     config.Save()
 
@@ -109,54 +109,71 @@ def Main(data_dir):
     pygame.quit()
 
 
-def Main_Menu_Loop():
-    # Update resolution
-    (width, height) = screen.Update_Resolution()
-
+def Main_Menu_Loop(name, clock, screen, (width, height)):
     # Further initialisation
     menu_image = resource.Load_Image("mainmenu.jpg")
-    menu_rect = menu_image.get_rect()
-    sr = screen.surface.get_rect()
 
-    if menu_rect.size != sr.size:
-        menu_rect = menu_rect.fit(sr)
-        menu_image = pygame.transform.scale(menu_image, menu_rect.size)
+    if ( menu_image.get_rect().width != width ):
+        menu_image = pygame.transform.scale(menu_image, (width, height))
 
-    font.Scale_Font(height)
+    stats.Set_Font_Scale(config.cfg.font_scale)
+
+    fs = "Fullscreen"
+    if ( config.cfg.fullscreen ):
+        fs = "Windowed"
 
     main_menu = current_menu = menu.Menu([ 
                 (None, None, []),
-                #(MENU_TUTORIAL, "Play Tutorial", []),
+                (MENU_TUTORIAL, "Play Tutorial", []),
                 (MENU_NEW_GAME, "Play New Game", []),
                 (MENU_LOAD, "Restore Game", []),
                 (None, None, []),
-                (MENU_MUTE, "Toggle Sound", []),
-                (MENU_MANUAL, "View Manual", []),
-                (MENU_UPDATES, "Check for Updates", []),
+                (MENU_RES, "Set Graphics Resolution", []),
+                (MENU_FULLSCREEN, fs + " Mode", []),
+                (MENU_UPDATES, "Online Updates", []),
                 (None, None, []),
                 (MENU_QUIT, "Exit to " + extra.Get_OS(), 
                     [ K_ESCAPE , K_F10 ])])
+    resolution_menu = menu.Menu( 
+                [(None, None, [])] + [
+                (w, "%u x %u Mode" % (w,h), [])
+                    for (w, h, fs) in RESOLUTIONS ] +
+                [(None, None, []),
+                (-1, "Cancel", [])])
     difficulty_menu = menu.Menu( 
                 [(None, None, []),
-                #(MENU_TUTORIAL, "Tutorial", []),
-                #(None, None, []),
+                (MENU_TUTORIAL, "Tutorial", []),
+                (None, None, []),
                 (MENU_BEGINNER, "Beginner", []),
                 (MENU_INTERMEDIATE, "Intermediate", []),
                 (MENU_EXPERT, "Expert", []),
                 (None, None, []),
                 (-1, "Cancel", [])])
+    updates_menu = menu.Menu(
+                [(None, None, []),
+                (MENU_WEBSITE, "Visit Website", []),
+                (MENU_UPDATES, "Check for Updates", []),
+                (-1, "Cancel", [])])
 
-    copyright = [ NAME,
-            "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
+    copyright = [ name,
+            "A Biscuit Games Production for Pyweek",
+            "Copyright (C) Jack Whitham 2006 - website: www.jwhitham.org.uk",
+            "Special thanks to Acidd_UK for many key improvements.",
             None,
             "Game version " + startup.Get_Game_Version() ]
 
+    if ( screen.get_rect().height > 700 ):
+        copyright += [
+            "Thanks to andrew_j_w, Jillyanthrax, newsbot3 and nmitchell",
+            "for feature suggestions and testing, and shouts to " + "#pyweek"]
+
     # off we go.
 
-    while True:
-        # Main menu loop
-        screen.surface.fill(BLACK)
-        screen.surface.blit(menu_image, menu_rect.topleft)
+    quit = False
+    while ( not quit ):
+        # Main menu
+        screen.fill((0,0,0))
+        screen.blit(menu_image, (0,0))
       
         y = 5
         sz = 11
@@ -164,42 +181,66 @@ def Main_Menu_Loop():
             if ( text == None ):
                 sz = 7
                 continue
-            img = font.Get_Font(sz).render(text, True, COPYRIGHT)
+            img = stats.Get_Font(sz).render(text, True, (200, 200, 128))
             img_r = img.get_rect()
             img_r.center = (( width * 3 ) / 4, 0)
-            img_r.clamp_ip(screen.surface.get_rect())
+            img_r.clamp_ip(screen.get_rect())
             img_r.top = y
-            screen.surface.blit(img, img_r.topleft)
+            screen.blit(img, img_r.topleft)
             y += img_r.height
        
-        (quit, cmd) = extra.Simple_Menu_Loop(current_menu,
+        (quit, cmd) = extra.Simple_Menu_Loop(screen, current_menu,
                 (( width * 3 ) / 4, 10 + ( height / 2 )))
 
-        if ( quit ):
-            return MENU_QUIT
-
-        if ( cmd == MENU_RESIZE_EVENT ):
-            # Sent to outer loop, reinitialisation will be required
-            return MENU_RESIZE_EVENT
-
-        elif ( current_menu == main_menu ):
+        if ( current_menu == main_menu ):
             if ( cmd == MENU_NEW_GAME ):
                 current_menu = difficulty_menu
-
             elif ( cmd == MENU_TUTORIAL ):
-                return MENU_TUTORIAL
-
+                quit = game.Main_Loop(screen, clock, 
+                        (width,height), None, MENU_TUTORIAL)
             elif ( cmd == MENU_LOAD ):
                 current_menu = save_menu.Save_Menu(False)
-
             elif ( cmd == MENU_QUIT ):
-                return MENU_QUIT
+                quit = True
+            elif ( cmd == MENU_FULLSCREEN ):
+                config.cfg.fullscreen = not config.cfg.fullscreen
 
-            elif ( cmd == MENU_MUTE ):
-                config.cfg.mute = not config.cfg.mute
+                # This only works in Unix:
+                pygame.display.toggle_fullscreen()
+
+                return False # set mode
+
+            elif ( cmd == MENU_RES ):
+                current_menu = resolution_menu
 
             elif ( cmd == MENU_UPDATES ):
-                if Update_Feature(screen, menu_image):
+                current_menu = updates_menu
+                
+                
+        elif ( cmd != None ):
+            if ( current_menu == resolution_menu ):
+                for (w, h, fs) in RESOLUTIONS:
+                    if ( w == cmd ):
+                        config.cfg.resolution = (w, h)
+                        config.cfg.font_scale = fs
+                        # change res - don't quit
+                        return False
+
+            elif ( current_menu == difficulty_menu ):
+                if ( cmd >= 0 ):
+                    quit = game.Main_Loop(screen, clock, 
+                            (width,height), None, cmd)
+
+            elif ( current_menu == updates_menu ):
+                website = False
+
+                if ( cmd == MENU_UPDATES ):
+                    website = Update_Feature(screen, menu_image)
+
+                elif ( cmd == MENU_WEBSITE ):
+                    website = True
+
+                if ( website ):
                     url = ( CGISCRIPT + "v=" +
                             startup.Get_Game_Version() )
 
@@ -208,53 +249,30 @@ def Main_Menu_Loop():
                         webbrowser.open(url, True, True)
                     except:
                         pass
-
-            elif ( cmd == MENU_MANUAL ):
-                if os.path.isfile(DEB_MANUAL):
-                    # Debian manual present
-                    url = 'file://' + DEB_MANUAL
-                else:
-                    base = os.path.abspath(resource.Path(os.path.join("..", 
-                            "manual", "index.html")))
-                    if os.path.isfile(base):
-                        # Upstream package manual present
-                        url = 'file://' + base
-                    else:
-                        # No manual? Redirect to website.
-                        url = 'http://www.jwhitham.org/20kly/'
-
-                pygame.display.iconify()
-                try:
-                    webbrowser.open(url, True, True)
-                except:
-                    pass
-
-        elif ( cmd != None ):
-            if ( current_menu == difficulty_menu ):
-                if ( cmd >= 0 ):
-                    # Start game at specified difficulty
-                    return cmd
-
+                
             else: # Load menu
                 if ( cmd >= 0 ):
                     # Start game from saved position
-                    return cmd
+                    quit = game.Main_Loop(screen, clock, 
+                            (width,height), cmd, None)
 
             current_menu = main_menu 
 
-def Update_Feature(menu_image, menu_rect):
-    def Message(msg_list):
-        screen.surface.blit(menu_image, menu_rect.topleft)
+    return True
 
-        y = screen.surface.get_rect().centery
+def Update_Feature(screen, menu_image):
+    def Message(msg_list):
+        screen.blit(menu_image, (0,0))
+
+        y = screen.get_rect().centery
         for msg in msg_list:
-            img_1 = font.Get_Font(24).render(msg, True, WHITE)
-            img_2 = font.Get_Font(24).render(msg, True, BLACK)
+            img_1 = stats.Get_Font(24).render(msg, True, (255, 255, 255))
+            img_2 = stats.Get_Font(24).render(msg, True, (0, 0, 0))
             img_r = img_1.get_rect()
-            img_r.centerx = screen.surface.get_rect().centerx
+            img_r.centerx = screen.get_rect().centerx
             img_r.centery = y
-            screen.surface.blit(img_2, img_r.topleft)
-            screen.surface.blit(img_1, img_r.move(2,-2).topleft)
+            screen.blit(img_2, img_r.topleft)
+            screen.blit(img_1, img_r.move(2,-2).topleft)
             y += img_r.height
         pygame.display.flip()
 
@@ -265,13 +283,13 @@ def Update_Feature(menu_image, menu_rect):
         ok = True
         timer = 4000
         while (( ok ) and ( timer > 0 )):
-            e = screen.Get_Event(False)
+            e = pygame.event.poll()
             while ( e.type != NOEVENT ):
                 if (( e.type == MOUSEBUTTONDOWN )
                 or ( e.type == KEYDOWN )
                 or ( e.type == QUIT )):
                     ok = False
-                e = screen.Get_Event(False)
+                e = pygame.event.poll()
 
             pygame.time.wait( 40 )
             timer -= 40

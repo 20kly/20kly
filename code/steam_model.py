@@ -5,26 +5,68 @@
 
 # A model for the movement of steam within the system.
 
-FRAME_RATE = 30         # frames per second
 
-SOURCE_LOSS = 1000000
-BASE_WELL_PRODUCTION = 150
-
-CONDUCTANCE = { 1 : 100 }
-PIPE_CURRENT_LIMIT = { 1 : 100 }
+from primitives import *
 
 
+class Voltage_Model:
+    # Don't understand steam? Confused by the thought of
+    # boiling water being used as a source of energy?
+    # Why not just assume that it's electricity.
+    
+    def __init__(self):
+        # Invariant:
+        self.capacitance = 1.0
+        # May change:
+        self.charge = 0.0
+        self.voltage = 0.0
+        # Changed by upgrades
+        self.capacity = INITIAL_NODE_CAPACITY
 
-PERSON_STEAM = 1            # amount of steam required per person per frame
-WORK_UNIT_STEAM = 5000      # amount of steam required for a work unit
+    TIME_CONSTANT = 0.1
+    NEGLIGIBLE = 0.01
 
-CONSERVATISM = 1000         # life support reserve size, per person per frame
+    def Source(self, current):
+        dq = current * self.TIME_CONSTANT
+        self.charge += dq
+        self.__Bound()
 
-from colours import *
+    def Think(self, neighbour_list):
+        self.voltage = self.charge / self.capacitance
+        currents = []
 
-SUB_PIPES = [ 
-    (10, 15, DARK_GREEN), # 15% of throughput at resist factor 10 - low
-    (12, 40, YELLOW_GREEN), # 40% of throughput at resist factor 12 - normal
-    (20, 25, ORANGE_GREEN), # 25% of throughput at resist factor 20 - high
-    (90, 20, DARK_ORANGE), # remaining 20% at resist factor 90     - overload
-]
+        for (neighbour, resist) in neighbour_list:
+            dir = 0
+            # Potential difference:
+            dv = self.voltage - neighbour.voltage
+            if ( dv >= self.NEGLIGIBLE ):
+                # Current flow:
+                i = dv / resist
+                # Charge flow:
+                dq = i * self.TIME_CONSTANT
+                self.charge -= dq
+                neighbour.charge += dq
+                currents.append(i)
+            else:
+                currents.append(0.0)
+        self.__Bound()
+        return currents
+        
+    def __Bound(self):    
+        if ( self.charge < 0 ):
+            self.charge = 0
+        elif ( self.charge > self.capacity ):
+            self.charge = self.capacity # vent
+
+    def Get_Pressure(self):
+        return self.charge
+
+    def Get_Capacity(self):
+        return self.capacity
+
+    def Capacity_Upgrade(self):
+        self.capacity += CAPACITY_UPGRADE
+
+class Steam_Model(Voltage_Model):
+    pass
+

@@ -1,21 +1,16 @@
 # 
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-import pickle, extra, os
+import pickle
 
 
 HEADER_SIZE = 100
 NUM_SLOTS = 10
 
 def Make_Save_Name(num):
-    name = "save" + str(num) + ".dat"
-    home = extra.Get_Home()
-    if ( home == None ):
-        return name
-    else:
-        return os.path.join(home, ".lightyears." + name)
+    return "save" + str(num) + ".dat"
 
 def Load(g, num):
     name = Make_Save_Name(num)

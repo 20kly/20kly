@@ -8,7 +8,6 @@ import pygame , time
 from pygame.locals import *
 
 import stats
-from colours import *
 
 __messages = []
 __day = 0
@@ -53,7 +52,7 @@ def Set_Day(day):
     global __day
     __day = int(day)
 
-def New_Mail(text, colour=GREY):
+def New_Mail(text, colour=(128,128,128)):
     global __messages, __day, __change
     text = ( "Day %u: " % __day ) + text
     __messages.append((time.time() + MSG_EXPIRY_TIME, 
