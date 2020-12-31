@@ -3,7 +3,7 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-import pickle , startup
+import pickle, startup, os, extra
 
 
 class Config:
@@ -17,10 +17,16 @@ class Config:
 
 cfg = Config()
 
-FILENAME = "config.dat"
+FILENAME = None
 
 def Initialise():
     global cfg, FILENAME
+
+    home = extra.Get_Home()
+    if ( home == None ):
+        FILENAME = "config.dat"
+    else:
+        FILENAME = os.path.join(home, ".20k.cfg")
 
     try:
         f = file(FILENAME, "rb")

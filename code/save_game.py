@@ -3,14 +3,19 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006.
 # 
 
-import pickle
+import pickle, extra, os
 
 
 HEADER_SIZE = 100
 NUM_SLOTS = 10
 
 def Make_Save_Name(num):
-    return "save" + str(num) + ".dat"
+    name = "save" + str(num) + ".dat"
+    home = extra.Get_Home()
+    if ( home == None ):
+        return name
+    else:
+        return os.path.join(home, ".20k." + name)
 
 def Load(g, num):
     name = Make_Save_Name(num)

@@ -4,7 +4,7 @@
 # 
 
 
-import pygame , os
+import pygame, os, sys
 from pygame.locals import *
 
 from mail import New_Mail
@@ -14,13 +14,15 @@ __img_cache = dict()
 __snd_cache = dict()
 __snd_disabled = False
 
+DATA_DIR = os.path.abspath(os.path.join(
+                os.path.dirname(sys.argv[ 0 ]), "data"))
 
 
 def Path(name, audio=False):
     if ( audio ):
-        return os.path.join("data","audio",name)
+        return os.path.join(DATA_DIR,"audio",name)
     else:
-        return os.path.join("data",name)
+        return os.path.join(DATA_DIR,name)
 
 def Load_Image(name):
     global __img_cache

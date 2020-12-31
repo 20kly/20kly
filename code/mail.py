@@ -56,7 +56,7 @@ def New_Mail(text, colour=(128,128,128)):
     global __messages, __day, __change
     text = ( "Day %u: " % __day ) + text
     __messages.append((time.time() + MSG_EXPIRY_TIME, 
-            stats.Get_Font(20).render(text, False, colour)))
+            stats.Get_Font(20).render(text, True, colour)))
     __change = True
 
 def Initialise():

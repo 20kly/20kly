@@ -7,7 +7,7 @@
 # don't merit their own modules.
 
 
-import pygame , sys , time , random
+import pygame , sys , time , random , os
 
 import intersect , bresenham , resource
 from primitives import *
@@ -147,4 +147,12 @@ def Get_System_Info():
     # debugging problems using a savegame as a starting point.
     return repr([time.asctime(), sys.platform, sys.version, 
             pygame.version.ver, sys.path, sys.prefix, sys.executable])
+
+
+def Get_Home():
+    for i in [ "HOME", "APPDATA" ]:
+        home = os.getenv(i)
+        if ( home != None ):
+            return home
+    return None
 

@@ -7,14 +7,17 @@
 # I hope you enjoy it. Have fun.
 
 if ( __name__ == "__main__" ):
-    import sys
+    import sys, os
 
-    sys.path.insert(0, 'code')
+    CODE_DIR = os.path.abspath(os.path.join(
+                os.path.dirname(sys.argv[ 0 ]), "code"))
+
+    sys.path.insert(0, CODE_DIR)
 
     try:
         import startup
     except:
-        print "Please run the program from the game directory."
+        print "Unable to find programs - searched", CODE_DIR
         sys.exit(1)
 
     startup.Main()
