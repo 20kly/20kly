@@ -6,13 +6,14 @@
 # Mysterious alien attackers.
 # Look away now, unless you want to understand how the aliens work.
 
-import math , pygame , random
+import math , pygame
 from pygame.locals import *
 
 import extra , sound
 from quiet_season import Quiet_Season
 from primitives import *
 from map_items import *
+from game_random import game_random
 
 
 
@@ -85,8 +86,8 @@ class Alien_Season(Quiet_Season):
                 self.t2_announced = True
 
         # Make a wave of bug-eyed monsters. Here's where they start:
-        num_aliens = random.randint(2,2 + int(self.alien_tech_level))
-        alien_angle = random.random() * TWO_PI
+        num_aliens = game_random.randint(2,2 + int(self.alien_tech_level))
+        alien_angle = game_random.random() * TWO_PI
         (cx,cy) = GRID_CENTRE
         alien_radius = cx + cy
 
@@ -97,8 +98,8 @@ class Alien_Season(Quiet_Season):
         dest.pos = (x,y)
 
         # Get target list for aliens
-        num_targets = random.randint(1,1 + int(self.alien_tech_level))
-        random.shuffle(self.target_list)
+        num_targets = game_random.randint(1,1 + int(self.alien_tech_level))
+        game_random.shuffle(self.target_list)
         alien_targets = self.target_list[ 0:num_targets ]
         alien_targets.append(dest)
 
@@ -171,7 +172,7 @@ class Alien:
         self.attack_angle = 0
         self.points = [ (-1,-1) for i in xrange(3) ]
         self.countdown = 0
-        self.rotation = 0.05 + ( random.random() * 0.05 )
+        self.rotation = 0.05 + ( game_random.random() * 0.05 )
         self.bbox = None
 
 

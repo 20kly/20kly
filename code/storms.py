@@ -3,13 +3,14 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 # 
 
-import math , pygame , random
+import math , pygame
 from pygame.locals import *
 
 import extra , particle , sound
 from quiet_season import Quiet_Season
 from primitives import *
 from map_items import *
+from game_random import game_random
 
 
 storm_sound = storm_graphics = None
@@ -63,7 +64,7 @@ class Storm:
         self.storm_frame = 0
 
         [a, b] = extra.Make_Quake_SF_Points(5)
-        if ( random.randint(0,1) == 0 ):
+        if ( game_random.randint(0,1) == 0 ):
             (a, b) = (b, a) # flip - ensures start point is not always on top or left
 
         (self.pos, dest) = (a, b)
@@ -73,7 +74,7 @@ class Storm:
         dx = tx - sx
         dy = ty - sy
        
-        speed = (( random.random() * 1.5 ) + 0.6 ) * self.difficulty
+        speed = (( game_random.random() * 1.5 ) + 0.6 ) * self.difficulty
 
         # Convert the overall displacement vector (dx,dy) into a velocity.
         distance = math.hypot(dx,dy)

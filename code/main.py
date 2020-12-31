@@ -4,7 +4,7 @@
 # 
 
 
-import pygame , random , sys , math , time , webbrowser , urllib , os
+import pygame , sys , math , time , webbrowser , urllib , os
 from pygame.locals import *
 
 import game , stats , storms , extra , save_menu , resource , menu

@@ -7,10 +7,11 @@
 # don't merit their own modules.
 
 
-import pygame , sys , time , random , os
+import pygame , sys , time , os
 
 import intersect , bresenham , resource
 from primitives import *
+from game_random import game_random
 
 # The function returns (x,y), a point on the line between
 # (x1,y1) and (x2,y2), such that a / b of the line
@@ -86,12 +87,12 @@ def Make_Quake_SF_Points(off):
     (w,h) = GRID_SIZE
 
     while ( crosses_centre ):
-        if ( random.randint(0,1) == 0 ):
-            start = (random.randint(0,w - 1), -off)
-            finish = (random.randint(0,w - 1), h + off)
+        if ( game_random.randint(0,1) == 0 ):
+            start = (game_random.randint(0,w - 1), -off)
+            finish = (game_random.randint(0,w - 1), h + off)
         else:
-            start = (-off, random.randint(0,h - 1))
-            finish = (h + off, random.randint(0,h - 1))
+            start = (-off, game_random.randint(0,h - 1))
+            finish = (h + off, game_random.randint(0,h - 1))
 
         crosses_centre = ( 
                 intersect.Intersect((start, finish),

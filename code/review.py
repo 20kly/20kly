@@ -6,7 +6,7 @@
 # Game statistics review.. no RTS game would be complete without one!
 #
 
-import pygame , random , sys , math , time , pickle
+import pygame , sys , math , time , pickle
 from pygame.locals import *
 
 import extra , resource , stats , menu

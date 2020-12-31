@@ -5,12 +5,13 @@
 
 # Do you believe in the users?
 
-import pygame , random
+import pygame
 from pygame.locals import *
 
 import stats , menu , draw_obj , mail , particle , tutor
 from map_items import *
 from primitives import *
+from game_random import ui_random
 
 
 class User_Interface:
@@ -28,8 +29,8 @@ class User_Interface:
         # rotated on startup to create one of eight possible backdrops.
         # (Note: These don't get saved, as they're part of the UI. That's bad.)
 
-        img = pygame.transform.rotate(img, 90 * random.randint(0,3))
-        if ( random.randint(0,1) == 0 ):
+        img = pygame.transform.rotate(img, 90 * ui_random.randint(0,3))
+        if ( ui_random.randint(0,1) == 0 ):
             img = pygame.transform.flip(img, True, False)
             
         self.background = pygame.transform.scale(img, (width, height))
@@ -65,8 +66,8 @@ class User_Interface:
             # Earthquake effect
             m = 6
             r = output.get_rect()
-            r.left += random.randint(-m, m)
-            r.top += random.randint(-m, m)
+            r.left += ui_random.randint(-m, m)
+            r.top += ui_random.randint(-m, m)
             r = output.get_rect().clip(r)
             output = output.subsurface(r)
             self.Update_All()

@@ -8,10 +8,11 @@
 # Particle animations are precomputed and put onto colour-keyed surfaces.
 # 
 
-import pygame , random , math
+import pygame , math
 
 import resource
 from primitives import *
+from game_random import ui_random
 
 
 MAX_STEAM_SIZE = 20
@@ -24,11 +25,11 @@ class Steam_Particle:
         m1 = m - 1
         m2 = m + 1
 
-        (self.x, self.y) = (random.randint(m1,m2), MAX_STEAM_SIZE)
-        self.bright = random.randint(80,160)
-        self.dx = ( random.random() * 2.0 ) - 1.0
-        self.dy = - ( random.random() + 1.0 )
-        self.db = ( random.random() * 2.0 ) + 3.0
+        (self.x, self.y) = (ui_random.randint(m1,m2), MAX_STEAM_SIZE)
+        self.bright = ui_random.randint(80,160)
+        self.dx = ( ui_random.random() * 2.0 ) - 1.0
+        self.dy = - ( ui_random.random() + 1.0 )
+        self.db = ( ui_random.random() * 2.0 ) + 3.0
 
     def Next(self):
         self.x += self.dx
@@ -54,14 +55,14 @@ class Steam_Particle:
 # Swirling particles in a scary sand storm!
 class Storm_Particle:
     def __init__(self):
-        self.radius = 4.0 + ( random.random() * 1.8 ) # eye of storm radius = 4.
-        self.angle = random.random() * TWO_PI
-        self.dr = abs(random.Random().normalvariate(0.0,0.15)) + 0.01
+        self.radius = 4.0 + ( ui_random.random() * 1.8 ) # eye of storm radius = 4.
+        self.angle = ui_random.random() * TWO_PI
+        self.dr = abs(ui_random.normalvariate(0.0,0.15)) + 0.01
 
         # Colour comes from an authentic set of alien storm colours.
         stormsample = resource.Load_Image("stormsample.png")
-        x = random.randint(0, stormsample.get_rect().width - 1)
-        y = random.randint(0, stormsample.get_rect().height - 1)
+        x = ui_random.randint(0, stormsample.get_rect().width - 1)
+        y = ui_random.randint(0, stormsample.get_rect().height - 1)
         self.c = stormsample.get_at((x,y)) 
 
     def Next(self):
@@ -100,7 +101,7 @@ def Make_Particle_Effect(particle_class):
         # note random starting point. Make transition from 
         # frame NUM_FRAMES-1 to frame 0 as seamless as any
         # other frame transition.
-        j = random.randint(0,len(particle_effect) - 1)
+        j = ui_random.randint(0,len(particle_effect) - 1)
 
         particle = particle_class()
 

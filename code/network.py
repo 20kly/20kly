@@ -6,12 +6,13 @@
 # Sorry, this isn't anything to do with IP: the Network is 
 # the steam transport network.
 
-import math , random , time , sound
+import math , time , sound
 
 import extra
 from map_items import *
 from primitives import *
 from mail import New_Mail
+from game_random import game_random
 
 
 class Network:
@@ -37,7 +38,7 @@ class Network:
         (x,y) = GRID_CENTRE
 
         # An additional bootstrap well, plus node, is created close to the city.
-        wgpos = (x + 5,y + random.randint(-3,3))
+        wgpos = (x + 5,y + game_random.randint(-3,3))
         w = Well(wgpos)
         self.Add_Grid_Item(w)
         wn = Well_Node(wgpos)
@@ -297,8 +298,8 @@ class Network:
 
         while (( self.ground_grid.has_key( (x,y) ))
         or ( math.hypot( x - cx, y - cy ) < 10 )):
-            x = random.randint(0, mx - 1)
-            y = random.randint(0, my - 1)
+            x = game_random.randint(0, mx - 1)
+            y = game_random.randint(0, my - 1)
             if ( teaching ):
                 if ( x < cx ):
                     x += cx

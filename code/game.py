@@ -6,7 +6,7 @@
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame , random , sys , math , time , pickle
+import pygame , sys , math , time , pickle
 from pygame.locals import *
 
 import bresenham , intersect , extra , stats , mail , gametime
