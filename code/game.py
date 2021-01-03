@@ -113,9 +113,8 @@ def Main_Loop(screen, clock, (width, height),
     g = Game_Data()
     g.version = startup.Get_Game_Version()
     g.sysinfo = extra.Get_System_Info()
-    g.seed = ui_random.randint(1, 1 << 31)
-    g.random = game_random
-    game_random.reset(g.seed)
+    game_random.reset(1)
+    game_random.begin("test1.dat")
 
     # Steam network initialisation
     g.net = Network(teaching)
@@ -233,6 +232,7 @@ def Main_Loop(screen, clock, (width, height),
         tutor.On(( menu_margin * 40 ) / 100)
 
     cur_time = g.game_time.time()
+    game_random.work_timer_event(g)
 
     # Main loop
     while ( loop_running ):
@@ -372,6 +372,7 @@ def Main_Loop(screen, clock, (width, height),
             g.net.Steam_Think()
             g.net.Expire_Popups()
             tutor.Examine_Game(g)
+            game_random.work_timer_event(g)
 
         if ( g.season_effect <= cur_time ):
             # Seasonal periodic effects

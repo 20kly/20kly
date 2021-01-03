@@ -11,7 +11,7 @@ from pygame.locals import *
 import stats , menu , draw_obj , mail , particle , tutor
 from map_items import *
 from primitives import *
-from game_random import ui_random
+from game_random import ui_random, game_random
 
 
 class User_Interface:
@@ -210,12 +210,14 @@ class User_Interface:
 
             if ( self.selection != None ):
                 if ( self.mode == DESTROY ):
+                    game_random.action("Destroy", self.selection)
                     self.net.Destroy(self.selection)
                     self.__Clear_Control_Selection()
                     self.selection = None
                     self.Update_All()
 
                 elif ( self.mode == UPGRADE ):
+                    game_random.action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -274,6 +276,7 @@ class User_Interface:
             # empty (may contain pipes)
             if ( self.mode == BUILD_NODE ):
                 # create new node!
+                game_random.action("Build_Node", gpos)
                 n = Node(gpos)
                 n.Sound_Effect()
                 self.selection = None
@@ -283,6 +286,7 @@ class User_Interface:
 
             elif ( self.mode == DESTROY ):
                 # I presume you are referring to a pipe?
+                game_random.action("Destroy", self.selection)
                 pipe = self.selection
                 if ( pipe != None ):
                     self.net.Destroy(pipe)
@@ -292,7 +296,7 @@ class User_Interface:
 
             elif ( self.mode == UPGRADE ):
                 if ( self.selection != None ):
-
+                    game_random.action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -314,17 +318,20 @@ class User_Interface:
                 and ( isinstance(self.selection, Node) )
                 and ( n != self.selection )):
                     # end pipe here
+                    game_random.action("Add_Pipe", self.selection, n)
                     if ( self.net.Add_Pipe(self.selection, n) ):
                         tutor.Notify_Add_Pipe()
                         self.selection = None
 
             elif ( self.mode == DESTROY ):
+                game_random.action("Destroy", n)
                 self.net.Destroy(n)
                 self.selection = None
                 self.__Clear_Control_Selection()
                 self.Update_All()
 
             elif ( self.mode == UPGRADE ):
+                game_random.action("Upgrade", n)
                 n.Begin_Upgrade()
                 self.selection = n
                 self.__Clear_Control_Selection()
@@ -338,6 +345,7 @@ class User_Interface:
             w = self.net.ground_grid[ gpos ]
             if ( self.mode == BUILD_NODE ):
                 # A node is planned on top of the well.
+                game_random.action("Build_Node", gpos)
                 self.selection = None
                 n = Well_Node(gpos)
                 if ( self.net.Add_Grid_Item(n) ):
