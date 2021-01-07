@@ -399,4 +399,45 @@ class User_Interface:
         for p in self.net.pipe_list:
             p.Frame_Advance(frame_time)
 
+    def Playback_Action(self, name, *payload):
+        self.selection = None
+        gpos = None
 
+        if len(payload) >= 2:
+            gpos = payload[0:2]
+            self.selection = self.net.ground_grid.get(gpos, None)
+            if self.selection is None:
+                self.selection = self.net.Get_Pipe(gpos)
+
+        if name == "Destroy":
+            assert self.selection
+            self.net.Destroy(self.selection)
+
+        elif name == "Upgrade":
+            assert self.selection
+            self.selection.Begin_Upgrade()
+
+        elif name == "Build_Node":
+            assert gpos
+            if isinstance(self.selection, Well):
+                rc = self.net.Add_Grid_Item(Well_Node(gpos))
+                assert rc
+            else:
+                assert not self.selection
+                rc = self.net.Add_Grid_Item(Node(gpos))
+                assert rc
+
+        elif name == "Add_Pipe":
+            assert self.selection
+            assert len(payload) >= 4
+            gpos = payload[2:4]
+            n = self.net.ground_grid.get(gpos, None)
+            assert isinstance(n, Node)
+            assert isinstance(self.selection, Node)
+            rc = self.net.Add_Pipe(self.selection, n)
+            assert rc
+
+        else:
+            assert False, name
+
+        self.selection = None

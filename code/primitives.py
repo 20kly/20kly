@@ -49,6 +49,11 @@ MENU_MANUAL = 218
 MENU_MUTE = 219
 MENU_PEACEFUL = 220
 
+# Playback and record
+PM_OFF = 301
+PM_PLAYBACK = 302
+PM_RECORD = 303
+
 # Mathematical constants
 HALF_PI = math.pi * 0.5
 TWO_PI = math.pi * 2.0

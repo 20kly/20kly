@@ -10,6 +10,7 @@ from pygame.locals import *
 import game , stats , storms , extra , save_menu , resource , menu
 import config , startup , sound , alien_invasion , quakes
 from primitives import *
+from game_random import PlaybackEOF
 
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
 DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
@@ -43,6 +44,12 @@ def Main(data_dir):
         except pygame.error, message:
             print 'Sound initialization failed. %s' % message
             no_sound = True
+
+    playback_mode = PM_OFF
+    if "--playback" in sys.argv:
+        playback_mode = PM_PLAYBACK
+    if "--record" in sys.argv:
+        playback_mode = PM_RECORD
 
     pygame.init()
     pygame.font.init()
@@ -81,6 +88,14 @@ def Main(data_dir):
     quakes.Init_Quakes()
 
     quit = False
+    if playback_mode != PM_OFF:
+        try:
+            game.Main_Loop(screen, clock, 
+                    (width, height), None, MENU_BEGINNER, playback_mode)
+        except PlaybackEOF:
+            pass
+        quit = True
+
     while ( not quit ):
         if ( config.cfg.resolution != (width, height) ):
 
@@ -178,7 +193,7 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
 
             elif ( cmd == MENU_TUTORIAL ):
                 quit = game.Main_Loop(screen, clock, 
-                        (width,height), None, MENU_TUTORIAL)
+                        (width,height), None, MENU_TUTORIAL, PM_OFF)
 
             elif ( cmd == MENU_LOAD ):
                 current_menu = save_menu.Save_Menu(False)
@@ -237,13 +252,13 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
             elif ( current_menu == difficulty_menu ):
                 if ( cmd >= 0 ):
                     quit = game.Main_Loop(screen, clock, 
-                            (width,height), None, cmd)
+                            (width,height), None, cmd, PM_OFF)
 
             else: # Load menu
                 if ( cmd >= 0 ):
                     # Start game from saved position
                     quit = game.Main_Loop(screen, clock, 
-                            (width,height), cmd, None)
+                            (width,height), cmd, None, PM_OFF)
 
             current_menu = main_menu 
 

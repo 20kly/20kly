@@ -30,7 +30,7 @@ class Game_Data:
     pass
 
 def Main_Loop(screen, clock, (width, height), 
-            restore_pos, challenge):
+            restore_pos, challenge, playback_mode):
     # Initialisation of screen things.
 
     menu_margin = height
@@ -113,8 +113,11 @@ def Main_Loop(screen, clock, (width, height),
     g = Game_Data()
     g.version = startup.Get_Game_Version()
     g.sysinfo = extra.Get_System_Info()
-    game_random.reset(1)
-    game_random.begin("test1.dat")
+
+    if playback_mode == PM_PLAYBACK:
+        game_random.begin_read("test1.dat")
+    elif playback_mode == PM_RECORD:
+        game_random.begin_write("test1.dat")
 
     # Steam network initialisation
     g.net = Network(teaching)
@@ -233,6 +236,7 @@ def Main_Loop(screen, clock, (width, height),
 
     cur_time = g.game_time.time()
     game_random.work_timer_event(g)
+    game_random.season_timer_event(g)
 
     # Main loop
     while ( loop_running ):
@@ -242,8 +246,6 @@ def Main_Loop(screen, clock, (width, height),
         menu_inhibit = ui.Is_Menu_Open() or not g.game_running
         
 
-        # Insert delay...
-        # Hmm, I'm not sure if I know what this does.
         clock.tick(FRAME_RATE)
 
         rt_now = time.time()
@@ -255,6 +257,9 @@ def Main_Loop(screen, clock, (width, height),
                 print '%1.2f fps' % ( float(fps_count) / ( rt_now - fps_time ) )
             fps_time = rt_now 
             fps_count = 0
+
+        if playback_mode != PM_OFF:
+            rt_frame_length = 1.0 / FRAME_RATE
 
         if ( not menu_inhibit ):
             if ( not tutor.Frozen () ):
@@ -377,6 +382,7 @@ def Main_Loop(screen, clock, (width, height),
         if ( g.season_effect <= cur_time ):
             # Seasonal periodic effects
             g.season_effect = cur_time + g.season_fx.Get_Period()
+            game_random.season_timer_event(g)
             g.season_fx.Per_Period()
         
         if ((( not tutor.Permit_Season_Change() )
@@ -441,12 +447,17 @@ def Main_Loop(screen, clock, (width, height),
                 exit_options)
             in_game_menu.Select(None)
 
+        game_random.do_user_actions(ui)
+
         # Events
         e = pygame.event.poll()
         while ( e.type != NOEVENT ):
             if e.type == QUIT:
                 loop_running = False
                 quit = True
+
+            elif playback_mode == PM_PLAYBACK:
+                pass
 
             elif (( e.type == MOUSEBUTTONDOWN )
             or ( e.type == MOUSEMOTION )):
@@ -478,7 +489,7 @@ def Main_Loop(screen, clock, (width, height),
                 elif ( menu_inhibit ):
                     current_menu.Key_Press(e.key)
 
-                if ( DEBUG ):
+                if ( DEBUG or playback_mode == PM_RECORD ):
                     # Cheats.
                     if ( e.key == K_F10 ):
                         New_Mail("SEASON ADVANCE CHEAT")
