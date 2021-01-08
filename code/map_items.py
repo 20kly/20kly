@@ -50,6 +50,11 @@ class Item:
     def Sound_Effect(self):
         pass
 
+    def Sort_Key(self, hub):
+        (x1, y1) = self.pos
+        (x2, y2) = hub.pos
+        return (abs(x1 - x2), abs(y1 - y2), x1, y1)
+
 class Well(Item):
     def __init__(self, (x,y), name="Well"):
         Item.__init__(self, name)

@@ -235,8 +235,6 @@ def Main_Loop(screen, clock, (width, height),
         tutor.On(( menu_margin * 40 ) / 100)
 
     cur_time = g.game_time.time()
-    game_random.work_timer_event(g)
-    game_random.season_timer_event(g)
 
     # Main loop
     while ( loop_running ):
@@ -246,7 +244,8 @@ def Main_Loop(screen, clock, (width, height),
         menu_inhibit = ui.Is_Menu_Open() or not g.game_running
         
 
-        clock.tick(FRAME_RATE)
+        if playback_mode != PM_PLAYBACK:
+            clock.tick(FRAME_RATE)
 
         rt_now = time.time()
         rt_frame_length = rt_now - rt_then
@@ -268,6 +267,7 @@ def Main_Loop(screen, clock, (width, height),
 
         cur_time = g.game_time.time()
         mail.Set_Day(g.game_time.Get_Day())
+        game_random.timestamp(g)
             
         ui.Draw_Game(game_screen_surf, g.season_fx)
 
@@ -377,12 +377,10 @@ def Main_Loop(screen, clock, (width, height),
             g.net.Steam_Think()
             g.net.Expire_Popups()
             tutor.Examine_Game(g)
-            game_random.work_timer_event(g)
 
         if ( g.season_effect <= cur_time ):
             # Seasonal periodic effects
             g.season_effect = cur_time + g.season_fx.Get_Period()
-            game_random.season_timer_event(g)
             g.season_fx.Per_Period()
         
         if ((( not tutor.Permit_Season_Change() )
@@ -489,7 +487,7 @@ def Main_Loop(screen, clock, (width, height),
                 elif ( menu_inhibit ):
                     current_menu.Key_Press(e.key)
 
-                if ( DEBUG or playback_mode == PM_RECORD ):
+                if ( DEBUG or playback_mode != PM_OFF ):
                     # Cheats.
                     if ( e.key == K_F10 ):
                         New_Mail("SEASON ADVANCE CHEAT")

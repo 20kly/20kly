@@ -66,14 +66,13 @@ class Game_Random:
             else:
                 break
 
-    def work_timer_event(self, g):
-        self.write("WORK_TIMER_EVENT", "")
+    def timestamp(self, g):
+        supply = g.net.hub.Get_Steam_Supply()
+        demand = g.net.hub.Get_Steam_Demand()
+        self.write("TS", "<ddd", g.game_time.time(), supply, demand)
         for n in g.net.node_list:
             (x, y) = n.pos
             self.write("NODE", "<iiid", x, y, n.health, n.steam.charge)
-
-    def season_timer_event(self, g):
-        self.write("SEASON_TIMER_EVENT", "")
 
     def action(self, name, *objects):
         object_data = []

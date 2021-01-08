@@ -125,7 +125,7 @@ class Network:
         cv = self.connection_value
         while ( len(now) != 0 ):
             next = set([])
-            for node in now:
+            for node in sorted(now, key=lambda node: node.Sort_Key):
                 if ( node.connection_value < cv ):
                     if (( work_points > 0 ) and node.Needs_Work() ):
                         node.Do_Work()
