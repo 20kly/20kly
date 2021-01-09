@@ -36,7 +36,7 @@ class Alien_Season(Quiet_Season):
         # carrying the most current (this is the most
         # likely strategy)
 
-        most_current = [ (abs(pipe.current_n1_to_n2), pipe)
+        most_current = [ ((abs(pipe.current_n1_to_n2), pipe.n1.pos), pipe)
                 for pipe in self.net.pipe_list ]
         extra.Sort_By_Tuple_0(most_current)
 
@@ -47,7 +47,7 @@ class Alien_Season(Quiet_Season):
 
         # Or they may choose to attack the node with the most
         # connections
-        most_conns = [ (len(node.pipes), node)
+        most_conns = [ ((len(node.pipes), node.pos), node)
                 for node in self.net.node_list ]
         extra.Sort_By_Tuple_0(most_conns)
 
@@ -57,8 +57,8 @@ class Alien_Season(Quiet_Season):
         target += most_conns[ -m: ]
 
         # Or they might attack the busiest steam generator.
-        busy_generator = [ (sum([ abs(pipe.current_n1_to_n2)
-                        for pipe in node.pipes]), node)
+        busy_generator = [ ((sum([ abs(pipe.current_n1_to_n2)
+                        for pipe in node.pipes]), node.pos), node)
                 for node in self.net.node_list 
                 if isinstance(node, Well_Node) ]
         extra.Sort_By_Tuple_0(busy_generator)

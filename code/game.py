@@ -267,7 +267,9 @@ def Main_Loop(screen, clock, (width, height),
 
         cur_time = g.game_time.time()
         mail.Set_Day(g.game_time.Get_Day())
-        game_random.timestamp(g)
+
+        if ( not menu_inhibit ):
+            game_random.timestamp(g)
             
         ui.Draw_Game(game_screen_surf, g.season_fx)
 
@@ -445,7 +447,8 @@ def Main_Loop(screen, clock, (width, height),
                 exit_options)
             in_game_menu.Select(None)
 
-        game_random.do_user_actions(ui)
+        if ( not menu_inhibit ):
+            game_random.do_user_actions(ui)
 
         # Events
         e = pygame.event.poll()

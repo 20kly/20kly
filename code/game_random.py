@@ -70,9 +70,15 @@ class Game_Random:
         supply = g.net.hub.Get_Steam_Supply()
         demand = g.net.hub.Get_Steam_Demand()
         self.write("TS", "<ddd", g.game_time.time(), supply, demand)
+        bad = []
         for n in g.net.node_list:
             (x, y) = n.pos
-            self.write("NODE", "<iiid", x, y, n.health, n.steam.charge)
+            try:
+                self.write("NODE", "<iiid", x, y, n.health, n.steam.charge)
+            except PlaybackError as e:
+                bad.append(str(e))
+        if len(bad):
+            raise PlaybackError("".join(bad))
 
     def action(self, name, *objects):
         object_data = []
