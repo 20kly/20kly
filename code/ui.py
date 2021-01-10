@@ -11,7 +11,7 @@ from pygame.locals import *
 import stats , menu , draw_obj , mail , particle , tutor
 from map_items import *
 from primitives import *
-from game_random import ui_random, game_random
+from game_random import ui_random, game_random, PlaybackError
 
 
 class User_Interface:
@@ -210,14 +210,14 @@ class User_Interface:
 
             if ( self.selection != None ):
                 if ( self.mode == DESTROY ):
-                    game_random.action("Destroy", self.selection)
+                    game_random.Action("Destroy", self.selection)
                     self.net.Destroy(self.selection)
                     self.__Clear_Control_Selection()
                     self.selection = None
                     self.Update_All()
 
                 elif ( self.mode == UPGRADE ):
-                    game_random.action("Upgrade", self.selection)
+                    game_random.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -276,19 +276,19 @@ class User_Interface:
             # empty (may contain pipes)
             if ( self.mode == BUILD_NODE ):
                 # create new node!
-                game_random.action("Build_Node", gpos)
                 n = Node(gpos)
                 n.Sound_Effect()
                 self.selection = None
                 if ( self.net.Add_Grid_Item(n) ):
+                    game_random.Action("Build_Node", n)
                     self.selection = n
                     tutor.Notify_Add_Node(n)
 
             elif ( self.mode == DESTROY ):
                 # I presume you are referring to a pipe?
-                game_random.action("Destroy", self.selection)
                 pipe = self.selection
                 if ( pipe != None ):
+                    game_random.Action("Destroy", self.selection)
                     self.net.Destroy(pipe)
                     self.__Clear_Control_Selection()
                     self.Update_All()
@@ -296,7 +296,7 @@ class User_Interface:
 
             elif ( self.mode == UPGRADE ):
                 if ( self.selection != None ):
-                    game_random.action("Upgrade", self.selection)
+                    game_random.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -318,20 +318,20 @@ class User_Interface:
                 and ( isinstance(self.selection, Node) )
                 and ( n != self.selection )):
                     # end pipe here
-                    game_random.action("Add_Pipe", self.selection, n)
                     if ( self.net.Add_Pipe(self.selection, n) ):
+                        game_random.Action("Add_Pipe", self.selection, n)
                         tutor.Notify_Add_Pipe()
                         self.selection = None
 
             elif ( self.mode == DESTROY ):
-                game_random.action("Destroy", n)
+                game_random.Action("Destroy", n)
                 self.net.Destroy(n)
                 self.selection = None
                 self.__Clear_Control_Selection()
                 self.Update_All()
 
             elif ( self.mode == UPGRADE ):
-                game_random.action("Upgrade", n)
+                game_random.Action("Upgrade", n)
                 n.Begin_Upgrade()
                 self.selection = n
                 self.__Clear_Control_Selection()
@@ -345,10 +345,10 @@ class User_Interface:
             w = self.net.ground_grid[ gpos ]
             if ( self.mode == BUILD_NODE ):
                 # A node is planned on top of the well.
-                game_random.action("Build_Node", gpos)
                 self.selection = None
                 n = Well_Node(gpos)
                 if ( self.net.Add_Grid_Item(n) ):
+                    game_random.Action("Build_Node", n)
                     self.selection = n
                     self.selection.Sound_Effect()
 
@@ -402,40 +402,59 @@ class User_Interface:
     def Playback_Action(self, name, *payload):
         self.selection = None
         gpos = None
+        objects = []
 
-        if len(payload) >= 2:
-            gpos = payload[0:2]
-            self.selection = self.net.ground_grid.get(gpos, None)
-            if self.selection is None:
-                self.selection = self.net.Get_Pipe(gpos)
+        for i in range(0, len(payload), 2):
+            x = payload[i]
+            y = payload[i + 1]
+            gpos = (x, y)
+            obj = self.net.ground_grid.get(gpos, None)
+            if obj is not None:
+                objects.append(obj)
+            if i == 0:
+                self.selection = obj
+            if i == 2:
+                self.selection = None
+                for pipe in self.net.pipe_list:
+                    if (((pipe.n1 == objects[0]) and (pipe.n2 == objects[1]))
+                    or ((pipe.n1 == objects[1]) and (pipe.n2 == objects[0]))):
+                        self.selection = pipe
+                        break
 
         if name == "Destroy":
-            assert self.selection
+            if not self.selection:
+                raise PlaybackError(
+                        "Destroy must always reference a valid "
+                        "selection: got " + repr(payload))
             self.net.Destroy(self.selection)
 
         elif name == "Upgrade":
-            assert self.selection
+            if not self.selection:
+                raise PlaybackError(
+                        "Upgrade must always reference a valid "
+                        "selection: got " + repr(payload))
             self.selection.Begin_Upgrade()
 
         elif name == "Build_Node":
             assert gpos
             if isinstance(self.selection, Well):
                 rc = self.net.Add_Grid_Item(Well_Node(gpos))
-                assert rc
             else:
                 assert not self.selection
                 rc = self.net.Add_Grid_Item(Node(gpos))
-                assert rc
+            if not rc:
+                raise PlaybackError(
+                        "Failed to add node at " + repr(payload))
 
         elif name == "Add_Pipe":
-            assert self.selection
+            assert not self.selection
             assert len(payload) >= 4
-            gpos = payload[2:4]
-            n = self.net.ground_grid.get(gpos, None)
-            assert isinstance(n, Node)
-            assert isinstance(self.selection, Node)
-            rc = self.net.Add_Pipe(self.selection, n)
-            assert rc
+            assert isinstance(objects[0], Node)
+            assert isinstance(objects[1], Node)
+            rc = self.net.Add_Pipe(objects[0], objects[1])
+            if not rc:
+                raise PlaybackError(
+                        "Failed to add pipe at " + repr(payload))
 
         else:
             assert False, name

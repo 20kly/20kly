@@ -8,7 +8,7 @@ import tempfile
 import struct
 import map_items
 
-HEADER_NUMBER = 20210101
+HEADER_NUMBER = 20210109
 
 class Game_Random:
     def __init__(self):
@@ -58,10 +58,7 @@ class Game_Random:
             if name.startswith("ACTION_"):
                 self.read_any()
                 name = name[7:]
-                assert (len(payload) % 4) == 0
-                words = len(payload) // 4
-                assert (0 <= words <= 4)
-                object_data = struct.unpack("<" + str(words) + "i", payload)
+                object_data = struct.unpack("<" + str(len(payload)) + "B", payload)
                 ui.Playback_Action(name, *object_data)
             else:
                 break
@@ -71,20 +68,34 @@ class Game_Random:
         demand = g.net.hub.Get_Steam_Demand()
         self.write("TS", "<ddd", g.game_time.time(), supply, demand)
         bad = []
+        for pos in sorted(g.net.pipe_grid):
+            (x2, y2) = pos
+            for pipe in g.net.pipe_grid[pos]:
+                (x1, y1) = pipe.n1.pos
+                (x3, y3) = pipe.n2.pos
+                try:
+                    self.write("PG", "<BBBBBB", x1, y1, x2, y2, x3, y3)
+                except PlaybackError as e:
+                    bad.append(str(e))
+
         for n in g.net.node_list:
             (x, y) = n.pos
             try:
-                self.write("NODE", "<iiid", x, y, n.health, n.steam.charge)
+                self.write("NODE", "<BBid", x, y, n.health, n.steam.charge)
             except PlaybackError as e:
                 bad.append(str(e))
+
         if len(bad):
             raise PlaybackError("".join(bad))
 
-    def action(self, name, *objects):
+    def Action(self, name, *objects):
         object_data = []
         for obj in objects:
-            if type(obj) == tuple:
-                (x, y) = obj
+            if isinstance(obj, map_items.Pipe):
+                (x, y) = obj.n1.pos
+                object_data.append(x)
+                object_data.append(y)
+                (x, y) = obj.n2.pos
                 object_data.append(x)
                 object_data.append(y)
             elif isinstance(obj, map_items.Building):
@@ -94,7 +105,7 @@ class Game_Random:
             else:
                 assert False, repr(obj)
 
-        self.write("ACTION_" + name, "<" + str(len(object_data)) + "i", *object_data)
+        self.write("ACTION_" + name, "<" + str(len(object_data)) + "B", *object_data)
 
     def write(self, name, fmt, *data):
         if self.reading:
