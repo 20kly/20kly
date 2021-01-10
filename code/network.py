@@ -6,7 +6,7 @@
 # Sorry, this isn't anything to do with IP: the Network is 
 # the steam transport network.
 
-import math , time , sound
+import math , time , sound , sys
 
 import extra
 from map_items import *
@@ -107,6 +107,8 @@ class Network:
         else:
             assert False # unknown type!
 
+        if gpos == (30, 27):
+            sys.stderr.write("item at " + repr(gpos) + " is " + repr(item) + "\n")
         return True
 
     def Is_Connected(self, node):
@@ -259,6 +261,8 @@ class Network:
         if ( by != None ):
             New_Mail(node.name_type + " destroyed by " + by + ".")
         
+        if node.pos == (30, 27):
+            sys.stderr.write("item at " + repr(node.pos) + " is destroyed " + repr(node) + "\n")
 
         node.Prepare_To_Die()
         self.__List_Destroy(self.node_list, node)

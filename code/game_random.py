@@ -70,7 +70,7 @@ class Game_Random:
         bad = []
         for pos in sorted(g.net.pipe_grid):
             (x2, y2) = pos
-            for pipe in g.net.pipe_grid[pos]:
+            for pipe in sorted(g.net.pipe_grid[pos], key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
                 (x1, y1) = pipe.n1.pos
                 (x3, y3) = pipe.n2.pos
                 try:
