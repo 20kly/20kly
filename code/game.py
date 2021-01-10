@@ -392,7 +392,7 @@ def Main_Loop(screen, clock, (width, height),
 
         if ( g.season_ends <= cur_time ):
             # Season change
-            sys.stderr.write("season change @ " + repr(cur_time) + "\n")
+            #sys.stderr.write("season change @ " + repr(cur_time) + "\n")
             if ( g.season == SEASON_START ):
                 g.season = SEASON_QUIET
                 g.season_fx = Quiet_Season(g.net)

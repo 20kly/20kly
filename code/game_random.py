@@ -8,7 +8,7 @@ import tempfile
 import struct
 import map_items
 
-HEADER_NUMBER = 20210109
+HEADER_NUMBER = 20210110
 
 class Game_Random:
     def __init__(self):
@@ -66,24 +66,35 @@ class Game_Random:
     def timestamp(self, g):
         supply = g.net.hub.Get_Steam_Supply()
         demand = g.net.hub.Get_Steam_Demand()
-        self.write("TS", "<ddd", g.game_time.time(), supply, demand)
         bad = []
-        for pos in sorted(g.net.pipe_grid):
+        grid_locs = sorted(set(g.net.pipe_grid) | set(g.net.ground_grid))
+        self.write("TIMESTAMP", "<dddI", g.game_time.time(), supply, demand, len(grid_locs))
+
+        for pos in grid_locs:
             (x2, y2) = pos
-            for pipe in sorted(g.net.pipe_grid[pos], key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
+            pipes = g.net.pipe_grid.get(pos, [])
+            node = g.net.ground_grid.get(pos, None)
+            if isinstance(node, map_items.Well_Node):
+                node_code = 1
+            elif isinstance(node, map_items.Node):
+                node_code = 2
+            elif isinstance(node, map_items.Well):
+                node_code = 3
+            else:
+                node_code = 0
+            self.write("G", "<BBBB", x2, y2, len(pipes), node_code)
+            for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
                 (x1, y1) = pipe.n1.pos
                 (x3, y3) = pipe.n2.pos
                 try:
-                    self.write("PG", "<BBBBBB", x1, y1, x2, y2, x3, y3)
+                    self.write("P", "<BBBB", x1, y1, x3, y3)
                 except PlaybackError as e:
                     bad.append(str(e))
-
-        for n in g.net.node_list:
-            (x, y) = n.pos
-            try:
-                self.write("NODE", "<BBid", x, y, n.health, n.steam.charge)
-            except PlaybackError as e:
-                bad.append(str(e))
+            if 1 <= node_code <= 2:
+                try:
+                    self.write("N", "<id", node.health, node.steam.charge)
+                except PlaybackError as e:
+                    bad.append(str(e))
 
         if len(bad):
             raise PlaybackError("".join(bad))
@@ -120,7 +131,7 @@ class Game_Random:
 
         name_bytes = name.encode("utf-8")
         payload = struct.pack(fmt, *data)
-        header = struct.pack("<II", len(name_bytes), len(payload))
+        header = struct.pack("<BB", len(name_bytes), len(payload))
         self.record.write(header)
         self.record.write(name_bytes)
         self.record.write(payload)
@@ -133,13 +144,13 @@ class Game_Random:
 
     def read_any(self):
         loc = self.record.tell()
-        header = self.record.read(8)
+        header = self.record.read(2)
         if len(header) == 0:
             raise PlaybackEOF()
-        if len(header) != 8:
+        if len(header) != 2:
             raise PlaybackError("When reading packet header at 0x%x - unexpected EOF" % loc)
 
-        (len_name, len_payload) = struct.unpack("<II", header)
+        (len_name, len_payload) = struct.unpack("<BB", header)
         name = self.record.read(len_name).decode("utf-8")
         payload = self.record.read(len_payload)
         if len(payload) != len_payload:
