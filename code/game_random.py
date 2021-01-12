@@ -82,7 +82,13 @@ class Game_Random:
                 node_code = 3
             else:
                 node_code = 0
-            self.write("G", "<BBBB", x2, y2, len(pipes), node_code)
+
+            g.net.Remove_Destroyed_Pipes(pos)
+            try:
+                self.write("G", "<BBBB", x2, y2, len(pipes), node_code)
+            except PlaybackError as e:
+                bad.append(str(e))
+
             for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
                 (x1, y1) = pipe.n1.pos
                 (x3, y3) = pipe.n2.pos
@@ -96,8 +102,11 @@ class Game_Random:
                 except PlaybackError as e:
                     bad.append(str(e))
 
-        if len(bad):
-            raise PlaybackError("".join(bad))
+            if len(bad):
+                for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
+                    bad.append("\nexpected pipe: " + repr((pipe.n1.pos, pipe.n2.pos, pipe.destroyed, pipe.health)) + "\n")
+
+                raise PlaybackError("".join(bad))
 
     def Action(self, name, *objects):
         object_data = []

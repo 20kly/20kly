@@ -206,9 +206,9 @@ class Network:
                 self.pipe_grid[ gpos ].append(pipe)
         return True
 
-    def Get_Pipe(self, gpos):
+    def Remove_Destroyed_Pipes(self, gpos):
         if ( not self.pipe_grid.has_key(gpos) ):
-            return None
+            return
         l = self.pipe_grid[ gpos ]
 
         # Remove destroyed pipes
@@ -218,6 +218,13 @@ class Network:
         # to save future recomputation.
         if ( len(l2) != len(l) ):
             self.pipe_grid[ gpos ] = l = l2
+
+    def Get_Pipe(self, gpos):
+        if ( not self.pipe_grid.has_key(gpos) ):
+            return None
+
+        self.Remove_Destroyed_Pipes(gpos)
+        l = self.pipe_grid[ gpos ]
 
         if ( len(l) == 0 ):
             return None
@@ -294,7 +301,7 @@ class Network:
         l = len(lst)
         for i in reversed(xrange(l)):
             if ( lst[ i ] == itm ):
-                assert itm == lst.pop(i)
+                lst.pop(i)
 
     def Make_Well(self, teaching=False, inhibit_effects=False):
         self.dirty = True
