@@ -4,7 +4,7 @@
 # 
 
 
-import pygame , time
+import pygame , time , sys
 from pygame.locals import *
 
 import stats
@@ -58,6 +58,8 @@ def New_Mail(text, colour=(128,128,128)):
     __messages.append((time.time() + MSG_EXPIRY_TIME, 
             stats.Get_Font(20).render(text, True, colour)))
     __change = True
+    print(text)
+    sys.stdout.flush()
 
 def Initialise():
     global __messages

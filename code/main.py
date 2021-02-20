@@ -4,12 +4,15 @@
 # 
 
 
-import pygame , random , sys , math , time , webbrowser , urllib , os
+import pygame , sys , math , time , webbrowser , urllib , os
+import getopt
 from pygame.locals import *
 
 import game , stats , storms , extra , save_menu , resource , menu
 import config , startup , sound , alien_invasion , quakes
 from primitives import *
+from game_random import PlaybackEOF
+import primitives
 
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
 DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
@@ -18,31 +21,56 @@ DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
 def Main(data_dir):
 
     n = "20,000 Light-Years Into Space"
-    print ""
-    print n
-    print "Copyright (C) Jack Whitham 2006-11"
-    print "Version", config.CFG_VERSION
-    print ""
+    print("")
+    print(n)
+    print("Copyright (C) Jack Whitham 2006-11")
+    print("Version", config.CFG_VERSION)
+    print("")
+    sys.stdout.flush()
 
     resource.DATA_DIR = data_dir
+    
+    (opts_list, args) = getopt.getopt(
+            sys.argv[1:], "",
+            ["safe", "fullscreen",
+                "no-sound", "playback=", "record=",
+                "resolution=", "challenge="])
+    opts = dict(opts_list)
+    sys.stdout.flush()
 
-    config.Initialise("--safe" in sys.argv)
+    config.Initialise("--safe" in opts)
 
     # Pygame things
     flags = 0
-    if ("--fullscreen" in sys.argv):
+    if ("--fullscreen" in opts):
         flags |= FULLSCREEN
 
     bufsize = 2048
 
-    no_sound = ( "--no-sound" in sys.argv )
+    no_sound = ( "--no-sound" in opts)
     if not no_sound:
         try:
             pygame.mixer.pre_init(22050, -16, 2, bufsize)
             pygame.mixer.init()
-        except pygame.error, message:
-            print 'Sound initialization failed. %s' % message
+        except pygame.error as message:
+            print('Sound initialization failed. %s' % message)
             no_sound = True
+
+    playback_mode = PM_OFF
+    record_challenge = 0
+    playback_file = opts.get("--playback", None)
+    if playback_file is not None:
+        playback_mode = PM_PLAYBACK
+
+    record_file = opts.get("--record", None)
+    if record_file is not None:
+        if playback_mode == PM_PLAYBACK:
+            playback_mode = PM_PLAYTHRU
+        else:
+            playback_mode = PM_RECORD
+            record_challenge = getattr(primitives,
+                        "MENU_" + opts.get("--challenge",
+                                    "BEGINNER").upper())
 
     pygame.init()
     pygame.font.init()
@@ -58,6 +86,10 @@ def Main(data_dir):
         resource.No_Sound()
     else:
         pygame.mixer.init(22050,-16,2,bufsize)
+
+    res = opts.get("--resolution", "").split("x")
+    if len(res) == 2:
+        config.cfg.resolution = (int(res[0]), int(res[1]))
 
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode(config.cfg.resolution, flags)
@@ -81,6 +113,19 @@ def Main(data_dir):
     quakes.Init_Quakes()
 
     quit = False
+    if playback_mode != PM_OFF:
+        # record/playback
+        try:
+            game.Main_Loop(screen=screen, clock=clock,
+                    width_height=(width, height), restore_pos=None,
+                    challenge=record_challenge,
+                    playback_mode=playback_mode,
+                    playback_file=playback_file,
+                    record_file=record_file)
+        except PlaybackEOF:
+            print("End of playback")
+        quit = True
+
     while ( not quit ):
         if ( config.cfg.resolution != (width, height) ):
 
@@ -102,8 +147,9 @@ def Main(data_dir):
     pygame.quit()
 
 
-def Main_Menu_Loop(name, clock, screen, (width, height)):
+def Main_Menu_Loop(name, clock, screen, width_height):
     # Further initialisation
+    (width, height) = width_height
     menu_image = resource.Load_Image("mainmenu.jpg")
 
     if ( menu_image.get_rect().width != width ):
@@ -163,22 +209,26 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
                 continue
             img = stats.Get_Font(sz).render(text, True, (200, 200, 128))
             img_r = img.get_rect()
-            img_r.center = (( width * 3 ) / 4, 0)
+            img_r.center = (( width * 3 ) // 4, 0)
             img_r.clamp_ip(screen.get_rect())
             img_r.top = y
             screen.blit(img, img_r.topleft)
             y += img_r.height
        
         (quit, cmd) = extra.Simple_Menu_Loop(screen, current_menu,
-                (( width * 3 ) / 4, 10 + ( height / 2 )))
+                (( width * 3 ) // 4, 10 + ( height // 2 )))
 
         if ( current_menu == main_menu ):
             if ( cmd == MENU_NEW_GAME ):
                 current_menu = difficulty_menu
 
             elif ( cmd == MENU_TUTORIAL ):
-                quit = game.Main_Loop(screen, clock, 
-                        (width,height), None, MENU_TUTORIAL)
+                quit = game.Main_Loop(screen=screen, clock=clock,
+                        width_height=(width, height), restore_pos=None,
+                        challenge=MENU_TUTORIAL,
+                        playback_mode=PM_OFF,
+                        playback_file=None,
+                        record_file=None)
 
             elif ( cmd == MENU_LOAD ):
                 current_menu = save_menu.Save_Menu(False)
@@ -236,14 +286,22 @@ def Main_Menu_Loop(name, clock, screen, (width, height)):
 
             elif ( current_menu == difficulty_menu ):
                 if ( cmd >= 0 ):
-                    quit = game.Main_Loop(screen, clock, 
-                            (width,height), None, cmd)
+                    quit = game.Main_Loop(screen=screen, clock=clock,
+                            width_height=(width, height), restore_pos=None,
+                            challenge=cmd,
+                            playback_mode=PM_OFF,
+                            playback_file=None,
+                            record_file=None)
 
             else: # Load menu
                 if ( cmd >= 0 ):
                     # Start game from saved position
-                    quit = game.Main_Loop(screen, clock, 
-                            (width,height), cmd, None)
+                    quit = game.Main_Loop(screen=screen, clock=clock,
+                            width_height=(width, height), restore_pos=cmd,
+                            challenge=None,
+                            playback_mode=PM_OFF,
+                            playback_file=None,
+                            record_file=None)
 
             current_menu = main_menu 
 
@@ -290,7 +348,7 @@ def Update_Feature(screen, menu_image):
         f = urllib.urlopen(url)
         new_version = f.readline()
         f.close()
-    except Exception, x:
+    except Exception as x:
         Finish(str(x))
         return False
 

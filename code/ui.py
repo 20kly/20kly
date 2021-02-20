@@ -5,16 +5,18 @@
 
 # Do you believe in the users?
 
-import pygame , random
+import pygame
 from pygame.locals import *
 
 import stats , menu , draw_obj , mail , particle , tutor
 from map_items import *
 from primitives import *
+from game_random import ui_random, game_random, PlaybackError
 
 
 class User_Interface:
-    def __init__(self, net, (width, height)):
+    def __init__(self, net, width_height):
+        (width, height) = width_height
         self.net = net
         self.control_menu = None
 
@@ -28,8 +30,8 @@ class User_Interface:
         # rotated on startup to create one of eight possible backdrops.
         # (Note: These don't get saved, as they're part of the UI. That's bad.)
 
-        img = pygame.transform.rotate(img, 90 * random.randint(0,3))
-        if ( random.randint(0,1) == 0 ):
+        img = pygame.transform.rotate(img, 90 * ui_random.randint(0,3))
+        if ( ui_random.randint(0,1) == 0 ):
             img = pygame.transform.flip(img, True, False)
             
         self.background = pygame.transform.scale(img, (width, height))
@@ -65,8 +67,8 @@ class User_Interface:
             # Earthquake effect
             m = 6
             r = output.get_rect()
-            r.left += random.randint(-m, m)
-            r.top += random.randint(-m, m)
+            r.left += ui_random.randint(-m, m)
+            r.top += ui_random.randint(-m, m)
             r = output.get_rect().clip(r)
             output = output.subsurface(r)
             self.Update_All()
@@ -209,12 +211,14 @@ class User_Interface:
 
             if ( self.selection != None ):
                 if ( self.mode == DESTROY ):
+                    game_random.Action("Destroy", self.selection)
                     self.net.Destroy(self.selection)
                     self.__Clear_Control_Selection()
                     self.selection = None
                     self.Update_All()
 
                 elif ( self.mode == UPGRADE ):
+                    game_random.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -257,14 +261,14 @@ class User_Interface:
             self.selection = None
 
         if ( DEBUG ):
-            print 'Selection:',self.selection
+            print('Selection:',self.selection)
             for (i,n) in enumerate(self.net.node_list):
                 if ( n == self.selection ):
-                    print 'Found: node',i
+                    print('Found: node',i)
             for (i,p) in enumerate(self.net.pipe_list):
                 if ( p == self.selection ):
-                    print 'Found: pipe',i
-            print 'End'
+                    print('Found: pipe',i)
+            print('End')
 
 
         if ( not self.net.ground_grid.has_key(gpos) ):
@@ -276,6 +280,7 @@ class User_Interface:
                 n = Node(gpos)
                 n.Sound_Effect()
                 self.selection = None
+                game_random.Action("Build_Node", n)
                 if ( self.net.Add_Grid_Item(n) ):
                     self.selection = n
                     tutor.Notify_Add_Node(n)
@@ -284,6 +289,7 @@ class User_Interface:
                 # I presume you are referring to a pipe?
                 pipe = self.selection
                 if ( pipe != None ):
+                    game_random.Action("Destroy", self.selection)
                     self.net.Destroy(pipe)
                     self.__Clear_Control_Selection()
                     self.Update_All()
@@ -291,7 +297,7 @@ class User_Interface:
 
             elif ( self.mode == UPGRADE ):
                 if ( self.selection != None ):
-
+                    game_random.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
 
@@ -313,17 +319,20 @@ class User_Interface:
                 and ( isinstance(self.selection, Node) )
                 and ( n != self.selection )):
                     # end pipe here
+                    game_random.Action("Add_Pipe", self.selection, n)
                     if ( self.net.Add_Pipe(self.selection, n) ):
                         tutor.Notify_Add_Pipe()
                         self.selection = None
 
             elif ( self.mode == DESTROY ):
+                game_random.Action("Destroy", n)
                 self.net.Destroy(n)
                 self.selection = None
                 self.__Clear_Control_Selection()
                 self.Update_All()
 
             elif ( self.mode == UPGRADE ):
+                game_random.Action("Upgrade", n)
                 n.Begin_Upgrade()
                 self.selection = n
                 self.__Clear_Control_Selection()
@@ -339,11 +348,16 @@ class User_Interface:
                 # A node is planned on top of the well.
                 self.selection = None
                 n = Well_Node(gpos)
+                game_random.Action("Build_Node", n)
                 if ( self.net.Add_Grid_Item(n) ):
                     self.selection = n
                     self.selection.Sound_Effect()
 
 
+        if self.selection == None:
+            game_random.Action("Unselect")
+        else:
+            game_random.Action("Select", self.selection)
         self.net.Popup(self.selection)
         tutor.Notify_Select(self.selection)
 
@@ -390,4 +404,73 @@ class User_Interface:
         for p in self.net.pipe_list:
             p.Frame_Advance(frame_time)
 
+    def Playback_Action(self, name, *payload):
+        self.selection = None
+        gpos = None
+        objects = []
 
+        for i in range(0, len(payload), 2):
+            x = payload[i]
+            y = payload[i + 1]
+            gpos = (x, y)
+            obj = self.net.ground_grid.get(gpos, None)
+            if obj is not None:
+                objects.append(obj)
+            if i == 0:
+                self.selection = obj
+            if i == 2:
+                self.selection = None
+                for pipe in self.net.pipe_list:
+                    if (((pipe.n1 == objects[0]) and (pipe.n2 == objects[1]))
+                    or ((pipe.n1 == objects[1]) and (pipe.n2 == objects[0]))):
+                        self.selection = pipe
+                        break
+
+        if name == "Destroy":
+            if not self.selection:
+                raise PlaybackError(
+                        "Destroy must always reference a valid "
+                        "selection: got " + repr(payload))
+            self.net.Destroy(self.selection)
+
+        elif name == "Upgrade":
+            if not self.selection:
+                raise PlaybackError(
+                        "Upgrade must always reference a valid "
+                        "selection: got " + repr(payload))
+            self.selection.Begin_Upgrade()
+
+        elif name == "Build_Node":
+            assert gpos
+            if isinstance(self.selection, Well):
+                n = Well_Node(gpos)
+                rc = self.net.Add_Grid_Item(n)
+            else:
+                assert not self.selection
+                n = Node(gpos)
+                rc = self.net.Add_Grid_Item(n)
+                if rc:
+                    tutor.Notify_Add_Node(n)
+
+        elif name == "Add_Pipe":
+            assert len(payload) >= 4
+            assert isinstance(objects[0], Node)
+            assert isinstance(objects[1], Node)
+            rc = self.net.Add_Pipe(objects[0], objects[1])
+            if rc:
+                tutor.Notify_Add_Pipe()
+
+        elif name == "Select":
+            assert self.selection
+            self.net.Popup(self.selection)
+            tutor.Notify_Select(self.selection)
+
+        elif name == "Unselect":
+            assert not self.selection
+            self.net.Popup(self.selection)
+            tutor.Notify_Select(self.selection)
+
+        else:
+            assert False, name
+
+        self.selection = None

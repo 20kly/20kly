@@ -6,7 +6,7 @@
 # Game statistics review.. no RTS game would be complete without one!
 #
 
-import pygame , random , sys , math , time , pickle
+import pygame , sys , math , time , pickle
 from pygame.locals import *
 
 import extra , resource , stats , menu
@@ -34,16 +34,18 @@ def Analyse_Network(game_object):
     return hr
 
 # Called at the end of the game, to display statistics:
-def Review(screen, (width, height), game_object, historian):
+def Review(screen, width_height, game_object, historian):
 
+    (width, height) = width_height
     g = game_object
     extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
 
-    def Text(str, size, (x,y), justify):
+    def Text(str, size, xy, justify):
+        (x,y) = xy
         img = stats.Get_Font(size).render(str, True, (255, 255, 255))
 
         if ( justify == 0 ): # centre
-            x -= ( img.get_rect().width ) / 2
+            x -= ( img.get_rect().width ) // 2
         elif ( justify < 0 ): # right
             x -= img.get_rect().width
 
@@ -53,13 +55,13 @@ def Review(screen, (width, height), game_object, historian):
 
 
     if ( g.win ):
-        y = Text("You have won the game!", 36, (width / 2, 10), 0)
+        y = Text("You have won the game!", 36, (width // 2, 10), 0)
     else:
-        y = Text("You have lost the game!", 36, (width / 2, 10), 0) 
+        y = Text("You have lost the game!", 36, (width // 2, 10), 0) 
 
-    Text("Thankyou for playing!", 15, (width / 2, y), 0) 
+    Text("Thankyou for playing!", 15, (width // 2, y), 0) 
 
-    y += height / 10
+    y += height // 10
 
     lev = dict()
     lev[ MENU_TUTORIAL ] = lev[ MENU_BEGINNER ] = "Beginner"
@@ -83,7 +85,7 @@ def Review(screen, (width, height), game_object, historian):
         ( "Game level", level ),
         ( "Your " + level + " Score", "%u" % score ) ]
 
-    r = Rect(25, y, width / 2, 1)
+    r = Rect(25, y, width // 2, 1)
     y = Text("Summary", 18, r.center, 0)
 
     for (key, data) in l:
@@ -94,7 +96,7 @@ def Review(screen, (width, height), game_object, historian):
     r = r.inflate(10,10)
     pygame.draw.rect(screen, (128, 128, 128), r, 2)
 
-    y = r.bottom + ( height / 10 )
+    y = r.bottom + ( height // 10 )
 
     graph_window = Rect(r.left, y, r.width, ( height - y ) - 25 )
 
@@ -109,7 +111,8 @@ def Review(screen, (width, height), game_object, historian):
         ( "Work Unit Availability", "work_units_avail", (0,255,255) ),
         ( "City Steam Pressure", "city_pressure", (0,0,255) ) ]
 
-    def Regraph((heading, attribute, colour)):
+    def Regraph(arg):
+        (heading, attribute, colour) = arg
         pygame.draw.rect(screen, (0, 0, 0), graph_window)
         pygame.draw.rect(screen, (128, 128, 128), graph_window, 2)
 
@@ -124,7 +127,7 @@ def Review(screen, (width, height), game_object, historian):
         graph_subwin.top += text_margin
 
         if ( len(historian) == 0 ):
-            print "Historian has no data - no graph available"
+            print("Historian has no data - no graph available")
             return
 
 
@@ -134,7 +137,7 @@ def Review(screen, (width, height), game_object, historian):
             try:
                 gy = getattr(hr, attribute)
             except Attribute_Error:
-                print "Attribute",attribute,"not present"
+                print("Attribute",attribute,"not present")
                 return
 
             if ( gy < 0 ):
@@ -149,7 +152,7 @@ def Review(screen, (width, height), game_object, historian):
                 max_gy = gy
 
         if (( max_gt <= 0 ) or ( max_gy <= 0 )):
-            print "Graph not available (/0)"
+            print("Graph not available (/0)")
             return
 
         def Calc_Step_Max(maximum,number_of_steps):
@@ -216,7 +219,7 @@ def Review(screen, (width, height), game_object, historian):
     quit = False
     while ( not quit ):
         (quit, cmd) = extra.Simple_Menu_Loop(screen, 
-                    proceed, (( width * 3 ) / 4, height / 2 ))
+                    proceed, (( width * 3 ) // 4, height // 2 ))
 
         if ( cmd == MENU_MENU ):
             quit = True

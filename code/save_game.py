@@ -24,9 +24,9 @@ def Load(g, num):
         header = f.read( HEADER_SIZE )
         g2 = pickle.load(f)
         f.close()
-    except Exception, x:
+    except Exception as x:
         y = ("Error restoring file: " + repr(x) + str(x))
-        print y
+        print(y)
         return (None, y)
     
     if ( g2.version != g.version ):
@@ -47,7 +47,7 @@ def Save(g, num, label):
         f.write(label)
         pickle.dump(g,f)
         f.close()
-    except Exception, x:
+    except Exception as x:
         return "Error saving file: " + repr(x) + str(x)
     
     return None
@@ -59,7 +59,7 @@ def Get_Info(num):
         f = file(name, "rb")
         label = f.read( HEADER_SIZE )
         f.close()
-    except Exception, x:
+    except Exception as x:
         # File not found, probably.. who cares.
         return None
 

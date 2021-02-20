@@ -1,0 +1,6 @@
+*.py text eol=lf
+*.txt text eol=lf
+*.html text eol=lf
+*.sh text eol=lf
+lightyears text eol=lf
+.gitattributes text eol=lf

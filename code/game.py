@@ -6,12 +6,13 @@
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame , random , sys , math , time , pickle
+import pygame , sys , math , time , pickle
 from pygame.locals import *
 
 import bresenham , intersect , extra , stats , mail , gametime
 import menu , startup , save_menu , save_game , config , resource
 import review , sound , tutor
+from game_random import game_random, ui_random
 from primitives import *
 from quiet_season import Quiet_Season
 from alien_invasion import Alien_Season
@@ -28,10 +29,11 @@ from mail import New_Mail
 class Game_Data:
     pass
 
-def Main_Loop(screen, clock, (width, height), 
-            restore_pos, challenge):
+def Main_Loop(screen, clock, width_height,
+            restore_pos, challenge, playback_mode, playback_file, record_file):
     # Initialisation of screen things.
 
+    (width, height) = width_height
     menu_margin = height
     screen.fill((0,0,0))  # screen is black during init
     pygame.display.flip()
@@ -42,7 +44,7 @@ def Main_Loop(screen, clock, (width, height),
     # Grid setup
     (w,h) = GRID_SIZE
     assert w == h
-    Set_Grid_Size(height / h)
+    Set_Grid_Size(height // h)
 
     # Windows..
     game_screen_rect = Rect(0, 0, menu_margin, height)
@@ -66,7 +68,7 @@ def Main_Loop(screen, clock, (width, height),
 
     picture = resource.Load_Image("headersm.jpg")
     picture_rect = picture.get_rect().inflate(10,10)
-    picture_rect.center = (x1 + ( menu_width1 / 2 ),0)
+    picture_rect.center = (x1 + ( menu_width1 // 2 ),0)
     picture_rect.top = margin
     picture_surf = screen.subsurface(picture_rect)
 
@@ -106,12 +108,18 @@ def Main_Loop(screen, clock, (width, height),
 
     alarm_sound = sound.Persisting_Sound("emergency")
 
-    teaching = ( challenge == MENU_TUTORIAL )
-
     # Game data holder
     g = Game_Data()
     g.version = startup.Get_Game_Version()
     g.sysinfo = extra.Get_System_Info()
+
+    if playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+        challenge = game_random.begin_read(playback_file)
+
+    if playback_mode in (PM_PLAYTHRU, PM_RECORD):
+        game_random.begin_write(record_file, challenge)
+
+    teaching = ( challenge == MENU_TUTORIAL )
 
     # Steam network initialisation
     g.net = Network(teaching)
@@ -119,11 +127,11 @@ def Main_Loop(screen, clock, (width, height),
     DIFFICULTY.Set(MENU_INTERMEDIATE)
 
     # Establish equilibrium with initial network.
-    for i in xrange(300):
+    for i in range(300):
         g.net.Steam_Think()
         if ( g.net.hub.Get_Pressure() >= PRESSURE_GOOD ):
             if ( DEBUG ):
-                print i,'steps required for equilibrium'
+                print(i,'steps required for equilibrium')
             break
 
     assert g.net.hub.Get_Pressure() >= PRESSURE_GOOD
@@ -196,7 +204,7 @@ def Main_Loop(screen, clock, (width, height),
         lev[ MENU_PEACEFUL ] = "a Peaceful"
     
         assert g.challenge != None
-        assert lev.has_key( g.challenge )
+        assert lev.get( g.challenge, None )
         New_Mail("You are playing " + lev[ g.challenge ] + " game.")
         New_Mail("Win the game by upgrading your city to tech level %u."
                 % DIFFICULTY.CITY_MAX_TECH_LEVEL )
@@ -226,7 +234,7 @@ def Main_Loop(screen, clock, (width, height),
     Summary(g)
 
     if ( g.challenge == MENU_TUTORIAL ):
-        tutor.On(( menu_margin * 40 ) / 100)
+        tutor.On(( menu_margin * 40 ) // 100)
 
     cur_time = g.game_time.time()
 
@@ -238,9 +246,10 @@ def Main_Loop(screen, clock, (width, height),
         menu_inhibit = ui.Is_Menu_Open() or not g.game_running
         
 
-        # Insert delay...
-        # Hmm, I'm not sure if I know what this does.
-        clock.tick(FRAME_RATE)
+        if playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+            clock.tick(0)
+        else:
+            clock.tick(FRAME_RATE)
 
         rt_now = time.time()
         rt_frame_length = rt_now - rt_then
@@ -248,9 +257,12 @@ def Main_Loop(screen, clock, (width, height),
         fps_count += 1
         if ( fps_count > 100 ):
             if ( DEBUG ):
-                print '%1.2f fps' % ( float(fps_count) / ( rt_now - fps_time ) )
+                print('%1.2f fps' % ( float(fps_count) / ( rt_now - fps_time ) ))
             fps_time = rt_now 
             fps_count = 0
+
+        if playback_mode != PM_OFF:
+            rt_frame_length = 1.0 / FRAME_RATE
 
         if ( not menu_inhibit ):
             if ( not tutor.Frozen () ):
@@ -259,6 +271,9 @@ def Main_Loop(screen, clock, (width, height),
 
         cur_time = g.game_time.time()
         mail.Set_Day(g.game_time.Get_Day())
+
+        if ( not menu_inhibit ):
+            game_random.timestamp(g)
             
         ui.Draw_Game(game_screen_surf, g.season_fx)
 
@@ -381,6 +396,7 @@ def Main_Loop(screen, clock, (width, height),
 
         if ( g.season_ends <= cur_time ):
             # Season change
+            #sys.stderr.write("season change @ " + repr(cur_time) + "\n")
             if ( g.season == SEASON_START ):
                 g.season = SEASON_QUIET
                 g.season_fx = Quiet_Season(g.net)
@@ -436,12 +452,18 @@ def Main_Loop(screen, clock, (width, height),
                 exit_options)
             in_game_menu.Select(None)
 
+        if ( not menu_inhibit ):
+            game_random.do_user_actions(ui)
+
         # Events
         e = pygame.event.poll()
         while ( e.type != NOEVENT ):
             if e.type == QUIT:
                 loop_running = False
                 quit = True
+
+            elif playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+                pass
 
             elif (( e.type == MOUSEBUTTONDOWN )
             or ( e.type == MOUSEMOTION )):
@@ -473,7 +495,7 @@ def Main_Loop(screen, clock, (width, height),
                 elif ( menu_inhibit ):
                     current_menu.Key_Press(e.key)
 
-                if ( DEBUG ):
+                if ( DEBUG or playback_mode != PM_OFF ):
                     # Cheats.
                     if ( e.key == K_F10 ):
                         New_Mail("SEASON ADVANCE CHEAT")

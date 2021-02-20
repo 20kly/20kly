@@ -6,13 +6,14 @@
 # Mysterious alien attackers.
 # Look away now, unless you want to understand how the aliens work.
 
-import math , pygame , random
+import math , pygame
 from pygame.locals import *
 
 import extra , sound
 from quiet_season import Quiet_Season
 from primitives import *
 from map_items import *
+from game_random import game_random
 
 
 
@@ -35,7 +36,7 @@ class Alien_Season(Quiet_Season):
         # carrying the most current (this is the most
         # likely strategy)
 
-        most_current = [ (abs(pipe.current_n1_to_n2), pipe)
+        most_current = [ ((abs(pipe.current_n1_to_n2), pipe.n1.pos), pipe)
                 for pipe in self.net.pipe_list ]
         extra.Sort_By_Tuple_0(most_current)
 
@@ -46,7 +47,7 @@ class Alien_Season(Quiet_Season):
 
         # Or they may choose to attack the node with the most
         # connections
-        most_conns = [ (len(node.pipes), node)
+        most_conns = [ ((len(node.pipes), node.pos), node)
                 for node in self.net.node_list ]
         extra.Sort_By_Tuple_0(most_conns)
 
@@ -56,8 +57,8 @@ class Alien_Season(Quiet_Season):
         target += most_conns[ -m: ]
 
         # Or they might attack the busiest steam generator.
-        busy_generator = [ (sum([ abs(pipe.current_n1_to_n2)
-                        for pipe in node.pipes]), node)
+        busy_generator = [ ((sum([ abs(pipe.current_n1_to_n2)
+                        for pipe in node.pipes]), node.pos), node)
                 for node in self.net.node_list 
                 if isinstance(node, Well_Node) ]
         extra.Sort_By_Tuple_0(busy_generator)
@@ -85,8 +86,8 @@ class Alien_Season(Quiet_Season):
                 self.t2_announced = True
 
         # Make a wave of bug-eyed monsters. Here's where they start:
-        num_aliens = random.randint(2,2 + int(self.alien_tech_level))
-        alien_angle = random.random() * TWO_PI
+        num_aliens = game_random.randint(2,2 + int(self.alien_tech_level))
+        alien_angle = game_random.random() * TWO_PI
         (cx,cy) = GRID_CENTRE
         alien_radius = cx + cy
 
@@ -97,8 +98,8 @@ class Alien_Season(Quiet_Season):
         dest.pos = (x,y)
 
         # Get target list for aliens
-        num_targets = random.randint(1,1 + int(self.alien_tech_level))
-        random.shuffle(self.target_list)
+        num_targets = game_random.randint(1,1 + int(self.alien_tech_level))
+        game_random.shuffle(self.target_list)
         alien_targets = self.target_list[ 0:num_targets ]
         alien_targets.append(dest)
 
@@ -106,7 +107,7 @@ class Alien_Season(Quiet_Season):
             # No targets! Therefore, no aliens.
             return
 
-        for i in xrange(num_aliens):
+        for i in range(num_aliens):
             x = cx + ( alien_radius * math.cos(alien_angle) )
             y = cy + ( alien_radius * math.sin(alien_angle) )
             a = Alien()
@@ -169,9 +170,9 @@ class Alien:
         self.current_target = None
         self.speed = 0
         self.attack_angle = 0
-        self.points = [ (-1,-1) for i in xrange(3) ]
+        self.points = [ (-1,-1) for i in range(3) ]
         self.countdown = 0
-        self.rotation = 0.05 + ( random.random() * 0.05 )
+        self.rotation = 0.05 + ( game_random.random() * 0.05 )
         self.bbox = None
 
 
@@ -227,7 +228,7 @@ class Alien:
                     self.net.Popup(self.current_target)
                     fire = True
             else:
-                dist = math.hypot(tx - x, ty - y)
+                dist = game_random.hypot(tx - x, ty - y)
                 if ( dist > 0.1 ):
                     # Still en-route to target zone
                     self.speed += self.ACC_PER_SECOND_PER_SECOND 

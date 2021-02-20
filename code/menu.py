@@ -106,7 +106,8 @@ class Menu:
                     pygame.draw.rect(output, (0, 180, 0), r, 1)
 
 
-    def __Draw(self, (width_hint, height_hint)):
+    def __Draw(self, width_height_hint):
+        (width_hint, height_hint) = width_height_hint
         surf = pygame.Surface((width_hint, height_hint))
         bbox = Rect(0, 0, width_hint, height_hint)
 
@@ -164,7 +165,7 @@ class Menu:
 
 
     def Justify(self, width, text_width):
-        return ( width - text_width ) / 2
+        return ( width - text_width ) // 2
 
     def Enhancement_Interface(self, surf, num, rect, margin):
         pass
@@ -176,7 +177,7 @@ class Enhanced_Menu(Menu):
         Menu.__init__(self, menu_options, force_width)
 
     def Enhancement_Interface(self, surf, num, rect, margin):
-        if ( self.pictures.has_key( num ) ):
+        if ( self.pictures.get( num, None ) ):
             img = resource.Load_Image( self.pictures[ num ] )
             img_r = img.get_rect()
             img_r.center = rect.center

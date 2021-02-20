@@ -37,22 +37,22 @@ def Initialise(delete_file):
         return
 
     try:
-        f = file(FILENAME, "rb")
+        f = open(FILENAME, "rb")
         cfg2 = pickle.load(f)
         f.close()
         if cfg2.version == CFG_VERSION:
             # Configuration is valid, we can use it.
             cfg = cfg2
-    except Exception, x:
+    except Exception:
         pass
 
 def Save():
     global cfg, FILENAME
 
     try:
-        f = file(FILENAME, "wb")
+        f = open(FILENAME, "wb")
         pickle.dump(cfg, f)
         f.close()
-    except Exception, x:
+    except Exception:
         pass
 

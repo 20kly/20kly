@@ -9,7 +9,7 @@ import sys
 
 def Check_Version():
     fault = False
-    if ( sys.__dict__.has_key("version_info" ) ):
+    if ( sys.__dict__.get("version_info", None) ):
         (major, minor, micro, releaselevel, serial) = sys.version_info
         if (( major < 2 )
         or (( major == 2 ) and ( minor < 4 ))):
@@ -20,35 +20,35 @@ def Check_Version():
         fault = True
 
     if ( fault ):
-        print ""
-        print "Python 2 version 2.4 or higher is required."
-        print "You appear to be using version",(str(major) + "." + str(minor))
+        print("")
+        print("Python 2 version 2.4 or higher is required.")
+        print("You appear to be using version",(str(major) + "." + str(minor)))
         sys.exit(1)
     
     try:
         import pygame
     except:
-        print ""
-        print "Pygame does not appear to be installed."
-        print "Please install the latest version from http://www.pygame.org/"
+        print("")
+        print("Pygame does not appear to be installed.")
+        print("Please install the latest version from http://www.pygame.org/")
         sys.exit(1)
   
     try:
-        # God damn! The size of this field changed between 
+        # The size of this field changed between 
         # ver. 1.6 and ver. 1.7. Arrgh. 
         [major, minor] = list(pygame.version.vernum)[ 0:2 ]
         x = pygame.version.ver
     except:
-        print ""
-        print "Pygame is installed, but you have an old version."
-        print "Please install the latest version from http://www.pygame.org/"
+        print("")
+        print("Pygame is installed, but you have an old version.")
+        print("Please install the latest version from http://www.pygame.org/")
         sys.exit(1)
 
     if (( major < 1 )
     or ( major == 1 ) and ( minor < 7 )):
-        print ""
-        print "Pygame version 1.7.x or higher is required."
-        print "Please install the latest version from http://www.pygame.org/"
+        print("")
+        print("Pygame version 1.7.x or higher is required.")
+        print("Please install the latest version from http://www.pygame.org/")
         sys.exit(1)
 
 

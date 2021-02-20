@@ -50,17 +50,17 @@ def Load_Image(name):
 
     key = name
 
-    if ( __img_cache.has_key(key) ):
+    if ( __img_cache.get(key, None) ):
         return __img_cache[ key ]
     
     fname = Path(name)
     try:
         img = pygame.image.load(fname)
-    except Exception, r:
+    except Exception as r:
         s = "WARNING: Unable to load image '" + fname + "': " + str(r)
-        print ""
-        print s
-        print ""
+        print("")
+        print(s)
+        print("")
         New_Mail(s)
         img = pygame.Surface((10,10))
         img.fill((255,0,0))
@@ -92,7 +92,7 @@ def Load_Sound(name):
     if ( __snd_disabled ):
         return None
 
-    if ( __snd_cache.has_key(name) ):
+    if ( __snd_cache.get(name, None) ):
         return __snd_cache[ name ]
 
     #print "Caching new sound:",name
@@ -100,12 +100,12 @@ def Load_Sound(name):
     fname = Path(fname + ".ogg", True)
     try:
         f = pygame.mixer.Sound(fname)
-    except Exception, x:
-        print ""
-        print "WARNING: Error loading sound effect " + fname
-        print "Real name: " + name
-        print repr(x) + " " + str(x)
-        print ""
+    except Exception as x:
+        print("")
+        print("WARNING: Error loading sound effect " + fname)
+        print("Real name: " + name)
+        print(repr(x) + " " + str(x))
+        print("")
         f = None
    
     __snd_cache[ name ] = f

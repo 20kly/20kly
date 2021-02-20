@@ -8,13 +8,14 @@
 #
 # Well, not quite...
 
-import math , pygame , random
+import math , pygame
 from pygame.locals import *
 
 import extra , intersect , sound
 from quiet_season import Quiet_Season
 from primitives import *
 from map_items import *
+from game_random import game_random
 
 
 class Quake_Season(Quiet_Season):
@@ -63,12 +64,12 @@ class Quake_Season(Quiet_Season):
 
         # Split line, repeatedly, at random locations.
         for i in range(6,1,-1):
-            split = random.randint(0,len(line) - 2)
+            split = game_random.randint(0,len(line) - 2)
             (x3, y3) = extra.Partial_Vector(line[ split ], line[ split + 1 ], 
-                    (random.random(), 1.0) )
+                    (game_random.random(), 1.0) )
             # New vertex gets moved about a bit.
-            x3 += ( random.random() * 2.0 * i ) - float(i)
-            y3 += ( random.random() * 2.0 * i ) - float(i)
+            x3 += ( game_random.random() * 2.0 * i ) - float(i)
+            y3 += ( game_random.random() * 2.0 * i ) - float(i)
             line.insert(split + 1, (x3, y3))
 
         # Long segments of the line are reduced into shorter segments.
@@ -77,7 +78,7 @@ class Quake_Season(Quiet_Season):
         while ( i <= ( len(line) - 2 )):
             (x1, y1) = line[ i ]
             (x2, y2) = line[ i + 1 ]
-            sz = math.hypot( x1 - x2, y1 - y2 )
+            sz = game_random.hypot( x1 - x2, y1 - y2 )
             if ( sz > 10.0 ):
                 (x3, y3) = extra.Partial_Vector(
                         line[ i ], line[ i + 1 ], (0.5, 1.0))
@@ -86,7 +87,7 @@ class Quake_Season(Quiet_Season):
                 i += 1
 
         # Line may be reversed.
-        if ( random.randint(0,1) == 0 ):
+        if ( game_random.randint(0,1) == 0 ):
             line.reverse()
 
         self.fault_lines = line
@@ -97,7 +98,7 @@ class Quake_Season(Quiet_Season):
         damage_nodes = set([])
         destroy_pipes = set([])
 
-        for i in xrange(len(self.fault_lines) - 1):
+        for i in range(len(self.fault_lines) - 1):
             gpos1 = self.fault_lines[ i ]
             gpos2 = self.fault_lines[ i + 1 ]
             # Any pipes that intersect gpos1 and gpos2 are destroyed.
@@ -129,12 +130,12 @@ class Quake_Season(Quiet_Season):
         if ( self.damage < 2.0 ):
             # Some Wells are created.
 
-            num_wells = random.randint(0, 3)
+            num_wells = game_random.randint(0, 3)
             if ( num_wells == 1 ):
                 New_Mail("A new steam well has appeared!")
             elif ( num_wells > 1 ):
                 New_Mail("Some new steam wells have appeared!")
-            for i in xrange(num_wells):
+            for i in range(num_wells):
                 self.net.Make_Well(False, True)
 
     def Draw(self, output, update_area):

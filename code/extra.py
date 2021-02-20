@@ -7,35 +7,42 @@
 # don't merit their own modules.
 
 
-import pygame , sys , time , random , os
+import pygame , sys , time , os
 
 import intersect , bresenham , resource
 from primitives import *
+from game_random import game_random
 
 # The function returns (x,y), a point on the line between
 # (x1,y1) and (x2,y2), such that a / b of the line
 # is between (x,y) and (x1,y1).
 
-def Partial_Vector((x1,y1),(x2,y2),(a,b)):
+def Partial_Vector(arg1, arg2, arg3):
+    (x1,y1) = arg1
+    (x2,y2) = arg2
+    (a,b) = arg3
     x = x1 + ((( x2 - x1 ) * a ) / b )
     y = y1 + ((( y2 - y1 ) * a ) / b )
     return (x,y)
 
 
 # I'm always wanting to sort lists of tuples.
-def Sort_By_Tuple_0(list):
-    list.sort(cmp=lambda (a,b),(c,d): cmp(a,c))
+def Sort_By_Tuple_0(list_of_tuples):
+    list_of_tuples.sort(key=lambda x: x[0])
     return None
 
-def More_Accurate_Line((x1,y1), (x2,y2)):
+def More_Accurate_Line(arg1, arg2):
+    (x1,y1) = arg1
+    (x2,y2) = arg2
     def A(i):
         return ( 2 * i ) + 1
 
-    return [ (x / 2, y / 2) for (x,y) in
+    return [ (x // 2, y // 2) for (x,y) in
             bresenham.Line((A(x1), A(y1)), (A(x2), A(y2))) ]
 
 # Check line (a,b) against given grid pos
-def Intersect_Grid_Square(gpos, (a,b)):
+def Intersect_Grid_Square(gpos, ab):
+    (a,b) = ab
     (x,y) = gpos
     x -= 0.5
     y -= 0.5
@@ -86,12 +93,12 @@ def Make_Quake_SF_Points(off):
     (w,h) = GRID_SIZE
 
     while ( crosses_centre ):
-        if ( random.randint(0,1) == 0 ):
-            start = (random.randint(0,w - 1), -off)
-            finish = (random.randint(0,w - 1), h + off)
+        if ( game_random.randint(0,1) == 0 ):
+            start = (game_random.randint(0,w - 1), -off)
+            finish = (game_random.randint(0,w - 1), h + off)
         else:
-            start = (-off, random.randint(0,h - 1))
-            finish = (h + off, random.randint(0,h - 1))
+            start = (-off, game_random.randint(0,h - 1))
+            finish = (h + off, game_random.randint(0,h - 1))
 
         crosses_centre = ( 
                 intersect.Intersect((start, finish),
@@ -101,7 +108,8 @@ def Make_Quake_SF_Points(off):
     return [start, finish]
 
 
-def Simple_Menu_Loop(screen, current_menu, (x,y)):
+def Simple_Menu_Loop(screen, current_menu, xy):
+    (x,y) = xy
     cmd = None
     quit = False
 
@@ -132,7 +140,7 @@ def Simple_Menu_Loop(screen, current_menu, (x,y)):
 def Get_OS():
     # On my machine, sys.platform reports 'linux2'. Remove digits.
     pf = sys.platform.title()
-    for i in xrange(len(pf)):
+    for i in range(len(pf)):
         if ( not pf[ i ].isalpha() ):
             pf = pf[0:i]
             break

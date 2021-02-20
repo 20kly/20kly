@@ -7,6 +7,7 @@
 
 
 from primitives import *
+import game_random
 
 
 class Voltage_Model:
@@ -50,6 +51,9 @@ class Voltage_Model:
             else:
                 currents.append(0.0)
         self.__Bound()
+        game_random.game_random.Steam(  
+                    neighbour_list, self.voltage, self.charge,
+                            self.capacitance, currents)
         return currents
         
     def __Bound(self):    

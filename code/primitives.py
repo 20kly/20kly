@@ -49,6 +49,12 @@ MENU_MANUAL = 218
 MENU_MUTE = 219
 MENU_PEACEFUL = 220
 
+# Playback and record
+PM_OFF = 301
+PM_PLAYBACK = 302
+PM_RECORD = 303
+PM_PLAYTHRU = 304
+
 # Mathematical constants
 HALF_PI = math.pi * 0.5
 TWO_PI = math.pi * 2.0
@@ -134,29 +140,33 @@ class Difficulty:
             self.STEAM_PRODUCTION_PER_LEVEL = 3
 
         else:
-            print 'Invalid level',level
+            print('Invalid level',level)
             assert False
 
 
 DIFFICULTY = Difficulty()
 
-def Scr_To_Grid((x,y)):
-    return (x / __grid_size, y / __grid_size)
+def Scr_To_Grid(xy):
+    (x,y) = xy
+    return (x // __grid_size, y // __grid_size)
 
-def Grid_To_Scr((x,y)):
+def Grid_To_Scr(xy):
+    (x,y) = xy
     return (( x * __grid_size ) + __h_grid_size,
             ( y * __grid_size ) + __h_grid_size )
 
-def Grid_To_Scr_Rect((x,y)):
+def Grid_To_Scr_Rect(xy):
+    (x,y) = xy
     (cx,cy) = Grid_To_Scr((x,y))
     return Rect(cx - __h_grid_size_1, cy - __h_grid_size_1, 
             __grid_size_1, __grid_size_1)
 
 def Set_Grid_Size(sz):
     global __grid_size, __grid_size_1, __h_grid_size, __h_grid_size_1
+    assert type(sz) == int
     __grid_size = sz
     __grid_size_1 = sz - 1
-    __h_grid_size = sz / 2
+    __h_grid_size = sz // 2
     __h_grid_size_1 = __h_grid_size - 1
 
 def Get_Grid_Size():

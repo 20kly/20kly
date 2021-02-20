@@ -50,10 +50,15 @@ class Item:
     def Sound_Effect(self):
         pass
 
+    def Manhattan_Distance_From(self, other):
+        (x1, y1) = self.pos
+        (x2, y2) = other.pos
+        return abs(x1 - x2) + abs(y1 - y2)
+
 class Well(Item):
-    def __init__(self, (x,y), name="Well"):
+    def __init__(self, xy, name="Well"):
         Item.__init__(self, name)
-        self.pos = (x,y)
+        self.pos = (x,y) = xy
         self.draw_obj = draw_obj.Draw_Obj("well.png", 1)
         self.emits_steam = True
 
@@ -146,7 +151,7 @@ class Building(Item):
 
     def Get_Information(self):
         l = Item.Get_Information(self)
-        h = (( self.health * 100 ) / self.max_health)
+        h = (( self.health * 100 ) // self.max_health)
         h2 = (self.max_health - self.health)
         units = ""
         if ( h2 > 0 ):
@@ -178,23 +183,23 @@ class Building(Item):
         (r,g,b) = self.base_colour
         if ( self.complete ):
             if ( self.health < self.max_health ):
-                g = ( self.health * g ) / self.max_health
-                b = ( self.health * b ) / self.max_health
+                g = ( self.health * g ) // self.max_health
+                b = ( self.health * b ) // self.max_health
                 if ( r < 128 ): r = 128
         else:
             if ( self.health > 0 ):
-                r = ( self.health * r ) / self.max_health
-                b = ( self.health * b ) / self.max_health
+                r = ( self.health * r ) // self.max_health
+                b = ( self.health * b ) // self.max_health
                 if ( r < 128 ): r = 128
             else:
                 r = g = b = 128
         return (r,g,b)
 
 class Node(Building):
-    def __init__(self,(x,y),name="Node"):
+    def __init__(self, xy, name="Node"):
         Building.__init__(self,name)
         self.pipes = []
-        self.pos = (x,y)
+        self.pos = (x,y) = xy
         self.max_health = NODE_HEALTH_UNITS * HEALTH_UNIT
         self.base_colour = (255,192,0)
         self.steam = Steam_Model()
@@ -262,7 +267,7 @@ class Node(Building):
         return self.steam.Get_Pressure()
 
     def Draw_Selected(self, output, highlight):
-        ra = ( Get_Grid_Size() / 2 ) + 2
+        ra = ( Get_Grid_Size() // 2 ) + 2
         pygame.draw.circle(output, highlight,
             Grid_To_Scr(self.pos), ra , 2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
@@ -272,8 +277,8 @@ class Node(Building):
 
 
 class City_Node(Node):
-    def __init__(self,(x,y),name="City"):
-        Node.__init__(self,(x,y),name)
+    def __init__(self,xy,name="City"):
+        Node.__init__(self,xy,name)
         self.base_colour = CITY_COLOUR
         self.avail_work_units = 1 
         self.city_upgrade = 0
@@ -383,8 +388,8 @@ class City_Node(Node):
 
 
 class Well_Node(Node):
-    def __init__(self,(x,y),name="Steam Maker"):
-        Node.__init__(self,(x,y),name)
+    def __init__(self,xy,name="Steam Maker"):
+        Node.__init__(self,xy,name)
         self.base_colour = (255,0,192)
         self.draw_obj_finished = draw_obj.Draw_Obj("maker.png", 1)
         self.draw_obj_incomplete = draw_obj.Draw_Obj("maker_u.png", 1)
@@ -421,8 +426,11 @@ class Pipe(Building):
         self.n2 = n2
         (x1,y1) = n1.pos
         (x2,y2) = n2.pos
-        self.pos = ((x1 + x2) / 2, (y1 + y2) / 2)
-        self.length = math.hypot(x1 - x2, y1 - y2)
+
+        from game_random import game_random
+
+        self.pos = ((x1 + x2) // 2, (y1 + y2) // 2)
+        self.length = game_random.hypot(x1 - x2, y1 - y2)
         self.max_health = int(self.length + 1) * HEALTH_UNIT
         self.base_colour = (0,255,0)
         self.resistance = ( self.length + 2.0 ) * RESISTANCE_FACTOR
@@ -465,7 +473,8 @@ class Pipe(Building):
         # a very soft target.
         return Building.Take_Damage(self, dmg_level * (self.length + 1.0))
 
-    def Draw_Mini(self, output, (x,y) ):
+    def Draw_Mini(self, output, xy):
+        (x,y) = xy
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
         x1 -= x ; x2 -= x
@@ -479,8 +488,8 @@ class Pipe(Building):
         pygame.draw.line(output, c, (x1,y1), (x2,y2), 2)
 
         if ( not self.Needs_Work() ):
-            mx = ( x1 + x2 ) / 2
-            my = ( y1 + y2 ) / 2
+            mx = ( x1 + x2 ) // 2
+            my = ( y1 + y2 ) // 2
             if ( output.get_rect().collidepoint((mx,my)) ):
                 info_text = "%1.1f U" % abs(self.current_n1_to_n2)
                 info_surf = stats.Get_Font(12).render(info_text, True, c)

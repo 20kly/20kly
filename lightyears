@@ -29,9 +29,9 @@ if __name__ == "__main__":
         import startup
         assert os.path.isdir(data_dir)
     except:
-        print "Unable to find LightYears code & data in:"
+        print("Unable to find LightYears code & data in:")
         for p in sys.path:
-            print '  ', p
+            print('  ', p)
 
         sys.exit(1)
 

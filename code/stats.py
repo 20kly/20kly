@@ -24,12 +24,12 @@ def Draw_Stats_Window(output, stats_tuple_list):
             # Draw a bar meter instead!
             assert type(text) == tuple
             items = [ text ]
-            Draw_Bar_Meter(output, [text], (w / 2, y + 3), ( w * 4 ) / 5, 6)
+            Draw_Bar_Meter(output, [text], (w // 2, y + 3), ( w * 4 ) // 5, 6)
             y += 8
         else:
             # Draw text, as usual
             txt = Get_Font(size).render(text, True, colour)
-            x = ( w - txt.get_rect().width ) / 2
+            x = ( w - txt.get_rect().width ) // 2
             output.blit(txt, (x,y))
             y += txt.get_rect().height
 
@@ -48,7 +48,7 @@ def Draw_Bar_Meter(output, items, centre_pos, width, item_height):
 
         if ( var > 0 ):
             if ( var > total ): var = total
-            r3 = Rect(r1.left + 1, y, (( w * var ) / total ), h)
+            r3 = Rect(r1.left + 1, y, (( w * var ) // total ), h)
             pygame.draw.rect(output, var_colour, r3)
 
         y += item_height
@@ -60,7 +60,7 @@ def Get_Font(size):
     if ( size < 10 ): 
         size = 10
 
-    if ( not __font_objects.has_key(size) ):
+    if ( not __font_objects.get(size, None) ):
         __font_objects[ size ] = resource.Load_Font(size)
     return __font_objects[ size ]
 
