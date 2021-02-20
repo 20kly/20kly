@@ -8,6 +8,7 @@ $L tests/beginner
 $L tests/tutorial
 $L tests/intermediate
 $L tests/intermediate_die
+$L tests/expert
 
 echo "Tests ok"
 
