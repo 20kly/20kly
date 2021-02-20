@@ -14,9 +14,6 @@ __img_cache = dict()
 __snd_cache = dict()
 __snd_disabled = False
 
-if not pygame.mixer or not pygame.mixer.get_init():
-	__snd__disabled = True
-
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
 
@@ -107,6 +104,7 @@ def Load_Sound(name):
         print(repr(x) + " " + str(x))
         print("")
         f = None
+        No_Sound()
    
     __snd_cache[ name ] = f
 

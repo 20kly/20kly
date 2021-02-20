@@ -50,6 +50,7 @@ def Main(data_dir):
     no_sound = ( "--no-sound" in opts)
     if not no_sound:
         try:
+            pygame.mixer.get_init()
             pygame.mixer.pre_init(22050, -16, 2, bufsize)
             pygame.mixer.init()
         except pygame.error as message:
@@ -143,7 +144,8 @@ def Main(data_dir):
     config.Save()
 
     # Bye bye Pygame.
-    pygame.mixer.quit()
+    if not no_sound:
+        pygame.mixer.quit()
     pygame.quit()
 
 
