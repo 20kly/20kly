@@ -24,7 +24,7 @@ def Main(data_dir):
     print("")
     print(n)
     print("Copyright (C) Jack Whitham 2006-11")
-    print("Version", config.CFG_VERSION)
+    print("Version " + startup.Get_Game_Version())
     print("")
     sys.stdout.flush()
 
@@ -193,7 +193,7 @@ def Main_Menu_Loop(name, clock, screen, width_height):
     copyright = [ name,
             "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
             None,
-            "Game version " + config.CFG_VERSION ]
+            "Game version " + startup.Get_Game_Version() ]
 
     # off we go.
 

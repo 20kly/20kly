@@ -6,11 +6,9 @@
 import pickle, startup, os, extra, primitives
 
 
-CFG_VERSION = "1.4"
-
 class Config:
     def __init__(self):
-        self.version = CFG_VERSION
+        self.version = startup.Get_Game_Version()
         (w, h, fs) = primitives.RESOLUTIONS[ 0 ]
         self.resolution = (w, h)
         self.fullscreen = False
@@ -25,6 +23,7 @@ FILENAME = None
 def Initialise(delete_file):
     global cfg, FILENAME
 
+    version = startup.Get_Game_Version()
     home = extra.Get_Home()
     if ( home == None ):
         FILENAME = "config.dat"
@@ -40,7 +39,7 @@ def Initialise(delete_file):
         f = open(FILENAME, "rb")
         cfg2 = pickle.load(f)
         f.close()
-        if cfg2.version == CFG_VERSION:
+        if cfg2.version == version:
             # Configuration is valid, we can use it.
             cfg = cfg2
     except Exception:

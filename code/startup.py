@@ -12,7 +12,7 @@ def Check_Version():
     if ( sys.__dict__.get("version_info", None) ):
         (major, minor, micro, releaselevel, serial) = sys.version_info
         if (( major < 2 )
-        or (( major == 2 ) and ( minor < 4 ))):
+        or (( major == 2 ) and ( minor < 6 ))):
             fault = True
     else:
         major = 1
@@ -20,17 +20,17 @@ def Check_Version():
         fault = True
 
     if ( fault ):
-        print("")
-        print("Python 2 version 2.4 or higher is required.")
-        print("You appear to be using version",(str(major) + "." + str(minor)))
+        sys.stderr.write("\n")
+        sys.stderr.write("Python 2 version 2.6 or higher is required.\n")
+        sys.stderr.write("You appear to be using version " + repr((major, minor)) + "\n")
         sys.exit(1)
     
     try:
         import pygame
     except:
-        print("")
-        print("Pygame does not appear to be installed.")
-        print("Please install the latest version from http://www.pygame.org/")
+        sys.stderr.write("\n")
+        sys.stderr.write("Pygame does not appear to be installed.\n")
+        sys.stderr.write("Please install the latest version from http://www.pygame.org/\n")
         sys.exit(1)
   
     try:
@@ -39,21 +39,22 @@ def Check_Version():
         [major, minor] = list(pygame.version.vernum)[ 0:2 ]
         x = pygame.version.ver
     except:
-        print("")
-        print("Pygame is installed, but you have an old version.")
-        print("Please install the latest version from http://www.pygame.org/")
+        sys.stderr.write("\n")
+        sys.stderr.write("Pygame is installed, but you have an old version.\n")
+        sys.stderr.write("Please install the latest version from http://www.pygame.org/\n")
         sys.exit(1)
 
     if (( major < 1 )
-    or ( major == 1 ) and ( minor < 7 )):
-        print("")
-        print("Pygame version 1.7.x or higher is required.")
-        print("Please install the latest version from http://www.pygame.org/")
+    or ( major == 1 ) and ( minor < 9 )):
+        sys.stderr.write("\n")
+        sys.stderr.write(repr(pygame.version.ver))
+        sys.stderr.write("Pygame version 1.9.x or higher is required.\n")
+        sys.stderr.write("Please install the latest version from http://www.pygame.org/\n")
         sys.exit(1)
 
 
 def Get_Game_Version():
-    return "1.3"
+    return "1.5"
 
 def Main(data_dir, ignore = None):
     Check_Version()
