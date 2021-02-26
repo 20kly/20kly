@@ -11,7 +11,6 @@ import resource
 from game_types import *
 
 __font_objects: Dict[int, pygame.font.Font] = dict()
-__font_scale = 0
 
 
 def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) -> None:
@@ -62,17 +61,12 @@ def Draw_Bar_Meter(output: SurfaceType, items: List[BarMeterStatTuple],
     return r1 # bounding box
 
 def Get_Font(size: int) -> pygame.font.Font:
-    size += __font_scale
     if ( size < 10 ):
         size = 10
 
     if ( not __font_objects.get(size, None) ):
         __font_objects[ size ] = resource.Load_Font(size)
     return __font_objects[ size ]
-
-def Set_Font_Scale(fs: int) -> None:
-    global __font_scale
-    __font_scale = fs - 4
 
 
 

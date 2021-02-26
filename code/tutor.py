@@ -15,6 +15,7 @@ import map_items
 import game
 from primitives import *
 from game_types import *
+from difficulty import DIFFICULTY
 
 
 __tutor = None
@@ -288,7 +289,7 @@ def Examine_Game(g: "game.Game_Data") -> None:
             pipe_count += 1
 
     # test 4 - season
-    if ( g.season in [ SEASON_STORM , SEASON_QUAKE ] ):
+    if ( g.season in [ Season.STORM , Season.QUAKE ] ):
         Aliens_Gone()
         g.game_running = False
 

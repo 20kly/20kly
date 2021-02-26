@@ -112,7 +112,7 @@ def Make_Quake_SF_Points(demo: game_random.Game_Random, off: int) -> List[Surfac
 
 
 def Simple_Menu_Loop(screen: SurfaceType, current_menu: menu.Menu,
-                     xy: SurfacePosition) -> Tuple[bool, Optional[int]]:
+        xy: SurfacePosition) -> Tuple[bool, Optional[MenuCommand]]:
     (x,y) = xy
     cmd = None
     quit = False

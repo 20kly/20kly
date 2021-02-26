@@ -12,21 +12,20 @@ class Save_Menu(menu.Menu):
     def __init__(self, saving: bool) -> None:
         file_list: List[MenuItem] = []
 
-        for i in range(save_game.NUM_SLOTS):
-            label = save_game.Get_Info(i)
-            j = i
+        for slot in save_game.SLOTS:
+            label = save_game.Get_Info(slot)
             if ( label is None ):
                 x = " " * 10
                 label = x + " -- Unused slot -- " + x
                 if ( not saving ):
-                    j = - ( i + 100 ) # can't load this one! assign silly value
+                    slot = MenuCommand.UNUSED # can't load this one! assign silly value
 
-            label = ( "%2d. " % ( i + 1 )) + label
+            label = ( "%2d. " % ( save_game.Get_Number(slot) + 1 )) + label
 
-            file_list.append((j, label, []))
+            file_list.append((slot, label, []))
 
         file_list.append((None, None, []))
-        file_list.append((-1, "Cancel", []))
+        file_list.append((MenuCommand.CANCEL, "Cancel", []))
 
         self.saving = saving
         menu.Menu.__init__(self, file_list)

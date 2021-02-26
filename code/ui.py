@@ -12,6 +12,7 @@ import stats , menu , draw_obj , mail , particle , tutor
 from primitives import *
 from game_types import *
 import game_random, network, resource, quiet_season, map_items
+from grid import Grid_To_Scr, Grid_To_Scr_Rect, Scr_To_Grid
 
 
 class User_Interface:
@@ -25,7 +26,7 @@ class User_Interface:
         self.stats_hash: int = 0
         self.selection: Optional[map_items.Building] = None
         self.mouse_pos: Optional[GridPosition] = None
-        self.mode: Optional[int] = NEUTRAL
+        self.mode: Optional[MenuCommand] = MenuCommand.NEUTRAL
 
 
         self.Reset()
@@ -138,13 +139,13 @@ class User_Interface:
 
         gpos = self.mouse_pos
         if ( gpos is not None ):
-            if ( self.mode == BUILD_NODE ):
+            if ( self.mode == MenuCommand.BUILD_NODE ):
                 # could put a node here.
                 r = Grid_To_Scr_Rect(gpos)
                 self.Update_Area(r)
                 pygame.draw.rect(output, (120,120,50), r, 1)
 
-            elif (( self.mode == BUILD_PIPE )
+            elif (( self.mode == MenuCommand.BUILD_PIPE )
             and ( self.selection is not None )
             and ( isinstance(self.selection, map_items.Node) )):
                 # pipe route illustrated
@@ -219,14 +220,14 @@ class User_Interface:
             self.mode = self.control_menu.Get_Command()
 
             if ( self.selection is not None ):
-                if ( self.mode == DESTROY ):
+                if ( self.mode == MenuCommand.DESTROY ):
                     self.demo.Action("Destroy", self.selection)
                     self.net.Destroy(self.selection)
                     self.__Clear_Control_Selection()
                     self.selection = None
                     self.Update_All()
 
-                elif ( self.mode == UPGRADE ):
+                elif ( self.mode == MenuCommand.UPGRADE ):
                     self.demo.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
                     self.__Clear_Control_Selection()
@@ -242,9 +243,9 @@ class User_Interface:
         self.__Clear_Control_Selection()
 
     def __Clear_Control_Selection(self) -> None:
-        self.mode = NEUTRAL
+        self.mode = MenuCommand.NEUTRAL
         if ( self.control_menu is not None ):
-            self.control_menu.Select(NEUTRAL)
+            self.control_menu.Select(MenuCommand.NEUTRAL)
 
     def Reset(self) -> None:
         self.selection = None
@@ -260,7 +261,7 @@ class User_Interface:
         self.update_area_list = []
 
     def Is_Menu_Open(self) -> bool:
-        return ( self.mode == OPEN_MENU )
+        return ( self.mode == MenuCommand.OPEN_MENU )
 
     def Game_Mouse_Down(self, spos: SurfacePosition) -> None:
         gpos = Scr_To_Grid(spos)
@@ -284,7 +285,7 @@ class User_Interface:
             self.selection = self.net.Get_Pipe(gpos)
 
             # empty (may contain pipes)
-            if ( self.mode == BUILD_NODE ):
+            if ( self.mode == MenuCommand.BUILD_NODE ):
                 # create new node!
                 n = map_items.Node(gpos)
                 n.Sound_Effect()
@@ -294,7 +295,7 @@ class User_Interface:
                     self.selection = n
                     tutor.Notify_Add_Node(n)
 
-            elif ( self.mode == DESTROY ):
+            elif ( self.mode == MenuCommand.DESTROY ):
                 # I presume you are referring to a pipe?
                 pipe = self.selection
                 if ( pipe is not None ):
@@ -304,7 +305,7 @@ class User_Interface:
                     self.Update_All()
                 self.selection = None
 
-            elif ( self.mode == UPGRADE ):
+            elif ( self.mode == MenuCommand.UPGRADE ):
                 if ( self.selection is not None ):
                     self.demo.Action("Upgrade", self.selection)
                     self.selection.Begin_Upgrade()
@@ -317,7 +318,7 @@ class User_Interface:
             # Contains node
 
             n = typing.cast(map_items.Node, self.net.ground_grid[ gpos ])
-            if ( self.mode == BUILD_PIPE ):
+            if ( self.mode == MenuCommand.BUILD_PIPE ):
                 if (( self.selection is None )
                 or ( isinstance(self.selection, map_items.Pipe))):
                     # start a new pipe here
@@ -333,14 +334,14 @@ class User_Interface:
                         tutor.Notify_Add_Pipe()
                         self.selection = None
 
-            elif ( self.mode == DESTROY ):
+            elif ( self.mode == MenuCommand.DESTROY ):
                 self.demo.Action("Destroy", n)
                 self.net.Destroy(n)
                 self.selection = None
                 self.__Clear_Control_Selection()
                 self.Update_All()
 
-            elif ( self.mode == UPGRADE ):
+            elif ( self.mode == MenuCommand.UPGRADE ):
                 self.demo.Action("Upgrade", n)
                 n.Begin_Upgrade()
                 self.selection = n
@@ -353,7 +354,7 @@ class User_Interface:
         elif ( isinstance(self.net.ground_grid[ gpos ], map_items.Well)):
             # Contains well (unimproved)
             w = self.net.ground_grid[ gpos ]
-            if ( self.mode == BUILD_NODE ):
+            if ( self.mode == MenuCommand.BUILD_NODE ):
                 # A node is planned on top of the well.
                 self.selection = None
                 n = map_items.Well_Node(gpos)
@@ -393,20 +394,20 @@ class User_Interface:
         self.Update_Area(r)
 
     def __Make_Control_Menu(self, width: int) -> None:
-        pictures = dict()
-        pictures[ BUILD_NODE ] = "bricks.png"
-        pictures[ BUILD_PIPE ] = "bricks2.png"
-        pictures[ DESTROY ] = "destroy.png"
-        pictures[ UPGRADE ] = "upgrade.png"
-        pictures[ OPEN_MENU ] = "menuicon.png"
+        pictures: Dict[MenuCommand, str] = dict()
+        pictures[ MenuCommand.BUILD_NODE ] = "bricks.png"
+        pictures[ MenuCommand.BUILD_PIPE ] = "bricks2.png"
+        pictures[ MenuCommand.DESTROY ] = "destroy.png"
+        pictures[ MenuCommand.UPGRADE ] = "upgrade.png"
+        pictures[ MenuCommand.OPEN_MENU ] = "menuicon.png"
 
         self.control_menu = menu.Enhanced_Menu([
-                (BUILD_NODE, "Build &Node", [ pygame.K_n ]),
-                (BUILD_PIPE, "Build &Pipe", [ pygame.K_p ]),
-                (DESTROY, "&Destroy", [ pygame.K_d , pygame.K_BACKSPACE ]),
-                (UPGRADE, "&Upgrade", [ pygame.K_u ]),
+                (MenuCommand.BUILD_NODE, "Build &Node", [ pygame.K_n ]),
+                (MenuCommand.BUILD_PIPE, "Build &Pipe", [ pygame.K_p ]),
+                (MenuCommand.DESTROY, "&Destroy", [ pygame.K_d , pygame.K_BACKSPACE ]),
+                (MenuCommand.UPGRADE, "&Upgrade", [ pygame.K_u ]),
                 (None, None, []),
-                (OPEN_MENU, "Menu", [ pygame.K_ESCAPE ])],
+                (MenuCommand.OPEN_MENU, "Menu", [ pygame.K_ESCAPE ])],
                 pictures, width)
 
     def Frame_Advance(self, frame_time: float) -> None:

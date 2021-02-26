@@ -64,10 +64,10 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
     y += height // 10
 
     lev = dict()
-    lev[ MENU_TUTORIAL ] = lev[ MENU_BEGINNER ] = "Beginner"
-    lev[ MENU_INTERMEDIATE ] = "Intermediate"
-    lev[ MENU_EXPERT ] = "Expert"
-    lev[ MENU_PEACEFUL ] = "Peaceful"
+    lev[ MenuCommand.TUTORIAL ] = lev[ MenuCommand.BEGINNER ] = "Beginner"
+    lev[ MenuCommand.INTERMEDIATE ] = "Intermediate"
+    lev[ MenuCommand.EXPERT ] = "Expert"
+    lev[ MenuCommand.PEACEFUL ] = "Peaceful"
     level = lev.get(g.challenge, "??")
 
     score = float(g.net.hub.total_steam) / float(g.game_time.Get_Day())
@@ -209,23 +209,23 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
 
     proceed = menu.Menu(
                 [(None, None, []),
-                (MENU_PREV, "Previous Graph", []),
-                (MENU_NEXT, "Next Graph", []),
+                (MenuCommand.PREV, "Previous Graph", []),
+                (MenuCommand.NEXT, "Next Graph", []),
                 (None, None, []),
-                (MENU_MENU, "Continue", [ pygame.K_ESCAPE ])])
+                (MenuCommand.MENU, "Continue", [ pygame.K_ESCAPE ])])
 
     quit = False
     while ( not quit ):
         (quit, cmd) = extra.Simple_Menu_Loop(screen,
                     proceed, (( width * 3 ) // 4, height // 2 ))
 
-        if ( cmd == MENU_MENU ):
+        if ( cmd == MenuCommand.MENU ):
             quit = True
-        elif ( cmd == MENU_PREV ):
+        elif ( cmd == MenuCommand.PREV ):
             graph_num = (( graph_num + len(available_graphs) - 1 )
                                 % len(available_graphs))
             Regraph(available_graphs[ graph_num ])
-        elif ( cmd == MENU_NEXT ):
+        elif ( cmd == MenuCommand.NEXT ):
             graph_num = ( graph_num + 1 ) % len(available_graphs)
             Regraph(available_graphs[ graph_num ])
 

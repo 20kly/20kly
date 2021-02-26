@@ -15,6 +15,8 @@ from game_types import *
 import steam_model
 from mail import New_Mail
 import network
+from difficulty import DIFFICULTY
+from grid import Grid_To_Scr, Get_Grid_Size, Grid_To_Scr_Rect
 
 class Item:
     def __init__(self, name: str) -> None:

@@ -6,22 +6,27 @@
 import pickle, extra, os
 
 from game_types import *
+from primitives import MenuCommand
 import game
 
 
 HEADER_SIZE = 100
-NUM_SLOTS = 10
+SLOTS = [MenuCommand.SAVE0, MenuCommand.SAVE1,
+    MenuCommand.SAVE2, MenuCommand.SAVE3,
+    MenuCommand.SAVE4, MenuCommand.SAVE5,
+    MenuCommand.SAVE6, MenuCommand.SAVE7,
+    MenuCommand.SAVE8, MenuCommand.SAVE9]
 
-def Make_Save_Name(num: int) -> str:
-    name = "save" + str(num) + ".dat"
+def Make_Save_Name(slot: MenuCommand) -> str:
+    name = "save" + str(Get_Number(slot)) + ".dat"
     home = extra.Get_Home()
     if ( home is None ):
         return name
     else:
         return os.path.join(home, ".lightyears." + name)
 
-def Load(g: "game.Game_Data", num: int) -> "Tuple[Optional[game.Game_Data], Optional[str]]":
-    name = Make_Save_Name(num)
+def Load(g: "game.Game_Data", slot: MenuCommand) -> "Tuple[Optional[game.Game_Data], Optional[str]]":
+    name = Make_Save_Name(slot)
     try:
         f = open(name, "rb")
         header = f.read( HEADER_SIZE )
@@ -37,7 +42,7 @@ def Load(g: "game.Game_Data", num: int) -> "Tuple[Optional[game.Game_Data], Opti
 
     return (g2, None)
 
-def Save(g: "game.Game_Data", num: int, label_text: str) -> Optional[str]:
+def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[str]:
     label = label_text.encode("utf-8")
     l = len(label)
     if ( l > HEADER_SIZE ):
@@ -45,7 +50,7 @@ def Save(g: "game.Game_Data", num: int, label_text: str) -> Optional[str]:
     else:
         label += ( b" " * ( HEADER_SIZE - l ))
 
-    name = Make_Save_Name(num)
+    name = Make_Save_Name(slot)
     try:
         f = open(name, "wb")
         f.write(label)
@@ -56,8 +61,15 @@ def Save(g: "game.Game_Data", num: int, label_text: str) -> Optional[str]:
 
     return None
 
-def Get_Info(num: int) -> Optional[str]:
-    name = Make_Save_Name(num)
+def Get_Number(slot: MenuCommand) -> int:
+    i = slot.value 
+    if MenuCommand.SAVE0.value <= i <= MenuCommand.SAVE9.value:
+        return i
+    else:
+        return -1
+
+def Get_Info(slot: MenuCommand) -> Optional[str]:
+    name = Make_Save_Name(slot)
     label = ""
     try:
         f = open(name, "rb")

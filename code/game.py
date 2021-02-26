@@ -11,7 +11,7 @@ import pygame , sys , math , time , pickle
 import bresenham , intersect , extra , stats , mail , gametime
 import menu , startup , save_menu , save_game , config , resource
 import review , sound , tutor , draw_obj
-import game_random
+import game_random, grid
 from primitives import *
 from game_types import *
 from quiet_season import Quiet_Season
@@ -22,20 +22,20 @@ from steam_model import Steam_Model
 from network import Network
 from ui import User_Interface
 from mail import New_Mail
-
+from difficulty import DIFFICULTY
 
 
 class Game_Data:
-    def __init__(self, demo: game_random.Game_Random, challenge: int) -> None:
+    def __init__(self, demo: game_random.Game_Random, challenge: MenuCommand) -> None:
         self.version = startup.Get_Game_Version()
         self.sysinfo = extra.Get_System_Info()
-        teaching = ( challenge == MENU_TUTORIAL )
+        teaching = ( challenge == MenuCommand.TUTORIAL )
 
         # Steam network initialisation
         self.net = Network(demo, teaching)
 
         # Game variables
-        self.season = SEASON_START
+        self.season = Season.START
         self.season_ends = 0.0
         self.season_effect = 0.0
         self.season_fx = Quiet_Season(self.net)
@@ -53,8 +53,8 @@ class Game_Data:
         self.wu_integral = 0
 
 def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePosition,
-              restore_pos: Optional[int], challenge: Optional[int],
-              playback_mode: Optional[int], playback_file: Optional[str],
+              restore_pos: Optional[int], challenge: Optional[MenuCommand],
+              playback_mode: PlayMode, playback_file: Optional[str],
               record_file: Optional[str]) -> bool:
     # Initialisation of screen things.
 
@@ -69,7 +69,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
     # Grid setup
     (w,h) = GRID_SIZE
     assert w == h
-    Set_Grid_Size(height // h)
+    grid.Set_Grid_Size(height // h)
 
     # Windows..
     game_screen_rect = pygame.Rect(0, 0, menu_margin, height)
@@ -134,11 +134,11 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
     alarm_sound = sound.Persisting_Sound("emergency")
     demo = game_random.Game_Random()
 
-    if playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+    if playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
         assert playback_file is not None
         challenge = demo.begin_read(playback_file)
 
-    if playback_mode in (PM_PLAYTHRU, PM_RECORD):
+    if playback_mode in (PlayMode.PLAYTHRU, PlayMode.RECORD):
         assert record_file is not None
         assert challenge is not None
         demo.begin_write(record_file, challenge)
@@ -148,7 +148,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
     # Game data holder
     g = Game_Data(demo, challenge)
 
-    DIFFICULTY.Set(MENU_INTERMEDIATE)
+    DIFFICULTY.Set(MenuCommand.INTERMEDIATE)
 
     # Establish equilibrium with initial network.
     for i in range(300):
@@ -166,22 +166,22 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         (controls_rect, ui.Control_Mouse_Down, ui.Control_Mouse_Move),
         (game_screen_rect, ui.Game_Mouse_Down, ui.Game_Mouse_Move) ]
     exit_options: List[MenuItem] = [
-        (MENU_MENU, "Exit to Main Menu", []),
-        (MENU_QUIT, "Exit to " + extra.Get_OS(), [ pygame.K_F10 ])]
+        (MenuCommand.MENU, "Exit to Main Menu", []),
+        (MenuCommand.QUIT, "Exit to " + extra.Get_OS(), [ pygame.K_F10 ])]
 
-    save_available: List[MenuItem] = [(MENU_SAVE, "Save Game", []),
-        (MENU_LOAD, "Restore Game", []),
+    save_available: List[MenuItem] = [(MenuCommand.SAVE, "Save Game", []),
+        (MenuCommand.LOAD, "Restore Game", []),
         (None, None, [])]
 
-    if ( challenge == MENU_TUTORIAL ):
+    if ( challenge == MenuCommand.TUTORIAL ):
         save_available = []
 
     in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
         (None, None, []),
-        (MENU_MUTE, "Toggle Sound", []),
+        (MenuCommand.MUTE, "Toggle Sound", []),
         (None, None, [])]) +
         save_available + [
-        (MENU_HIDE, "Return to Game", [ pygame.K_ESCAPE ])] +
+        (MenuCommand.HIDE, "Return to Game", [ pygame.K_ESCAPE ])] +
         exit_options)
 
     current_menu = in_game_menu
@@ -195,7 +195,6 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
     rt_then = time.time()
     fps_count = 0
     fps_time = rt_then
-    autosave_timer = 0.0
 
     if ( restore_pos is None ):
         DIFFICULTY.Set(challenge)
@@ -205,11 +204,11 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
 
     def Summary(g):
         lev = dict()
-        lev[ MENU_TUTORIAL ] = "a Tutorial"
-        lev[ MENU_BEGINNER ] = "a Beginner"
-        lev[ MENU_INTERMEDIATE ] = "an Intermediate"
-        lev[ MENU_EXPERT ] = "an Expert"
-        lev[ MENU_PEACEFUL ] = "a Peaceful"
+        lev[ MenuCommand.TUTORIAL ] = "a Tutorial"
+        lev[ MenuCommand.BEGINNER ] = "a Beginner"
+        lev[ MenuCommand.INTERMEDIATE ] = "an Intermediate"
+        lev[ MenuCommand.EXPERT ] = "an Expert"
+        lev[ MenuCommand.PEACEFUL ] = "a Peaceful"
 
         assert g.challenge is not None
         assert lev.get( g.challenge, None )
@@ -235,13 +234,13 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         return g
 
     if ( restore_pos is not None ):
-        g.challenge = MENU_INTERMEDIATE
+        g.challenge = MenuCommand.INTERMEDIATE
         g = Restore(g, restore_pos)
 
     assert g.challenge is not None
     Summary(g)
 
-    if ( g.challenge == MENU_TUTORIAL ):
+    if ( g.challenge == MenuCommand.TUTORIAL ):
         tutor.On(( menu_margin * 40 ) // 100)
 
     cur_time = g.game_time.time()
@@ -254,7 +253,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         menu_inhibit = ui.Is_Menu_Open() or not g.game_running
 
 
-        if playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+        if playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
             clock.tick(0)
         else:
             clock.tick(FRAME_RATE)
@@ -269,7 +268,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
             fps_time = rt_now
             fps_count = 0
 
-        if playback_mode != PM_OFF:
+        if playback_mode != PlayMode.OFF:
             rt_frame_length = 1.0 / FRAME_RATE
 
         if ( not menu_inhibit ):
@@ -289,9 +288,9 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         #ui.Draw_Selection(picture_surf)
 
         until_next: List[StatTuple]
-        if ( g.challenge == MENU_TUTORIAL ):
+        if ( g.challenge == MenuCommand.TUTORIAL ):
             until_next = []
-        elif ( g.challenge == MENU_PEACEFUL ):
+        elif ( g.challenge == MenuCommand.PEACEFUL ):
             until_next = [ ((128,128,128), 12, "Peaceful mode") ]
         else:
             until_next = [ ((128,128,128), 12, "(%d days until next season)" %
@@ -374,7 +373,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                   (CITY_COLOUR, 18, "City - Steam Pressure"),
                   (None, None, g.net.hub.Get_Pressure_Meter())])
 
-        if ( g.challenge == MENU_TUTORIAL ):
+        if ( g.challenge == MenuCommand.TUTORIAL ):
             tutor.Draw(screen, g)
 
         pygame.display.flip()
@@ -400,27 +399,27 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
             g.season_fx.Per_Period()
 
         if ((( not tutor.Permit_Season_Change() )
-        and ( g.season == SEASON_QUIET ))
-        or ( g.challenge == MENU_PEACEFUL )):
+        and ( g.season == Season.QUIET ))
+        or ( g.challenge == MenuCommand.PEACEFUL )):
             g.season_ends = cur_time + 2.0
 
         if ( g.season_ends <= cur_time ):
             # Season change
-            if ( g.season == SEASON_START ):
-                g.season = SEASON_QUIET
+            if ( g.season == Season.START ):
+                g.season = Season.QUIET
                 g.season_fx = Quiet_Season(g.net)
-            elif (( g.season == SEASON_QUIET )
-            or ( g.season == SEASON_STORM )):
-                g.season = SEASON_ALIEN
+            elif (( g.season == Season.QUIET )
+            or ( g.season == Season.STORM )):
+                g.season = Season.ALIEN
                 g.season_fx = Alien_Season(g.net, g.difficulty_level)
                 sound.FX("aliensappr")
-            elif ( g.season == SEASON_ALIEN ):
-                g.season = SEASON_QUAKE
+            elif ( g.season == Season.ALIEN ):
+                g.season = Season.QUAKE
                 g.season_fx = Quake_Season(g.net, g.difficulty_level)
                 if ( not tutor.Active() ): # hack...
                     sound.FX("quakewarn")
-            elif ( g.season == SEASON_QUAKE ):
-                g.season = SEASON_STORM
+            elif ( g.season == Season.QUAKE ):
+                g.season = Season.STORM
                 g.season_fx = Storm_Season(g.net, g.difficulty_level)
                 g.difficulty_level *= 1.2 # 20% harder..
                 sound.FX("stormwarn")
@@ -429,7 +428,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
             g.season_ends = cur_time + LENGTH_OF_SEASON
             g.season_effect = cur_time + ( g.season_fx.Get_Period() / 2 )
 
-            if ( g.challenge != MENU_PEACEFUL ):
+            if ( g.challenge != MenuCommand.PEACEFUL ):
                 New_Mail("The " + g.season_fx.name +
                                 " season has started.", (200,200,200))
 
@@ -457,7 +456,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         if ( just_ended ):
             current_menu = in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
                 (None, None, []),
-                (MENU_REVIEW, "Review Statistics", [])]) +
+                (MenuCommand.REVIEW, "Review Statistics", [])]) +
                 exit_options)
             in_game_menu.Select(None)
 
@@ -471,7 +470,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                 loop_running = False
                 quit = True
 
-            elif playback_mode in (PM_PLAYBACK, PM_PLAYTHRU):
+            elif playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
                 pass
 
             elif (( e.type == pygame.MOUSEBUTTONDOWN )
@@ -504,7 +503,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                 elif ( menu_inhibit ):
                     current_menu.Key_Press(e.key)
 
-                if ( DEBUG or playback_mode != PM_OFF ):
+                if ( DEBUG or playback_mode != PlayMode.OFF ):
                     # Cheats.
                     if ( e.key == pygame.K_F10 ):
                         New_Mail("SEASON ADVANCE CHEAT")
@@ -526,28 +525,28 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
             if ( current_menu == in_game_menu ):
 
                 # It's the normal menu.
-                if ( cmd == MENU_QUIT ):
+                if ( cmd == MenuCommand.QUIT ):
                     loop_running = False
                     quit = True
                     ui.Reset() # makes menu disappear
 
-                elif ( cmd == MENU_MENU ):
+                elif ( cmd == MenuCommand.MENU ):
                     loop_running = False
                     ui.Reset()
 
-                elif ( cmd == MENU_SAVE ):
+                elif ( cmd == MenuCommand.SAVE ):
                     if ( g.game_running ):
                         # Switch to alternate menu
                         current_menu = save_menu.Save_Menu(True)
 
-                elif ( cmd == MENU_LOAD ):
+                elif ( cmd == MenuCommand.LOAD ):
                     current_menu = save_menu.Save_Menu(False)
 
-                elif ( cmd == MENU_MUTE ):
+                elif ( cmd == MenuCommand.MUTE ):
                     config.cfg.mute = not config.cfg.mute
                     ui.Reset()
 
-                elif ( cmd == MENU_REVIEW ):
+                elif ( cmd == MenuCommand.REVIEW ):
                     loop_running = False
                     stats_review = True
                     ui.Reset()
@@ -562,7 +561,8 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                 # It's another menu! That means it's the save menu.
                 assert isinstance(current_menu, save_menu.Save_Menu)
                 if (( cmd is not None )
-                and ( cmd >= 0 )):
+                and ( cmd != MenuCommand.UNUSED )
+                and ( cmd != MenuCommand.CANCEL )):
                     if ( not current_menu.Is_Saving() ):
                         g = Restore(g, cmd)
 
@@ -582,14 +582,6 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                     Special_Refresh()
                     current_menu = in_game_menu
                     ui.Reset()
-
-        if (( autosave_timer <= cur_time )
-        and ( g.game_running )
-        and ( DEBUG )
-        and ( not menu_inhibit )):
-            # Autosave is slow, so it's really a debugging feature.
-            save_game.Save(g, 11, "Autosave")
-            autosave_timer = cur_time + 60
 
         if (( g.historian_time <= cur_time )
         and ( g.game_running )

@@ -17,10 +17,10 @@ class Menu:
         self.options = menu_options
 
         self.control_rects: List[ControlRectType] = []
-        self.hover: Optional[int] = None
+        self.hover: Optional[MenuCommand] = None
         self.bbox: RectType
 
-        self.selection: Optional[int] = None
+        self.selection: Optional[MenuCommand] = None
         self.update_required = True
 
         width_hint = height_hint = 10
@@ -41,10 +41,10 @@ class Menu:
 
         self.bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
-    def Get_Command(self) -> Optional[int]:
+    def Get_Command(self) -> Optional[MenuCommand]:
         return self.selection
 
-    def Select(self, snum: Optional[int]) -> None:
+    def Select(self, snum: Optional[MenuCommand]) -> None:
         self.update_required = True
         self.selection = snum
 
@@ -171,18 +171,18 @@ class Menu:
         return ( width - text_width ) // 2
 
     def Enhancement_Interface(self, surf: SurfaceType,
-            num: int, rect: RectType, margin: int) -> None:
+            num: MenuCommand, rect: RectType, margin: int) -> None:
         pass
 
 # Menu plus pictures!
 class Enhanced_Menu(Menu):
     def __init__(self, menu_options: List[MenuItem],
-                 pictures: Dict[int, str], force_width=0):
+                 pictures: Dict[MenuCommand, str], force_width=0):
         self.pictures = pictures
         Menu.__init__(self, menu_options, force_width)
 
     def Enhancement_Interface(self, surf: SurfaceType,
-            num: int, rect: RectType, margin: int) -> None:
+            num: MenuCommand, rect: RectType, margin: int) -> None:
         if ( self.pictures.get( num, None ) ):
             img = resource.Load_Image( self.pictures[ num ] )
             img_r = img.get_rect()

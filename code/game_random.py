@@ -58,14 +58,14 @@ class Game_Random:
             j = self.randint(0, i)
             (l[i], l[j]) = (l[j], l[i])
 
-    def begin_write(self, recording_file: str, challenge: int) -> None:
+    def begin_write(self, recording_file: str, challenge: MenuCommand) -> None:
         self.record = bz2.BZ2File(recording_file, "wb")
         seed = random.randint(1, 1 << 31)
         self.write_specific("GAME", "<I", WRITE_HEADER_NUMBER)
-        self.write_specific("SEED", "<II", seed, challenge)
+        self.write_specific("SEED", "<II", seed, challenge.value)
         self.rng = random.Random(seed)
 
-    def begin_read(self, recording_file: str) -> int:
+    def begin_read(self, recording_file: str) -> MenuCommand:
         self.play = tempfile.NamedTemporaryFile()
         self.play.write(bz2.BZ2File(recording_file, "rb").read())
         self.play.seek(0, 0)
@@ -73,7 +73,7 @@ class Game_Random:
         assert header == READ_HEADER_NUMBER
         (seed, challenge) = self.read_specific("SEED", "<II")
         self.rng = random.Random(seed)
-        return challenge
+        return MenuCommand(challenge)
 
     def do_user_actions(self, ui: "ui.User_Interface") -> None:
         if not self.play:

@@ -5,8 +5,7 @@
 
 
 import math
-import pygame
-import game_types
+import enum
 
 # Developers's controls:
 DEBUG = False # enables cheats
@@ -15,45 +14,58 @@ DEBUG_GRID = False
 
 
 # Arbitrary constants
-BUILD_NODE = 1
-BUILD_PIPE = 2
-DESTROY = 3
-UPGRADE = 4
-NEUTRAL = 5
-OPEN_MENU = 6
+class Season(enum.Enum):
+    QUIET = 104
+    STORM = 105
+    ALIEN = 106
+    QUAKE = 107
+    START = 108
 
-SEASON_QUIET = 104
-SEASON_STORM = 105
-SEASON_ALIEN = 106
-SEASON_QUAKE = 107
-SEASON_START = 108
-
-MENU_SAVE = 201
-MENU_LOAD = 202
-MENU_HIDE = 203
-MENU_QUIT = 204
-MENU_FULLSCREEN = 205
-MENU_TUTORIAL = 206
-MENU_NEW_GAME = 207
-MENU_RES = 208
-MENU_MENU = 209
-MENU_REVIEW = 210
-MENU_BEGINNER = 211
-MENU_INTERMEDIATE = 212
-MENU_EXPERT = 213
-MENU_PREV = 214
-MENU_NEXT = 215
-MENU_UPDATES = 216
-MENU_WEBSITE = 217
-MENU_MANUAL = 218
-MENU_MUTE = 219
-MENU_PEACEFUL = 220
+class MenuCommand(enum.Enum):
+    BUILD_NODE = 1
+    BUILD_PIPE = 2
+    DESTROY = 3
+    UPGRADE = 4
+    NEUTRAL = 5
+    OPEN_MENU = 6
+    SAVE = 201
+    LOAD = 202
+    HIDE = 203
+    QUIT = 204
+    FULLSCREEN = 205
+    TUTORIAL = 206
+    NEW_GAME = 207
+    MENU = 209
+    REVIEW = 210
+    BEGINNER = 211
+    INTERMEDIATE = 212
+    EXPERT = 213
+    PREV = 214
+    NEXT = 215
+    UPDATES = 216
+    WEBSITE = 217
+    MANUAL = 218
+    MUTE = 219
+    PEACEFUL = 220
+    SAVE0 = 400
+    SAVE1 = 401
+    SAVE2 = 402
+    SAVE3 = 403
+    SAVE4 = 404
+    SAVE5 = 405
+    SAVE6 = 406
+    SAVE7 = 407
+    SAVE8 = 408
+    SAVE9 = 409
+    UNUSED = 410
+    CANCEL = 411
 
 # Playback and record
-PM_OFF = 301
-PM_PLAYBACK = 302
-PM_RECORD = 303
-PM_PLAYTHRU = 304
+class PlayMode(enum.Enum):
+    OFF = 301
+    PLAYBACK = 302
+    RECORD = 303
+    PLAYTHRU = 304
 
 # Mathematical constants
 HALF_PI = math.pi * 0.5
@@ -99,87 +111,6 @@ GRID_SIZE = (50,50)
 # misc:
 CITY_BOX_SIZE = 10
 CITY_COLOUR = (192,128,0)
-RESOLUTIONS = [
-        (800, 600, -4),
-        (960, 720, 0),
-        (1120, 840, 2),
-        (1280, 1024, 4),
-        (1440, 1080, 6),
-        (1600, 1200, 8),
-            ]
+RESOLUTION = (1024, 768)
 CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
-
-# things that are set by the difficulty mode:
-class Difficulty:
-    def __init__(self) -> None:
-        self.Set(MENU_INTERMEDIATE)
-
-    def Set(self, level: int) -> None:
-        if ( level in [ MENU_BEGINNER , MENU_TUTORIAL ] ):
-            self.DAMAGE_FACTOR = 1.0
-            self.CITY_UPGRADE_WORK_PER_LEVEL = 2
-            self.GRACE_TIME = 20
-            self.CITY_MAX_TECH_LEVEL = 9
-            self.BASIC_STEAM_PRODUCTION = 10
-            self.STEAM_PRODUCTION_PER_LEVEL = 6
-
-        elif ( level in [ MENU_INTERMEDIATE, MENU_PEACEFUL ] ):
-            self.DAMAGE_FACTOR = 1.4
-            self.CITY_UPGRADE_WORK_PER_LEVEL = 3
-            self.GRACE_TIME = 10
-            self.CITY_MAX_TECH_LEVEL = 12
-            self.BASIC_STEAM_PRODUCTION = 6
-            self.STEAM_PRODUCTION_PER_LEVEL = 4
-
-        elif ( level == MENU_EXPERT ):
-            self.DAMAGE_FACTOR = 1.7
-            self.CITY_UPGRADE_WORK_PER_LEVEL = 4
-            self.GRACE_TIME = 5
-            self.CITY_MAX_TECH_LEVEL = 15
-            self.BASIC_STEAM_PRODUCTION = 4
-            self.STEAM_PRODUCTION_PER_LEVEL = 3
-
-        else:
-            print('Invalid level',level)
-            assert False
-
-
-DIFFICULTY = Difficulty()
-__grid_size = 0
-__grid_size_1 = 0
-__h_grid_size = 0
-__h_grid_size_1 = 0
-
-def Scr_To_Grid(xy: game_types.SurfacePosition) -> game_types.GridPosition:
-    (x,y) = xy
-    return (x // __grid_size, y // __grid_size)
-
-def Grid_To_Scr(xy: game_types.GridPosition) -> game_types.SurfacePosition:
-    (x,y) = xy
-    return (( x * __grid_size ) + __h_grid_size,
-            ( y * __grid_size ) + __h_grid_size )
-
-def Float_Grid_To_Scr(xy: game_types.FloatGridPosition) -> game_types.FloatSurfacePosition:
-    (x,y) = xy
-    return (( x * __grid_size ) + __h_grid_size,
-            ( y * __grid_size ) + __h_grid_size )
-
-def Grid_To_Scr_Rect(xy: game_types.GridPosition) -> game_types.RectType:
-    (x,y) = xy
-    (cx,cy) = Grid_To_Scr((x,y))
-    return pygame.Rect(cx - __h_grid_size_1, cy - __h_grid_size_1,
-            __grid_size_1, __grid_size_1)
-
-def Set_Grid_Size(sz: int) -> None:
-    global __grid_size, __grid_size_1, __h_grid_size, __h_grid_size_1
-    assert type(sz) == int
-    __grid_size = sz
-    __grid_size_1 = sz - 1
-    __h_grid_size = sz // 2
-    __h_grid_size_1 = __h_grid_size - 1
-
-def Get_Grid_Size() -> int:
-    return __grid_size
-
-Set_Grid_Size(10)
 

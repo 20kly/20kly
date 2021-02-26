@@ -1,6 +1,6 @@
 #
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
 
@@ -14,6 +14,7 @@ from primitives import *
 from game_types import *
 from game_random import PlaybackEOF
 import primitives
+import sdl
 
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
 DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
@@ -24,7 +25,7 @@ def Main(data_dir: str) -> None:
     n = "20,000 Light-Years Into Space"
     print("")
     print(n)
-    print("Copyright (C) Jack Whitham 2006-11")
+    print("Copyright (C) Jack Whitham 2006-21")
     print("Version " + startup.Get_Game_Version())
     print("")
     sys.stdout.flush()
@@ -33,19 +34,19 @@ def Main(data_dir: str) -> None:
 
     (opts_list, args) = getopt.getopt(
             sys.argv[1:], "",
-            ["safe", "fullscreen",
+            ["safe",
                 "no-sound", "playback=", "record=",
-                "resolution=", "challenge="])
+                "challenge="])
     opts = dict(opts_list)
     sys.stdout.flush()
 
     config.Initialise("--safe" in opts)
 
-    # Pygame things
-    flags = 0
-    if ("--fullscreen" in opts):
-        flags |= pygame.FULLSCREEN
+    # This allows the window to be scaled to any size
+    # The game itself always uses a native resolution of 1024x768
+    sdl.SDL_SetHintWithPriority("SDL_HINT_RENDER_SCALE_QUALITY", "best", 0)
 
+    # Pygame things
     bufsize = 2048
 
     no_sound = ( "--no-sound" in opts)
@@ -58,43 +59,30 @@ def Main(data_dir: str) -> None:
             print('Sound initialization failed. %s' % message)
             no_sound = True
 
-    playback_mode = PM_OFF
-    record_challenge = 0
+    playback_mode: PlayMode = PlayMode.OFF
+    record_challenge: Optional[MenuCommand] = None
     playback_file = opts.get("--playback", None)
     if playback_file is not None:
-        playback_mode = PM_PLAYBACK
+        playback_mode = PlayMode.PLAYBACK
 
     record_file = opts.get("--record", None)
     if record_file is not None:
-        if playback_mode == PM_PLAYBACK:
-            playback_mode = PM_PLAYTHRU
+        if playback_mode == PlayMode.PLAYBACK:
+            playback_mode = PlayMode.PLAYTHRU
         else:
-            playback_mode = PM_RECORD
-            record_challenge = getattr(primitives,
-                        "MENU_" + opts.get("--challenge",
-                                    "BEGINNER").upper())
+            playback_mode = PlayMode.RECORD
+            record_challenge = MenuCommand(opts.get("--challenge", "BEGINNER").upper())
 
     pygame.init()
     pygame.font.init()
-
-    if flags & pygame.FULLSCREEN:
-        # Ensure that all resolutions are supported by the system
-        for resolution in RESOLUTIONS:
-            if resolution[:2] not in pygame.display.list_modes():
-                RESOLUTIONS.remove(resolution)
-
 
     if ( no_sound ):
         resource.No_Sound()
     else:
         pygame.mixer.init(22050,-16,2,bufsize)
 
-    res = opts.get("--resolution", "").split("x")
-    if len(res) == 2:
-        config.cfg.resolution = (int(res[0]), int(res[1]))
-
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode(config.cfg.resolution, flags)
+    screen = pygame.display.set_mode(RESOLUTION, pygame.SCALED | pygame.RESIZABLE)
     height = screen.get_rect().height
     width = screen.get_rect().width
 
@@ -115,7 +103,7 @@ def Main(data_dir: str) -> None:
     quakes.Init_Quakes()
 
     quit = False
-    if playback_mode != PM_OFF:
+    if playback_mode != PlayMode.OFF:
         # record/playback
         try:
             game.Main_Loop(screen=screen, clock=clock,
@@ -129,17 +117,6 @@ def Main(data_dir: str) -> None:
         quit = True
 
     while ( not quit ):
-        if ( config.cfg.resolution != (width, height) ):
-
-            # As the toggle mode thing doesn't work outside of Unix,
-            # the fallback strategy is to do set_mode again.
-            # But if you set the same mode, then nothing happens.
-            # So:
-            screen = pygame.display.set_mode((640,480), flags)  # not the right mode
-            screen = pygame.display.set_mode(config.cfg.resolution, flags) # right mode!
-            height = screen.get_rect().height
-            width = screen.get_rect().width
-
         quit = Main_Menu_Loop(n, clock, screen, (width, height))
 
     config.Save()
@@ -159,38 +136,29 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
     if ( menu_image.get_rect().width != width ):
         menu_image = pygame.transform.scale(menu_image, (width, height))
 
-    stats.Set_Font_Scale(config.cfg.font_scale)
-
     main_menu = current_menu = menu.Menu([
                 (None, None, []),
-                (MENU_TUTORIAL, "Play Tutorial", []),
-                (MENU_NEW_GAME, "Play New Game", []),
-                (MENU_LOAD, "Restore Game", []),
+                (MenuCommand.TUTORIAL, "Play Tutorial", []),
+                (MenuCommand.NEW_GAME, "Play New Game", []),
+                (MenuCommand.LOAD, "Restore Game", []),
                 (None, None, []),
-                (MENU_RES, "Set Graphics Resolution", []),
-                (MENU_MUTE, "Toggle Sound", []),
-                (MENU_MANUAL, "View Manual", []),
-                (MENU_UPDATES, "Check for Updates", []),
+                (MenuCommand.MUTE, "Toggle Sound", []),
+                (MenuCommand.MANUAL, "View Manual", []),
+                (MenuCommand.UPDATES, "Check for Updates", []),
                 (None, None, []),
-                (MENU_QUIT, "Exit to " + extra.Get_OS(),
+                (MenuCommand.QUIT, "Exit to " + extra.Get_OS(),
                     [ pygame.K_ESCAPE , pygame.K_F10 ])])
-    resolution_menu = menu.Menu(typing.cast(List[MenuItem],
-                [(None, None, [])]) + [
-                (w, "%u x %u" % (w,h), [])
-                    for (w, h, fs) in RESOLUTIONS ] +
-                [(None, None, []),
-                (-1, "Cancel", [])])
     difficulty_menu = menu.Menu(
                 [(None, None, []),
-                (MENU_TUTORIAL, "Tutorial", []),
+                (MenuCommand.TUTORIAL, "Tutorial", []),
                 (None, None, []),
-                (MENU_BEGINNER, "Beginner", []),
-                (MENU_INTERMEDIATE, "Intermediate", []),
-                (MENU_EXPERT, "Expert", []),
+                (MenuCommand.BEGINNER, "Beginner", []),
+                (MenuCommand.INTERMEDIATE, "Intermediate", []),
+                (MenuCommand.EXPERT, "Expert", []),
                 (None, None, []),
-                (MENU_PEACEFUL, "Peaceful", []),
+                (MenuCommand.PEACEFUL, "Peaceful", []),
                 (None, None, []),
-                (-1, "Cancel", [])])
+                (MenuCommand.CANCEL, "Cancel", [])])
 
     copyright = [ name,
             "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
@@ -223,31 +191,28 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 (( width * 3 ) // 4, 10 + ( height // 2 )))
 
         if ( current_menu == main_menu ):
-            if ( cmd == MENU_NEW_GAME ):
+            if ( cmd == MenuCommand.NEW_GAME ):
                 current_menu = difficulty_menu
 
-            elif ( cmd == MENU_TUTORIAL ):
+            elif ( cmd == MenuCommand.TUTORIAL ):
                 quit = game.Main_Loop(screen=screen, clock=clock,
                         width_height=(width, height), restore_pos=None,
-                        challenge=MENU_TUTORIAL,
-                        playback_mode=PM_OFF,
+                        challenge=MenuCommand.TUTORIAL,
+                        playback_mode=PlayMode.OFF,
                         playback_file=None,
                         record_file=None)
 
-            elif ( cmd == MENU_LOAD ):
+            elif ( cmd == MenuCommand.LOAD ):
                 current_menu = save_menu.Save_Menu(False)
 
-            elif ( cmd == MENU_QUIT ):
+            elif ( cmd == MenuCommand.QUIT ):
                 quit = True
 
-            elif ( cmd == MENU_MUTE ):
+            elif ( cmd == MenuCommand.MUTE ):
                 config.cfg.mute = not config.cfg.mute
                 return False # update menu
 
-            elif ( cmd == MENU_RES ):
-                current_menu = resolution_menu
-
-            elif ( cmd == MENU_UPDATES ):
+            elif ( cmd == MenuCommand.UPDATES ):
                 if Update_Feature(screen, menu_image):
                     url = ( CGISCRIPT + "v=" +
                             startup.Get_Game_Version() )
@@ -258,7 +223,7 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                     except:
                         pass
 
-            elif ( cmd == MENU_MANUAL ):
+            elif ( cmd == MenuCommand.MANUAL ):
                 pygame.display.iconify()
                 if os.path.isfile(DEB_MANUAL):
                     # Debian manual present
@@ -280,30 +245,22 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
 
 
         elif ( cmd is not None ):
-            if ( current_menu == resolution_menu ):
-                for (w, h, fs) in RESOLUTIONS:
-                    if ( w == cmd ):
-                        config.cfg.resolution = (w, h)
-                        config.cfg.font_scale = fs
-                        # change res - don't quit
-                        return False
-
-            elif ( current_menu == difficulty_menu ):
-                if ( cmd >= 0 ):
+            if ( current_menu == difficulty_menu ):
+                if ( cmd != MenuCommand.CANCEL ):
                     quit = game.Main_Loop(screen=screen, clock=clock,
                             width_height=(width, height), restore_pos=None,
-                            challenge=cmd,
-                            playback_mode=PM_OFF,
+                            challenge=typing.cast(MenuCommand, cmd),
+                            playback_mode=PlayMode.OFF,
                             playback_file=None,
                             record_file=None)
 
             else: # Load menu
-                if ( cmd >= 0 ):
+                if ( cmd != MenuCommand.CANCEL ):
                     # Start game from saved position
                     quit = game.Main_Loop(screen=screen, clock=clock,
-                            width_height=(width, height), restore_pos=cmd,
-                            challenge=None,
-                            playback_mode=PM_OFF,
+                            width_height=(width, height),
+                            restore_pos=typing.cast(int, cmd), challenge=None,
+                            playback_mode=PlayMode.OFF,
                             playback_file=None,
                             record_file=None)
 
@@ -350,7 +307,8 @@ def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
     new_version = None
     try:
         f = urllib.request.urlopen(url)
-        new_version = f.readline()
+        new_version_bytes = f.readline()
+        new_version = new_version_bytes.decode("ascii")
         f.close()
     except Exception as x:
         Finish(str(x))
@@ -365,29 +323,38 @@ def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
         Finish("Version data not found.")
         return False
 
-    new_version = new_version.strip()
 
-    # Protect user from possible malicious tampering
-    # via a man-in-the-middle attack. I don't want to
-    # render an unfiltered string.
-    for i in new_version:
-        if (( i != '.' )
-        and ( i != '-' )
-        and ( not i.isdigit() )
-        and ( not i.isalpha() )):
-            Finish("Version data is incorrect.")
-            return False
+    def Decode(version: str) -> Tuple[int, int]:
+        version_code = version.strip().split(".")
 
-    if ( new_version == startup.Get_Game_Version() ):
+        try:
+            major = int(version_code[0], 10)
+            minor = int(version_code[1], 10)
+            return (major, minor)
+
+        except Exception as x:
+            return (0, 0)
+
+    old_version = startup.Get_Game_Version()
+    old_version_pair = Decode(old_version)
+    new_version_pair = Decode(new_version)
+    new_version = "{}.{}".format(*new_version_pair)
+
+    if new_version_pair == old_version_pair:
         Message(["Your software is up to date!",
             "Thankyou for using the update feature."])
         Finish(None)
         return False
-
-    Message(["New version " + new_version + " is available!",
-            "Opening website..."])
-    Finish(None)
-    return True
+    elif new_version_pair > old_version_pair:
+        Message(["New version " + new_version + " is available!",
+                "Opening website..."])
+        Finish(None)
+        return True
+    else:
+        Message(["Your software is very up to date (beta?)",
+            "'New' version is " + new_version + ": your version is " + old_version])
+        Finish(None)
+        return False
 
 
 

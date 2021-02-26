@@ -7,6 +7,7 @@ import pygame
 import typing
 
 from typing import List, Dict, Tuple, Union, Optional
+from primitives import MenuCommand
 
 SurfaceType = pygame.surface.Surface
 Colour = Tuple[int, int, int]
@@ -21,8 +22,8 @@ MessageType = Tuple[float, SurfaceType]
 DrawObjKey = Tuple[str, int]
 RectType = pygame.rect.Rect
 UpdateAreaMethod = typing.Callable[[RectType], None]
-MenuItem = Tuple[Optional[int], Optional[str], List[int]]
+MenuItem = Tuple[Optional[MenuCommand], Optional[str], List[int]]
 ClockType = typing.Any
-ControlRectType = Tuple[int, RectType]
+ControlRectType = Tuple[MenuCommand, RectType]
 NextParticleType = Tuple[FloatSurfacePosition, Colour4]
 

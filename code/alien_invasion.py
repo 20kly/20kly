@@ -15,6 +15,7 @@ import game_random
 from primitives import *
 from game_types import *
 import network, map_items
+from grid import Grid_To_Scr
 
 Target = Tuple[Tuple[float, FloatGridPosition], map_items.Item]
 

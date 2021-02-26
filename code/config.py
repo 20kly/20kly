@@ -10,11 +10,7 @@ from game_types import *
 class Config:
     def __init__(self) -> None:
         self.version = startup.Get_Game_Version()
-        (w, h, fs) = primitives.RESOLUTIONS[ 0 ]
-        self.resolution = (w, h)
-        self.fullscreen = False
         self.mute = True
-        self.font_scale = fs
         self.seen_before = False
 
 cfg = Config()
