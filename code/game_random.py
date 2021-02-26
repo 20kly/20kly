@@ -1,25 +1,31 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
-# 
+#
 
 import random
 import tempfile
 import struct
-import map_items
 import bz2
 import math
+
+import map_items
+import steam_model
+import game
+import ui
+from primitives import *
+from game_types import *
 
 READ_HEADER_NUMBER = 20210214
 WRITE_HEADER_NUMBER = 20210214
 
 class Game_Random:
-    def __init__(self):
+    def __init__(self) -> None:
         self.rng = random.Random()
-        self.record = None
-        self.play = None
+        self.record: Optional[bz2.BZ2File] = None
+        self.play: Optional[typing.IO[bytes]] = None
 
-    def random(self):
+    def random(self) -> float:
         x = self.rng.random()
         if self.play:
             (x, ) = self.read_specific("RANDOM", "<d")
@@ -29,7 +35,7 @@ class Game_Random:
 
         return x
 
-    def randint(self, a, b):
+    def randint(self, a: int, b: int) -> int:
         x = self.rng.randint(a, b)
         assert a <= x <= b
         assert abs(a) <= (1 << 31)
@@ -46,20 +52,20 @@ class Game_Random:
 
         return x
 
-    def shuffle(self, l):
+    def shuffle(self, l: List[typing.Any]) -> None:
         self.read_and_write("SHUFFLE", "<I", len(l))
         for i in range(1, len(l)):
             j = self.randint(0, i)
             (l[i], l[j]) = (l[j], l[i])
 
-    def begin_write(self, recording_file, challenge):
+    def begin_write(self, recording_file: str, challenge: int) -> None:
         self.record = bz2.BZ2File(recording_file, "wb")
-        seed = ui_random.randint(1, 1 << 31)
+        seed = random.randint(1, 1 << 31)
         self.write_specific("GAME", "<I", WRITE_HEADER_NUMBER)
         self.write_specific("SEED", "<II", seed, challenge)
         self.rng = random.Random(seed)
 
-    def begin_read(self, recording_file):
+    def begin_read(self, recording_file: str) -> int:
         self.play = tempfile.NamedTemporaryFile()
         self.play.write(bz2.BZ2File(recording_file, "rb").read())
         self.play.seek(0, 0)
@@ -69,7 +75,7 @@ class Game_Random:
         self.rng = random.Random(seed)
         return challenge
 
-    def do_user_actions(self, ui):
+    def do_user_actions(self, ui: "ui.User_Interface") -> None:
         if not self.play:
             return
 
@@ -87,7 +93,7 @@ class Game_Random:
             else:
                 break
 
-    def timestamp(self, g):
+    def timestamp(self, g: "game.Game_Data") -> None:
         supply = g.net.hub.Get_Steam_Supply()
         demand = g.net.hub.Get_Steam_Demand()
         bad = []
@@ -121,8 +127,10 @@ class Game_Random:
                 except PlaybackError as e:
                     bad.append(str(e))
             if 1 <= node_code <= 2:
+                assert isinstance(node, map_items.Node)
                 try:
-                    self.read_and_write("N", "<id", node.health, node.steam.charge)
+                    self.read_and_write("N", "<id",
+                                        node.health, node.steam.charge)
                 except PlaybackError as e:
                     bad.append(str(e))
 
@@ -132,7 +140,7 @@ class Game_Random:
 
                 raise PlaybackError("".join(bad))
 
-    def Action(self, name, *objects):
+    def Action(self, name, *objects) -> None:
         object_data = []
         for obj in objects:
             if isinstance(obj, map_items.Pipe):
@@ -151,7 +159,9 @@ class Game_Random:
 
         self.read_and_write("ACTION_" + name, "<" + str(len(object_data)) + "B", *object_data)
 
-    def Steam(self, neighbour_list, voltage, charge, capacitance, currents):
+    def Steam(self, neighbour_list: List[Tuple[steam_model.Steam_Model, float]],
+              voltage: float, charge: float, capacitance: float,
+              currents: List[float]):
         assert len(neighbour_list) == len(currents)
         self.read_and_write("ST", "<Iddd",
                     len(neighbour_list),
@@ -240,8 +250,3 @@ class PlaybackError(Exception):
 
 class PlaybackEOF(Exception):
     pass
-
-ui_random = random.Random()
-game_random = Game_Random()
-
-

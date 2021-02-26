@@ -1,13 +1,14 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 import pickle, startup, os, extra, primitives
+from game_types import *
 
 
 class Config:
-    def __init__(self):
+    def __init__(self) -> None:
         self.version = startup.Get_Game_Version()
         (w, h, fs) = primitives.RESOLUTIONS[ 0 ]
         self.resolution = (w, h)
@@ -18,14 +19,14 @@ class Config:
 
 cfg = Config()
 
-FILENAME = None
+FILENAME: Optional[str] = None
 
-def Initialise(delete_file):
+def Initialise(delete_file: bool) -> None:
     global cfg, FILENAME
 
     version = startup.Get_Game_Version()
     home = extra.Get_Home()
-    if ( home == None ):
+    if ( home is None ):
         FILENAME = "config.dat"
     else:
         FILENAME = os.path.join(home, ".lightyears.cfg")
@@ -45,10 +46,11 @@ def Initialise(delete_file):
     except Exception:
         pass
 
-def Save():
+def Save() -> None:
     global cfg, FILENAME
 
     try:
+        assert FILENAME
         f = open(FILENAME, "wb")
         pickle.dump(cfg, f)
         f.close()

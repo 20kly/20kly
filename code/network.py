@@ -1,52 +1,56 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
-# Sorry, this isn't anything to do with IP: the Network is 
+# Sorry, this isn't anything to do with IP: the Network is
 # the steam transport network.
 
 import math , time , sound
 
 import extra
-from map_items import *
+import map_items
 from primitives import *
+from game_types import *
 from mail import New_Mail
-from game_random import game_random
+import game_random
+import intersect
 
 
 class Network:
-    def __init__(self, teaching):
-        self.ground_grid = dict()
-        self.pipe_grid = dict()
-        self.well_list = []
-        self.node_list = []
-        self.pipe_list = []
+    def __init__(self, demo: "game_random.Game_Random",
+                 teaching: bool) -> None:
+        self.demo = demo
+        self.ground_grid: Dict[GridPosition, map_items.Item] = dict()
+        self.pipe_grid: Dict[GridPosition, List[map_items.Pipe]] = dict()
+        self.well_list: List[map_items.Well] = []
+        self.node_list: List[map_items.Node] = []
+        self.pipe_list: List[map_items.Pipe] = []
 
         # UI updates required?
         self.dirty = False
-    
+
         # Popup health meters may appear
-        self.popups = set([])
+        self.popups: typing.Set[map_items.Building] = set([])
 
         # Wells are created. All wells must be at least a certain
         # distance from the city.
         for i in range(10):
             self.Make_Well(teaching)
 
-        # Get centre: 
+        # Get centre:
         (x,y) = GRID_CENTRE
 
         # An additional bootstrap well, plus node, is created close to the city.
-        wgpos = (x + 5,y + game_random.randint(-3,3))
-        w = Well(wgpos)
+        wgpos = (x + 5,y + self.demo.randint(-3,3))
+        w = map_items.Well(wgpos)
         self.Add_Grid_Item(w)
-        wn = Well_Node(wgpos)
+        wn = map_items.Well_Node(wgpos)
         self.Add_Finished_Node(wn)
         wn.tutor_special = True
 
         # City is created.
-        cn = City_Node((x,y))
+        cn = map_items.City_Node((x,y))
         self.Add_Finished_Node(cn)
 
         # Pipe links the two
@@ -56,20 +60,21 @@ class Network:
         pipe.Do_Work()
 
         # Final setup
-        self.hub = cn # hub := city node
+        self.hub: map_items.City_Node = cn # hub := city node
 
         self.connection_value = 1
         self.Work_Pulse(0) # used to make connection map
 
 
-    def Add_Finished_Node(self, node):
+    def Add_Finished_Node(self, node: "map_items.Node") -> None:
         node.health = node.max_health
         node.Do_Work()
         node.complete = True
         self.Add_Grid_Item(node)
 
-    def Add_Grid_Item(self, item, inhibit_effects=False):
-        gpos = item.pos
+    def Add_Grid_Item(self, item: "map_items.Item",
+                      inhibit_effects=False) -> bool:
+        gpos = typing.cast(GridPosition, item.pos)
         if ( item.Is_Destroyed() ):
             if ( not inhibit_effects ):
                 New_Mail("Item is destroyed.")
@@ -82,7 +87,7 @@ class Network:
                 if ( pipe.Is_Destroyed() ):
                     continue
 
-                if ( extra.Intersect_Grid_Square(gpos, 
+                if ( extra.Intersect_Grid_Square(gpos,
                             (pipe.n1.pos, pipe.n2.pos)) ):
                     if ( not inhibit_effects ):
                         New_Mail("Can't build there - pipe in the way!")
@@ -90,18 +95,18 @@ class Network:
                     return False
 
         if (( self.ground_grid.get(gpos, None) )
-        and ( isinstance(self.ground_grid[ gpos ], Building) )):
+        and ( isinstance(self.ground_grid[ gpos ], map_items.Building) )):
             if ( not inhibit_effects ):
                 New_Mail("Can't build there - building in the way!")
                 sound.FX("error")
             return False
 
-        if ( isinstance(item, Node) ):
+        if ( isinstance(item, map_items.Node) ):
             self.node_list.append(item)
             if ( self.ground_grid.get( gpos, None )):
                 item.Save(self.ground_grid[ gpos ])
             self.ground_grid[ gpos ] = item
-        elif ( isinstance(item, Well) ):
+        elif ( isinstance(item, map_items.Well) ):
             self.well_list.append(item)
             self.ground_grid[ gpos ] = item
         else:
@@ -109,22 +114,22 @@ class Network:
 
         return True
 
-    def Is_Connected(self, node):
-        assert isinstance(node, Building)
+    def Is_Connected(self, node: "map_items.Building") -> bool:
+        assert isinstance(node, map_items.Building)
         return ( node.connection_value == self.connection_value )
 
-    def Work_Pulse(self, work_points):
+    def Work_Pulse(self, work_points: int) -> int:
         # Connection map is built up. Process is
         # recursive: a wavefront spreads out across the net.
         #
         # At the same time, find the first node that needs work doing,
         # and do work at it.
         used = 0
-        now = set([ self.hub ])
+        now: typing.Set[map_items.Building] = set([ self.hub ])
         self.connection_value += 1
         cv = self.connection_value
         while ( len(now) != 0 ):
-            next = set([])
+            next: typing.Set[map_items.Building] = set([])
             for node in sorted(now, key=lambda node:
                             (node.Manhattan_Distance_From(self.hub), node.pos)):
                 if ( node.connection_value < cv ):
@@ -138,12 +143,12 @@ class Network:
             now = next
         return used
 
-    def Popup(self, node):
-        if ( node != None ):
+    def Popup(self, node: "Optional[map_items.Building]") -> None:
+        if ( node is not None ):
             self.popups |= set([node])
             node.popup_disappears_at = time.time() + 4.0
 
-    def Expire_Popups(self):
+    def Expire_Popups(self) -> None:
         t = time.time()
         remove = set([])
         for node in self.popups:
@@ -151,21 +156,21 @@ class Network:
                 remove |= set([node])
         self.popups -= remove
 
-    def Steam_Think(self):
+    def Steam_Think(self) -> None:
         for n in self.node_list:
-            n.Steam_Think()
+            n.Steam_Think(self)
 
 
-    def Add_Pipe(self, n1, n2):
+    def Add_Pipe(self, n1: "map_items.Node", n2: "map_items.Node") -> bool:
 
         if ( n1.Is_Destroyed() or n2.Is_Destroyed() ):
             sound.FX("error")
             New_Mail("Nodes are destroyed.")
             return False
 
-        # What's in the pipe's path? 
+        # What's in the pipe's path?
         path = extra.More_Accurate_Line(n1.pos, n2.pos)
-       
+
         other_pipes = set([])
         other_items = set([])
         for gpos in path:
@@ -188,13 +193,13 @@ class Network:
                     New_Mail("There is already a pipe there.")
                     return False
                 if ( intersect.Intersect((p.n1.pos,p.n2.pos),
-                            (n1.pos,n2.pos)) != None ):
+                            (n1.pos,n2.pos)) is not None ):
                     sound.FX("error")
                     New_Mail("That crosses an existing pipe.")
                     return False
 
         sound.FX("bamboo1")
-        pipe = Pipe(n1, n2)
+        pipe = map_items.Pipe(n1, n2, self)
         self.pipe_list.append(pipe)
 
         for gpos in path:
@@ -204,7 +209,7 @@ class Network:
                 self.pipe_grid[ gpos ].append(pipe)
         return True
 
-    def Remove_Destroyed_Pipes(self, gpos):
+    def Remove_Destroyed_Pipes(self, gpos: GridPosition) -> None:
         if ( not self.pipe_grid.get(gpos, None) ):
             return
         l = self.pipe_grid[ gpos ]
@@ -217,7 +222,7 @@ class Network:
         if ( len(l2) != len(l) ):
             self.pipe_grid[ gpos ] = l = l2
 
-    def Get_Pipe(self, gpos):
+    def Get_Pipe(self, gpos: GridPosition) -> "Optional[map_items.Pipe]":
         if ( not self.pipe_grid.get(gpos, None) ):
             return None
 
@@ -234,22 +239,22 @@ class Network:
             l.append(out)
             return out
 
-    def Pipe_Possible(self, arg1, arg2):
+    def Pipe_Possible(self, arg1: GridPosition, arg2: GridPosition) -> bool:
         # no restrictions
         return True
-       
-    def Destroy(self, node, by=None):
-        if ( isinstance(node, Pipe) ):
+
+    def Destroy(self, node: "map_items.Item", by="") -> None:
+        if ( isinstance(node, map_items.Pipe) ):
             self.__Destroy_Pipe(node)
             return
 
         if (( node == self.hub )
-        or ( not isinstance(node, Building) )):
+        or ( not isinstance(node, map_items.Building) )):
             return # indestructible
 
         sound.FX("destroy")
 
-        if ( isinstance(node, Node) ):
+        if ( isinstance(node, map_items.Node) ):
             # work on a copy, as __Destroy_Pipe will change the list.
             pipe_list = [ pipe for pipe in node.pipes ]
             for pipe in pipe_list:
@@ -263,19 +268,19 @@ class Network:
 
         self.dirty = True
 
-        if ( by != None ):
+        if ( by is not None ):
             New_Mail(node.name_type + " destroyed by " + by + ".")
-        
+
         node.Prepare_To_Die()
         self.__List_Destroy(self.node_list, node)
         rnode = node.Restore()
 
-        if ( rnode == None ):
+        if ( rnode is None ):
             del self.ground_grid[ gpos ]
         else:
             self.ground_grid[ gpos ] = rnode
-        
-    def __Destroy_Pipe(self, pipe):
+
+    def __Destroy_Pipe(self, pipe: "map_items.Pipe") -> None:
         self.dirty = True
         pipe.Prepare_To_Die()
         self.__List_Destroy(self.pipe_list, pipe)
@@ -291,34 +296,34 @@ class Network:
         #        if ( len(l) == 0 ):
         #            del self.pipe_grid[ gpos ]
 
-   
-    def __List_Destroy(self, lst, itm):
+
+    def __List_Destroy(self, lst: List[typing.Any], itm: typing.Any) -> None:
         l = len(lst)
         for i in reversed(range(l)):
             if ( lst[ i ] == itm ):
                 lst.pop(i)
 
-    def Make_Well(self, teaching=False, inhibit_effects=False):
+    def Make_Well(self, teaching=False, inhibit_effects=False) -> None:
         self.dirty = True
         (x, y) = (cx, cy) = GRID_CENTRE
         (mx, my) = GRID_SIZE
 
         while (( self.ground_grid.get( (x,y), None ))
-        or ( game_random.hypot( x - cx, y - cy ) < 10 )):
-            x = game_random.randint(0, mx - 1)
-            y = game_random.randint(0, my - 1)
+        or ( self.demo.hypot( x - cx, y - cy ) < 10 )):
+            x = self.demo.randint(0, mx - 1)
+            y = self.demo.randint(0, my - 1)
             if ( teaching ):
                 if ( x < cx ):
                     x += cx
 
-        w = Well((x,y))
+        w = map_items.Well((x,y))
         self.Add_Grid_Item(w, inhibit_effects or teaching)
 
 
-    def Make_Ready_For_Save(self):
+    def Make_Ready_For_Save(self) -> None:
         for p in self.pipe_list:
             p.Make_Ready_For_Save()
-            
-            
-        
+
+
+
 

@@ -1,48 +1,48 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 #
 # Game statistics review.. no RTS game would be complete without one!
 #
 
 import pygame , sys , math , time , pickle
-from pygame.locals import *
 
-import extra , resource , stats , menu
+
+import extra , resource , stats , menu , game
 from primitives import *
+from game_types import *
 
 class Historical_Record:
-    pass
+    def __init__(self, g: "game.Game_Data") -> None:
+        self.day = g.game_time.Get_Day()
+        self.supply = g.net.hub.Get_Steam_Supply()
+        self.demand = g.net.hub.Get_Steam_Demand()
+        self.num_nodes = len(g.net.node_list)
+        self.num_pipes = len([ p for p in g.net.pipe_list if not p.Is_Destroyed() ])
+        self.tech_level = g.net.hub.tech_level
+        self.work_units_used = g.work_units_used
+        self.work_units_avail = g.net.hub.Get_Avail_Work_Units()
+        self.city_pressure = g.net.hub.Get_Pressure()
 
 # Called periodically during the game. Results are appended to a list
 # called historian, which is given to the Review function
-def Analyse_Network(game_object):
-    hr = Historical_Record()
-    g = game_object
-
-    hr.day = g.game_time.Get_Day()
-    hr.supply = g.net.hub.Get_Steam_Supply()
-    hr.demand = g.net.hub.Get_Steam_Demand()
-    hr.num_nodes = len(g.net.node_list)
-    hr.num_pipes = len([ p for p in g.net.pipe_list if not p.Is_Destroyed() ])
-    hr.tech_level = g.net.hub.tech_level
-    hr.work_units_used = g.work_units_used
-    hr.work_units_avail = g.net.hub.Get_Avail_Work_Units()
-    hr.city_pressure = g.net.hub.Get_Pressure()
-
-    return hr
+def Analyse_Network(game_object: "game.Game_Data") -> Historical_Record:
+    return Historical_Record(game_object)
 
 # Called at the end of the game, to display statistics:
-def Review(screen, width_height, game_object, historian):
+def Review(screen: SurfaceType, width_height: SurfacePosition,
+        game_object: "game.Game_Data",
+        historian: List[Historical_Record]) -> None:
 
     (width, height) = width_height
     g = game_object
     extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
 
-    def Text(str, size, xy, justify):
+    def Text(text: str, size: int,
+             xy: SurfacePosition, justify: int) -> int:
         (x,y) = xy
-        img = stats.Get_Font(size).render(str, True, (255, 255, 255))
+        img = stats.Get_Font(size).render(text, True, (255, 255, 255))
 
         if ( justify == 0 ): # centre
             x -= ( img.get_rect().width ) // 2
@@ -57,9 +57,9 @@ def Review(screen, width_height, game_object, historian):
     if ( g.win ):
         y = Text("You have won the game!", 36, (width // 2, 10), 0)
     else:
-        y = Text("You have lost the game!", 36, (width // 2, 10), 0) 
+        y = Text("You have lost the game!", 36, (width // 2, 10), 0)
 
-    Text("Thankyou for playing!", 15, (width // 2, y), 0) 
+    Text("Thankyou for playing!", 15, (width // 2, y), 0)
 
     y += height // 10
 
@@ -68,10 +68,7 @@ def Review(screen, width_height, game_object, historian):
     lev[ MENU_INTERMEDIATE ] = "Intermediate"
     lev[ MENU_EXPERT ] = "Expert"
     lev[ MENU_PEACEFUL ] = "Peaceful"
-    if ( not lev.has_key( g.challenge ) ):
-        level = "??"
-    else:
-        level = lev[ g.challenge ]
+    level = lev.get(g.challenge, "??")
 
     score = float(g.net.hub.total_steam) / float(g.game_time.Get_Day())
     if ( g.win ):
@@ -85,7 +82,7 @@ def Review(screen, width_height, game_object, historian):
         ( "Game level", level ),
         ( "Your " + level + " Score", "%u" % score ) ]
 
-    r = Rect(25, y, width // 2, 1)
+    r: RectType = pygame.Rect(25, y, width // 2, 1)
     y = Text("Summary", 18, r.center, 0)
 
     for (key, data) in l:
@@ -98,7 +95,7 @@ def Review(screen, width_height, game_object, historian):
 
     y = r.bottom + ( height // 10 )
 
-    graph_window = Rect(r.left, y, r.width, ( height - y ) - 25 )
+    graph_window = pygame.Rect(r.left, y, r.width, ( height - y ) - 25 )
 
 
     available_graphs = [
@@ -111,7 +108,7 @@ def Review(screen, width_height, game_object, historian):
         ( "Work Unit Availability", "work_units_avail", (0,255,255) ),
         ( "City Steam Pressure", "city_pressure", (0,0,255) ) ]
 
-    def Regraph(arg):
+    def Regraph(arg: Tuple[str, str, Colour]) -> None:
         (heading, attribute, colour) = arg
         pygame.draw.rect(screen, (0, 0, 0), graph_window)
         pygame.draw.rect(screen, (128, 128, 128), graph_window, 2)
@@ -136,7 +133,7 @@ def Review(screen, width_height, game_object, historian):
         for hr in historian:
             try:
                 gy = getattr(hr, attribute)
-            except Attribute_Error:
+            except AttributeError:
                 print("Attribute",attribute,"not present")
                 return
 
@@ -155,7 +152,8 @@ def Review(screen, width_height, game_object, historian):
             print("Graph not available (/0)")
             return
 
-        def Calc_Step_Max(maximum,number_of_steps):
+        def Calc_Step_Max(maximum: float,
+                          number_of_steps: float) -> Tuple[int, int]:
             step = int((float(maximum) / float(number_of_steps)) + 1)
             if ( step < 1 ):
                 step = 1
@@ -167,25 +165,25 @@ def Review(screen, width_height, game_object, historian):
 
         t_scale = float(graph_subwin.width) / float(max_gt)
         y_scale = -1.0 * ( float(graph_subwin.height) / float(max_gy) )
-       
+
         # Vertical divisions
         for gt in range(0, max_gt, step_gt):
             x = int( gt * t_scale ) + graph_subwin.left
-            pygame.draw.line(screen, (55,55,55), 
-                    (x, graph_subwin.bottom), 
+            pygame.draw.line(screen, (55,55,55),
+                    (x, graph_subwin.bottom),
                     (x, graph_subwin.top))
-            pygame.draw.line(screen, (255,255,255), 
-                    (x, graph_subwin.bottom), 
+            pygame.draw.line(screen, (255,255,255),
+                    (x, graph_subwin.bottom),
                     (x, graph_subwin.bottom - 2))
 
         # Horizontal divisions
         for gy in range(0, max_gy, step_gy):
             y = int( gy * y_scale ) + graph_subwin.bottom
-            pygame.draw.line(screen, (75,75,75), 
-                    (graph_subwin.left, y), 
+            pygame.draw.line(screen, (75,75,75),
+                    (graph_subwin.left, y),
                     (graph_subwin.right, y))
-            pygame.draw.line(screen, (75,75,75), 
-                    (graph_subwin.left, y), 
+            pygame.draw.line(screen, (75,75,75),
+                    (graph_subwin.left, y),
                     (graph_subwin.left + 2, y))
 
 
@@ -196,11 +194,11 @@ def Review(screen, width_height, game_object, historian):
             y = int( gy * y_scale ) + graph_subwin.bottom
             pygame.draw.line(screen, colour, (x1, y1), (x,y))
             (x1, y1) = (x, y)
-           
-        # Graph border    
-        pygame.draw.line(screen, (255,255,255), 
+
+        # Graph border
+        pygame.draw.line(screen, (255,255,255),
                 graph_subwin.topleft, graph_subwin.bottomleft)
-        pygame.draw.line(screen, (255,255,255), 
+        pygame.draw.line(screen, (255,255,255),
                 graph_subwin.bottomright, graph_subwin.bottomleft)
 
 
@@ -208,17 +206,17 @@ def Review(screen, width_height, game_object, historian):
     graph_num = 0
 
     # then...
-    
-    proceed = menu.Menu( 
+
+    proceed = menu.Menu(
                 [(None, None, []),
                 (MENU_PREV, "Previous Graph", []),
                 (MENU_NEXT, "Next Graph", []),
                 (None, None, []),
-                (MENU_MENU, "Continue", [ K_ESCAPE ])])
+                (MENU_MENU, "Continue", [ pygame.K_ESCAPE ])])
 
     quit = False
     while ( not quit ):
-        (quit, cmd) = extra.Simple_Menu_Loop(screen, 
+        (quit, cmd) = extra.Simple_Menu_Loop(screen,
                     proceed, (( width * 3 ) // 4, height // 2 ))
 
         if ( cmd == MENU_MENU ):

@@ -1,92 +1,92 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 # Items that you will find on the map.
 # All inherit from the basic Item.
 
 import pygame , math
-from pygame.locals import *
+
 
 import bresenham , intersect , extra , stats , resource , draw_obj , sound
 from primitives import *
-from steam_model import Steam_Model
+from game_types import *
+import steam_model
 from mail import New_Mail
+import network
 
 class Item:
-    def __init__(self, name):
-        self.pos = None
+    def __init__(self, name: str) -> None:
+        self.pos: Union[GridPosition, FloatGridPosition]
         self.name_type = name
-        self.draw_obj = None
+        self.draw_obj: draw_obj.Draw_Obj
         self.emits_steam = False
         self.tutor_special = False
 
-    def Draw(self, output):
-        self.draw_obj.Draw(output, self.pos, (0,0))
+    def Draw(self, output: SurfaceType) -> None:
+        self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), (0,0))
 
-    def Draw_Mini(self, output, soffset):
-        self.draw_obj.Draw(output, self.pos, soffset)
+    def Draw_Mini(self, output: SurfaceType, soffset: SurfacePosition) -> None:
+        self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), soffset)
 
-    def Draw_Selected(self, output, highlight):
+    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         return None
 
-    def Draw_Popup(self, output):
+    def Draw_Popup(self, output: SurfaceType) -> Optional[RectType]:
         return None
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         return [ ((255,255,0), 20, self.name_type) ]
 
-    def Prepare_To_Die(self):
+    def Prepare_To_Die(self) -> None:
         pass
 
-    def Take_Damage(self, dmg_level=1):
+    def Take_Damage(self, dmg_level=1) -> bool:
         # Basic items have no health and therefore can't be damaged
         return False
 
-    def Is_Destroyed(self):
+    def Is_Destroyed(self) -> bool:
         return False
 
-    def Sound_Effect(self):
+    def Sound_Effect(self) -> None:
         pass
 
-    def Manhattan_Distance_From(self, other):
+    def Manhattan_Distance_From(self, other: "Item") -> float:
         (x1, y1) = self.pos
         (x2, y2) = other.pos
         return abs(x1 - x2) + abs(y1 - y2)
 
 class Well(Item):
-    def __init__(self, xy, name="Well"):
+    def __init__(self, xy: GridPosition, name="Well") -> None:
         Item.__init__(self, name)
-        self.pos = (x,y) = xy
+        self.pos: GridPosition = xy
         self.draw_obj = draw_obj.Draw_Obj("well.png", 1)
         self.emits_steam = True
 
 
 class Building(Item):
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         Item.__init__(self, name)
+        self.pos: GridPosition
         self.health = 0
         self.complete = False
         self.was_once_complete = False
-        self.max_health = 5 * HEALTH_UNIT 
+        self.max_health = 5 * HEALTH_UNIT
         self.base_colour = (255,255,255)
         self.connection_value = 0
-        self.other_item_stack = []
+        self.other_item_stack: List[Item] = []
         self.popup_disappears_at = 0.0
         self.destroyed = False
         self.tech_level = 1
 
 
-    def Exits(self):
-        return []
-
-    def Prepare_To_Die(self):
+    def Prepare_To_Die(self) -> None:
         self.popup_disappears_at = 0.0
         self.health = 0
         self.destroyed = True
 
-    def Take_Damage(self, dmg_level=1):
+    def Take_Damage(self, dmg_level=1) -> bool:
         x = int(dmg_level * DIFFICULTY.DAMAGE_FACTOR)
         self.health -= x
         if ( self.health <= 0 ):
@@ -94,32 +94,35 @@ class Building(Item):
             return True
         return False
 
-    def Begin_Upgrade(self):
+    def Begin_Upgrade(self) -> None:
         pass
 
-    def Save(self, other_item):
+    def Save(self, other_item: Item) -> None:
         # Used for things that stack on top of other things,
         # e.g. steam maker on top of well
         assert isinstance(other_item, Item)
         assert other_item.pos == self.pos
         self.other_item_stack.append(other_item)
 
-    def Restore(self):
+    def Restore(self) -> Optional[Item]:
         if ( len(self.other_item_stack) != 0 ):
             return self.other_item_stack.pop()
         else:
             return None
 
-    def Is_Destroyed(self):
+    def Exits(self) -> "typing.Sequence[Building]":
+        return []
+
+    def Is_Destroyed(self) -> bool:
         return self.destroyed
-    
-    def Needs_Work(self):
+
+    def Needs_Work(self) -> bool:
         return ( self.max_health != self.health )
-        
-    def Is_Broken(self):
+
+    def Is_Broken(self) -> bool:
         return self.Needs_Work()
 
-    def Do_Work(self):
+    def Do_Work(self) -> None:
         if ( not self.destroyed ):
             if ( self.health < self.max_health ):
                 self.health += WORK_UNIT_SIZE
@@ -134,22 +137,22 @@ class Building(Item):
                 self.complete = True
                 self.was_once_complete = True
 
-    def Get_Popup_Items(self):
+    def Get_Popup_Items(self) -> List[BarMeterStatTuple]:
         return [ self.Get_Health_Meter() ]
-    
-    def Get_Health_Meter(self):
+
+    def Get_Health_Meter(self) -> BarMeterStatTuple:
         return (self.health, (0,255,0), self.max_health, (255,0,0))
 
-    def Draw_Popup(self, output):
+    def Draw_Popup(self, output) -> Optional[RectType]:
         (x,y) = Grid_To_Scr(self.pos)
         x -= 16
         y -= 12
         return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
 
-    def Get_Tech_Level(self):            
+    def Get_Tech_Level(self) -> str:
         return ("Tech Level %d" % self.tech_level)
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         l = Item.Get_Information(self)
         h = (( self.health * 100 ) // self.max_health)
         h2 = (self.max_health - self.health)
@@ -178,8 +181,8 @@ class Building(Item):
                 l += [ (self.Get_Diagram_Colour(), 15, "Not Built") ]
 
         return l
-    
-    def Get_Diagram_Colour(self):
+
+    def Get_Diagram_Colour(self) -> Colour:
         (r,g,b) = self.base_colour
         if ( self.complete ):
             if ( self.health < self.max_health ):
@@ -196,13 +199,13 @@ class Building(Item):
         return (r,g,b)
 
 class Node(Building):
-    def __init__(self, xy, name="Node"):
+    def __init__(self, xy: GridPosition, name="Node") -> None:
         Building.__init__(self,name)
-        self.pipes = []
-        self.pos = (x,y) = xy
+        self.pipes: List[Pipe] = []
+        self.pos: GridPosition = xy
         self.max_health = NODE_HEALTH_UNITS * HEALTH_UNIT
         self.base_colour = (255,192,0)
-        self.steam = Steam_Model()
+        self.steam = steam_model.Steam_Model()
         self.draw_obj_finished = draw_obj.Draw_Obj("node.png", 1)
         self.draw_obj_incomplete = draw_obj.Draw_Obj("node_u.png", 1)
         self.draw_obj = self.draw_obj_incomplete
@@ -225,8 +228,8 @@ class Node(Building):
             self.complete = False
             self.steam.Capacity_Upgrade()
 
-    def Steam_Think(self):
-        nl = []
+    def Steam_Think(self, net: "network.Network") -> None:
+        nl: List[Tuple[steam_model.Steam_Model, float]] = []
         for p in self.Exits():
             if ( not p.Is_Broken() ):
                 if ( p.n1 == self ):
@@ -236,7 +239,7 @@ class Node(Building):
                     if ( not p.n1.Is_Broken() ):
                         nl.append((p.n1.steam, p.resistance))
 
-        nd = self.steam.Think(nl)
+        nd = self.steam.Think(nl, net)
         for (p, current) in zip(self.Exits(), nd):
             # current > 0 means outgoing flow
             if ( current > 0.0 ):
@@ -248,46 +251,46 @@ class Node(Building):
             self.draw_obj = self.draw_obj_finished
 
 
-    def Exits(self):
+    def Exits(self) -> "typing.Sequence[Pipe]":
         return self.pipes
 
-    def Get_Popup_Items(self):
+    def Get_Popup_Items(self) -> List[BarMeterStatTuple]:
         return Building.Get_Popup_Items(self) + [
                 self.Get_Pressure_Meter() ]
 
-    def Get_Pressure_Meter(self):
-        return (int(self.Get_Pressure()), (100, 100, 255), 
+    def Get_Pressure_Meter(self) -> BarMeterStatTuple:
+        return (int(self.Get_Pressure()), (100, 100, 255),
                     int(self.steam.Get_Capacity()), (0, 0, 100))
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         return Building.Get_Information(self) + [
             ((128,128,128), 15, "Steam pressure: %1.1f P" % self.steam.Get_Pressure()) ]
 
-    def Get_Pressure(self):
+    def Get_Pressure(self) -> float:
         return self.steam.Get_Pressure()
 
-    def Draw_Selected(self, output, highlight):
+    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         ra = ( Get_Grid_Size() // 2 ) + 2
         pygame.draw.circle(output, highlight,
             Grid_To_Scr(self.pos), ra , 2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
 
-    def Sound_Effect(self):
+    def Sound_Effect(self) -> None:
         sound.FX("bamboo")
 
 
 class City_Node(Node):
-    def __init__(self,xy,name="City"):
+    def __init__(self, xy: GridPosition, name="City") -> None:
         Node.__init__(self,xy,name)
         self.base_colour = CITY_COLOUR
-        self.avail_work_units = 1 
+        self.avail_work_units = 1
         self.city_upgrade = 0
         self.city_upgrade_start = 1
         self.draw_obj = draw_obj.Draw_Obj("city1.png", 3)
         self.draw_obj_finished = self.draw_obj_incomplete = self.draw_obj
-        self.total_steam = 0
+        self.total_steam = 0.0
 
-    def Begin_Upgrade(self):
+    def Begin_Upgrade(self) -> None:
         # Upgrade a city for higher capacity
         # and more work units. Warning: upgraded city
         # will require more steam!
@@ -301,7 +304,7 @@ class City_Node(Node):
                 sound.FX("mechanical_1")
 
                 self.city_upgrade = self.city_upgrade_start = (
-                    ( CITY_UPGRADE_WORK + ( self.tech_level * 
+                    ( CITY_UPGRADE_WORK + ( self.tech_level *
                     DIFFICULTY.CITY_UPGRADE_WORK_PER_LEVEL )) * HEALTH_UNIT )
                 self.avail_work_units += 1 # Extra steam demand
             else:
@@ -311,13 +314,13 @@ class City_Node(Node):
             New_Mail("City is already being upgraded.")
             sound.FX("error")
 
-    def Needs_Work(self):
+    def Needs_Work(self) -> bool:
         return ( self.city_upgrade != 0 )
 
-    def Is_Broken(self):
+    def Is_Broken(self) -> bool:
         return False
 
-    def Do_Work(self):
+    def Do_Work(self) -> None:
         if ( self.city_upgrade > 0 ):
             self.city_upgrade -= 1
             if ( self.city_upgrade == 0 ):
@@ -328,67 +331,67 @@ class City_Node(Node):
                 New_Mail("City upgraded to level %d of %d!" %
                     ( self.tech_level, DIFFICULTY.CITY_MAX_TECH_LEVEL ) )
 
-    def Get_Avail_Work_Units(self):
+    def Get_Avail_Work_Units(self) -> int:
         return self.avail_work_units
 
-    def Get_Steam_Demand(self):
-        return (( self.avail_work_units * 
+    def Get_Steam_Demand(self) -> float:
+        return (( self.avail_work_units *
                 WORK_STEAM_DEMAND ) + STATIC_STEAM_DEMAND )
 
-    def Get_Steam_Supply(self):
+    def Get_Steam_Supply(self) -> float:
         supply = 0.0
         for pipe in self.pipes:
             if ( self == pipe.n1 ):
                 supply -= pipe.current_n1_to_n2
             else:
                 supply += pipe.current_n1_to_n2
-            
+
         return supply
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         l = Node.Get_Information(self)
         if ( self.city_upgrade != 0 ):
             l.append( ((255,255,50), 12, "Upgrading...") )
             l.append( (None, None, self.Get_City_Upgrade_Meter()) )
         return l
 
-    def Get_City_Upgrade_Meter(self):
+    def Get_City_Upgrade_Meter(self) -> BarMeterStatTuple:
         if ( self.city_upgrade == 0 ):
             return (0, (0,0,0), 1, (64,64,64))
         else:
-            return (self.city_upgrade_start - self.city_upgrade, (255,255,50), 
+            return (self.city_upgrade_start - self.city_upgrade, (255,255,50),
                  self.city_upgrade_start, (64,64,64))
 
-    def Steam_Think(self):
+    def Steam_Think(self, net: "network.Network") -> None:
         x = self.Get_Steam_Demand()
         self.total_steam += x
         self.steam.Source(- x)
-        Node.Steam_Think(self)
+        Node.Steam_Think(self, net)
 
-    def Draw(self, output):
+    def Draw(self, output: SurfaceType) -> None:
         Node.Draw(self, output)
 
-    def Get_Popup_Items(self):
+    def Get_Popup_Items(self) -> List[BarMeterStatTuple]:
         return [ self.Get_City_Upgrade_Meter() ,
                 self.Get_Pressure_Meter() ]
 
-    def Take_Damage(self, dmg_level=1):  # Can't destroy a city.
+    def Take_Damage(self, dmg_level=1) -> bool:  # Can't destroy a city.
         return False
 
-    def Draw_Selected(self, output, highlight):
+    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         r = Grid_To_Scr_Rect(self.pos).inflate(CITY_BOX_SIZE,CITY_BOX_SIZE)
         pygame.draw.rect(output, highlight,r,2)
         return r.inflate(2,2)
 
-    def Get_Tech_Level(self):            
+    def Get_Tech_Level(self) -> str:
         return Building.Get_Tech_Level(self) + (" of %d" % DIFFICULTY.CITY_MAX_TECH_LEVEL )
 
-    def Sound_Effect(self):
+    def Sound_Effect(self) -> None:
         sound.FX("computer")
 
 
 class Well_Node(Node):
-    def __init__(self,xy,name="Steam Maker"):
+    def __init__(self, xy: GridPosition, name="Steam Maker") -> None:
         Node.__init__(self,xy,name)
         self.base_colour = (255,0,192)
         self.draw_obj_finished = draw_obj.Draw_Obj("maker.png", 1)
@@ -398,26 +401,27 @@ class Well_Node(Node):
         self.production = 0
 
 
-    def Steam_Think(self):
+    def Steam_Think(self, net: "network.Network") -> None:
         if ( not self.Needs_Work() ):
-            self.production = (DIFFICULTY.BASIC_STEAM_PRODUCTION + (self.tech_level * 
+            self.production = (DIFFICULTY.BASIC_STEAM_PRODUCTION + (self.tech_level *
                     DIFFICULTY.STEAM_PRODUCTION_PER_LEVEL))
             self.steam.Source(self.production)
         else:
             self.production = 0
-        Node.Steam_Think(self)
+        Node.Steam_Think(self, net)
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         return Node.Get_Information(self) + [
-            (self.base_colour, 15, 
+            (self.base_colour, 15,
                 "Steam production: %1.1f U" % self.production) ]
 
-    def Sound_Effect(self):
+    def Sound_Effect(self) -> None:
         sound.FX("bamboo1")
 
 
 class Pipe(Building):
-    def __init__(self,n1,n2,name="Pipe"):
+    def __init__(self, n1: Node, n2: Node,
+                 net: "network.Network", name="Pipe") -> None:
         Building.__init__(self,name)
         assert n1 != n2
         n1.pipes.append(self)
@@ -427,19 +431,17 @@ class Pipe(Building):
         (x1,y1) = n1.pos
         (x2,y2) = n2.pos
 
-        from game_random import game_random
-
         self.pos = ((x1 + x2) // 2, (y1 + y2) // 2)
-        self.length = game_random.hypot(x1 - x2, y1 - y2)
+        self.length = net.demo.hypot(x1 - x2, y1 - y2)
         self.max_health = int(self.length + 1) * HEALTH_UNIT
         self.base_colour = (0,255,0)
         self.resistance = ( self.length + 2.0 ) * RESISTANCE_FACTOR
         self.current_n1_to_n2 = 0.0
 
         self.dot_drawing_offset = 0
-        self.dot_positions = []
+        self.dot_positions: List[FloatSurfacePosition] = []
 
-    def Begin_Upgrade(self):
+    def Begin_Upgrade(self) -> None:
         if ( self.tech_level >= PIPE_MAX_TECH_LEVEL ):
             New_Mail("Pipe cannot be upgraded further.")
             sound.FX("error")
@@ -450,15 +452,15 @@ class Pipe(Building):
             sound.FX("crisp")
             # Upgrade a pipe for lower resistance and more health.
             self.tech_level += 1
-            self.max_health += int( PIPE_UPGRADE_WORK_FACTOR * 
+            self.max_health += int( PIPE_UPGRADE_WORK_FACTOR *
                         self.length * HEALTH_UNIT )
             self.complete = False
             self.resistance *= PIPE_UPGRADE_RESISTANCE_FACTOR
 
-    def Exits(self):
+    def Exits(self) -> typing.Sequence[Node]:
         return [self.n1, self.n2]
 
-    def Flowing_From(self, node, current):
+    def Flowing_From(self, node: Node, current: float) -> None:
         if ( node == self.n1 ):
             self.current_n1_to_n2 = current
         elif ( node == self.n2 ):
@@ -466,14 +468,14 @@ class Pipe(Building):
         else:
             assert False
 
-    def Take_Damage(self, dmg_level=1):
+    def Take_Damage(self, dmg_level=1) -> bool:
         # Pipes have health proportional to their length.
         # To avoid a rules loophole, damage inflicted on
         # pipes is multiplied by their length. Pipes are
         # a very soft target.
         return Building.Take_Damage(self, dmg_level * (self.length + 1.0))
 
-    def Draw_Mini(self, output, xy):
+    def Draw_Mini(self, output: SurfaceType, xy: GridPosition) -> None:
         (x,y) = xy
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
@@ -495,14 +497,14 @@ class Pipe(Building):
                 info_surf = stats.Get_Font(12).render(info_text, True, c)
                 r2 = info_surf.get_rect()
                 r2.center = (mx,my)
-                r = Rect(r2)
+                r = pygame.Rect(r2)
                 r.width += 4
                 r.center = (mx,my)
                 pygame.draw.rect(output, (0, 40, 0), r)
                 output.blit(info_surf, r2.topleft)
 
 
-    def Draw(self,output):
+    def Draw(self, output: SurfaceType) -> None:
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
         if ( self.Needs_Work() ):
@@ -518,10 +520,10 @@ class Pipe(Building):
 
         if ( self.current_n1_to_n2 == 0.0 ):
             return
-            
-        r = Rect(0,0,1,1)
+
+        r = pygame.Rect(0,0,1,1)
         for pos in self.dot_positions:
-            r.center = pos
+            r.center = (int(pos[0]), int(pos[1]))
             output.fill(colour, r)
 
         # Thanks to Acidd_UK for the following suggestion.
@@ -533,21 +535,21 @@ class Pipe(Building):
         interp = self.dot_drawing_offset
         colour = (0, 255, 0) # brigt green dots
 
-        self.dot_positions = [ 
+        self.dot_positions = [
             extra.Partial_Vector(pos_a, pos_b, (interp, positions))
-            for interp in range(self.dot_drawing_offset, positions, 
+            for interp in range(self.dot_drawing_offset, positions,
                     self.SFACTOR) ]
 
         for pos in self.dot_positions:
-            r.center = pos
+            r.center = (int(pos[0]), int(pos[1]))
             output.fill(colour, r)
-    
+
     # Tune these to alter the speed of the dots.
     SFACTOR = 512
     FUTZFACTOR = 4.0 * 35.0
 
-    def Frame_Advance(self, frame_time):
-        self.dot_drawing_offset += int(self.FUTZFACTOR * 
+    def Frame_Advance(self, frame_time: float) -> None:
+        self.dot_drawing_offset += int(self.FUTZFACTOR *
                 frame_time * self.current_n1_to_n2)
 
         if ( self.dot_drawing_offset < 0 ):
@@ -556,10 +558,10 @@ class Pipe(Building):
         else:
             self.dot_drawing_offset = self.dot_drawing_offset % self.SFACTOR
 
-    def Make_Ready_For_Save(self):
+    def Make_Ready_For_Save(self) -> None:
         self.dot_positions = []
 
-    def __Draw_Original(self, output):
+    def __Draw_Original(self, output: SurfaceType) -> None:
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
         if ( self.Needs_Work() ):
@@ -568,20 +570,20 @@ class Pipe(Building):
             c = self.Get_Diagram_Colour()
         pygame.draw.line(output, c, (x1,y1), (x2,y2), 2)
 
-    def Draw_Selected(self, output, highlight):
+    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         p1 = Grid_To_Scr(self.n1.pos)
         p2 = Grid_To_Scr(self.n2.pos)
         pygame.draw.line(output, highlight, p1, p2, 5)
         #self.Draw(output) # Already done elsewhere.
 
-        return Rect(p1,(1,1)).union(Rect(p2,(1,1))).inflate(7,7)
+        return pygame.Rect(p1,(1,1)).union(pygame.Rect(p2,(1,1))).inflate(7,7)
 
-    def Get_Information(self):
+    def Get_Information(self) -> List[StatTuple]:
         return Building.Get_Information(self) + [
             ((128,128,128), 15, "%1.1f km" % self.length) ,
             ((128,128,128), 15, "Flow rate: %1.1f U" % abs(self.current_n1_to_n2) ) ]
 
-    def Sound_Effect(self):
+    def Sound_Effect(self) -> None:
         sound.FX("bamboo2")
 
 

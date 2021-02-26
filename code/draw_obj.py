@@ -1,52 +1,50 @@
-# 
+#
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
+#
 
 # Simple animation of map objects
-# 
-# I wrote this very late at night. It may well be total shit
-# but it appears to work. I am stressed out and should probably 
-# go to bed. 
-#
-# Main thing: you can't have surfaces in Draw_Obj because it
-# has to be pickled. That's why they are hidden on the other
-# side of the cache.
 
 
 import pygame , math
-from pygame.locals import *
+
 
 import resource
 from primitives import *
+from game_types import *
 
 
+class Abstract_Draw_Obj:
+    def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
+        pass
 
-cache = dict()
+cache: Dict[DrawObjKey, Abstract_Draw_Obj] = dict()
 frame = 0
 
-class Draw_Obj:
-    def __init__(self, img_name, grid_size):
+class Draw_Obj(Abstract_Draw_Obj):
+    def __init__(self, img_name: str, grid_size: int) -> None:
+        Abstract_Draw_Obj.__init__(self)
         self.key = (img_name, grid_size)
         Make_Cache_Item(self.key)
 
-    def Draw(self, output, gpos, sxsy):
+    def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
         cache[ self.key ].Draw(output, gpos, sxsy)
 
-def Flush_Draw_Obj_Cache():
+def Flush_Draw_Obj_Cache() -> None:
     global cache
-    cache = dict()
+    cache.clear()
 
-def Next_Frame():
+def Next_Frame() -> None:
     global frame
     frame += 1
 
-def Make_Cache_Item(key):
+def Make_Cache_Item(key: DrawObjKey) -> None:
     if ( cache.get(key, None) ):
         return  # Done already.
 
-    class Real_Draw_Obj:
-        def __init__(self, key):
+    class Real_Draw_Obj(Abstract_Draw_Obj):
+        def __init__(self, key: DrawObjKey) -> None:
+            Abstract_Draw_Obj.__init__(self)
             (img_name, grid_size) = key
 
             img = resource.Load_Image(img_name)
@@ -68,7 +66,7 @@ def Make_Cache_Item(key):
             for c in [ 0, 0, 50, 100, 150, 200, 250, 250, 150 ]:
                 self.frames.append(self.__Colour_Substitute(c, img))
 
-        def Draw(self, output, gpos, sxsy):
+        def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
             (sx, sy) = sxsy
             global frame
 

@@ -1,17 +1,23 @@
-# 
+#
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
+#
 
 
 import pygame, os, sys
-from pygame.locals import *
+
 
 from mail import New_Mail
 from primitives import *
+from game_types import *
 
-__img_cache = dict()
-__snd_cache = dict()
+try:
+    SoundType = pygame.mixer.Sound  # pygame.mixer might not be available
+except Exception:
+    pass
+
+__img_cache: Dict[str, SurfaceType] = dict()
+__snd_cache: "Dict[str, Optional[SoundType]]" = dict()
 __snd_disabled = False
 
 DATA_DIR = os.path.abspath(os.path.join(
@@ -36,20 +42,20 @@ AUDIO_TRANS_TBL = {
 }
 
 
-def Path(name, audio=False):
+def Path(name: str, audio=False) -> str:
     if ( audio ):
         return os.path.join(DATA_DIR,"..","audio",name)
     else:
         return os.path.join(DATA_DIR,name)
 
-def Load_Image(name):
+def Load_Image(name: str) -> SurfaceType:
     global __img_cache
 
     key = name
 
     if ( __img_cache.get(key, None) ):
         return __img_cache[ key ]
-    
+
     fname = Path(name)
     try:
         img = pygame.image.load(fname)
@@ -67,7 +73,7 @@ def Load_Image(name):
 
 
 DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
-def Load_Font(size):
+def Load_Font(size: int) -> pygame.font.Font:
     # ----------------------------------------------------------
     # This function was modified by Siegfried Gevatter, the
     # maintainer of "lighyears" in Debian, to let lightyears
@@ -83,9 +89,9 @@ def Load_Font(size):
 
     return pygame.font.Font(Path("Vera.ttf"), size)
 
-def Load_Sound(name):
+def Load_Sound(name: str) -> "Optional[SoundType]":
     global __snd_cache, __snd_disabled
-   
+
     if ( __snd_disabled ):
         return None
 
@@ -95,6 +101,7 @@ def Load_Sound(name):
     #print "Caching new sound:",name
     fname = AUDIO_TRANS_TBL.get(name, name)
     fname = Path(fname + ".ogg", True)
+    f: "Optional[SoundType]" = None
     try:
         f = pygame.mixer.Sound(fname)
     except Exception as x:
@@ -103,19 +110,18 @@ def Load_Sound(name):
         print("Real name: " + name)
         print(repr(x) + " " + str(x))
         print("")
-        f = None
         No_Sound()
-   
+
     __snd_cache[ name ] = f
 
     return f
 
 
-def No_Sound():
+def No_Sound() -> None:
     global __snd_disabled
     __snd_disabled = True
 
-def Has_Sound():
+def Has_Sound() -> bool:
     global __snd_disabled
     return not __snd_disabled
 

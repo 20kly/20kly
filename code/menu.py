@@ -1,25 +1,26 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 # A very lightweight menu system.
 
 import pygame
-from pygame.locals import *
+
 
 import stats , extra , resource , render , sound
+from game_types import *
 
 
 class Menu:
-    def __init__(self, menu_options, force_width=0):
+    def __init__(self, menu_options: List[MenuItem], force_width=0) -> None:
         self.options = menu_options
 
-        self.control_rects = []
-        self.hover = None
-        self.bbox = None
+        self.control_rects: List[ControlRectType] = []
+        self.hover: Optional[int] = None
+        self.bbox: RectType
 
-        self.selection = None
+        self.selection: Optional[int] = None
         self.update_required = True
 
         width_hint = height_hint = 10
@@ -28,8 +29,7 @@ class Menu:
             width_hint = force_width
 
         # Two attempts at drawing required.
-        (discard1, discard2,
-            (width_hint, height_hint)) = self.__Draw((width_hint, height_hint))
+        (_, _, (width_hint, height_hint)) = self.__Draw((width_hint, height_hint))
 
         if ( width_hint < 150 ):
             width_hint = 150
@@ -37,19 +37,19 @@ class Menu:
             width_hint = force_width
 
         (self.surf_store, self.control_rects,
-            (discard1, discard2)) = self.__Draw((width_hint, height_hint))
+            _) = self.__Draw((width_hint, height_hint))
 
-        self.bbox = Rect(0, 0, width_hint, height_hint)
+        self.bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
-    def Get_Command(self):
+    def Get_Command(self) -> Optional[int]:
         return self.selection
 
-    def Select(self, snum):
+    def Select(self, snum: Optional[int]) -> None:
         self.update_required = True
         self.selection = snum
 
-    def Mouse_Move(self, spos):
-        if (( spos == None )
+    def Mouse_Move(self, spos: Optional[SurfacePosition]) -> None:
+        if (( spos is None )
         or ( not self.bbox.collidepoint(spos) )):
             self.hover = None
             return
@@ -68,26 +68,27 @@ class Menu:
                     sound.FX("click_s")
                 return
 
-    def Mouse_Down(self, spos):
+    def Mouse_Down(self, spos: SurfacePosition) -> None:
 
         self.Mouse_Move(spos)
-        if ( self.hover != None ):
+        if ( self.hover is not None ):
             self.selection = self.hover
             sound.FX("click")
 
-    def Key_Press(self, k):
+    def Key_Press(self, k: int) -> None:
         for (num, name, hotkeys) in self.options:
-            if (( hotkeys != None ) and ( k in hotkeys )):
+            if (( hotkeys is not None ) and ( k in hotkeys )):
                 self.selection = num
                 self.update_required = True
                 sound.FX("click")
                 return
 
-    def Draw(self, output, centre=None):
+    def Draw(self, output: SurfaceType,
+             centre: Optional[SurfacePosition] = None) -> None:
         if ( self.update_required ):
             self.update_required = False
 
-            if ( centre == None ):
+            if ( centre is None ):
                 self.bbox.center = output.get_rect().center
             else:
                 self.bbox.center = centre
@@ -97,7 +98,7 @@ class Menu:
             output.blit(self.surf_store, self.bbox.topleft)
 
             for (num, r) in self.control_rects:
-                r = Rect(r)
+                r = pygame.Rect(r)
                 r.top += self.bbox.top
                 r.left += self.bbox.left
                 if ( num == self.selection ):
@@ -106,10 +107,11 @@ class Menu:
                     pygame.draw.rect(output, (0, 180, 0), r, 1)
 
 
-    def __Draw(self, width_height_hint):
+    def __Draw(self, width_height_hint: SurfacePosition) -> Tuple[
+            SurfaceType, List[ControlRectType], SurfacePosition]:
         (width_hint, height_hint) = width_height_hint
         surf = pygame.Surface((width_hint, height_hint))
-        bbox = Rect(0, 0, width_hint, height_hint)
+        bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
         extra.Tile_Texture(surf, "006metal.jpg", surf.get_rect())
 
@@ -117,12 +119,12 @@ class Menu:
         w = bbox.width - ( margin * 2 )
         th = None
         y = margin + bbox.top
-        control_rects = []
+        control_rects: List[ControlRectType] = []
         max_width = 0
         first_item = True
 
         for (num, name, hotkeys) in self.options:
-            if ( name == None ): # a gap
+            if ( name is None ): # a gap
                 if ( first_item ):
                     img = resource.Load_Image("header.jpg")
                     img_r = img.get_rect()
@@ -136,17 +138,18 @@ class Menu:
                 y += margin * 2
                 continue
 
+            assert num is not None
             txt = render.Render(name, 18, (50,200,20), (200,200,0))
-            if ( th == None ):
+            if ( th is None ):
                 th = txt.get_rect().height + ( margin * 2 )
             tw = txt.get_rect().width + ( margin * 2 )
             if ( tw > max_width ):
                 max_width = tw
 
-            x = bbox.left + margin 
-            r = Rect(x,y,w,th)
+            x = bbox.left + margin
+            r = pygame.Rect(x,y,w,th)
             x += self.Justify(w,txt.get_rect().width)
-        
+
             extra.Tile_Texture(surf, "greenrust.jpg", r)
             extra.Edge_Effect(surf, r)
             self.Enhancement_Interface(surf, num, r, margin)
@@ -164,19 +167,22 @@ class Menu:
         return (surf, control_rects, (max_width, y))
 
 
-    def Justify(self, width, text_width):
+    def Justify(self, width: int, text_width: int) -> int:
         return ( width - text_width ) // 2
 
-    def Enhancement_Interface(self, surf, num, rect, margin):
+    def Enhancement_Interface(self, surf: SurfaceType,
+            num: int, rect: RectType, margin: int) -> None:
         pass
 
 # Menu plus pictures!
 class Enhanced_Menu(Menu):
-    def __init__(self, menu_options, pictures, force_width=0):
+    def __init__(self, menu_options: List[MenuItem],
+                 pictures: Dict[int, str], force_width=0):
         self.pictures = pictures
         Menu.__init__(self, menu_options, force_width)
 
-    def Enhancement_Interface(self, surf, num, rect, margin):
+    def Enhancement_Interface(self, surf: SurfaceType,
+            num: int, rect: RectType, margin: int) -> None:
         if ( self.pictures.get( num, None ) ):
             img = resource.Load_Image( self.pictures[ num ] )
             img_r = img.get_rect()

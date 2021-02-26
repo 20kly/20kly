@@ -1,42 +1,45 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 # Mysterious alien attackers.
 # Look away now, unless you want to understand how the aliens work.
 
 import math , pygame
-from pygame.locals import *
+
 
 import extra , sound
 from quiet_season import Quiet_Season
+import game_random
 from primitives import *
-from map_items import *
-from game_random import game_random
+from game_types import *
+import network, map_items
 
+Target = Tuple[Tuple[float, FloatGridPosition], map_items.Item]
 
+alien_firing_sound: Optional[sound.Persisting_Sound] = None
 
 class Alien_Season(Quiet_Season):
-    def __init__(self, net, alien_tech_level):
+    def __init__(self, net: network.Network, alien_tech_level: float) -> None:
         Quiet_Season.__init__(self, net)
         self.alien_tech_level = alien_tech_level
         self.__Compute_Targets(5)
-        self.alien_list = []
+        self.alien_list: List[Alien] = []
         self.name = "Alien"
         self.new_aliens = False
         self.t2_announced = False
 
 
 
-    def __Compute_Targets(self,m):
+    def __Compute_Targets(self,m: int) -> None:
         # Analyse your network to determine the strategy
-        # that will be used by the aliens. 
+        # that will be used by the aliens.
         # The aliens may choose to attack the pipe that is
         # carrying the most current (this is the most
         # likely strategy)
 
-        most_current = [ ((abs(pipe.current_n1_to_n2), pipe.n1.pos), pipe)
+        most_current: List[Target] = [ ((abs(pipe.current_n1_to_n2), pipe.n1.pos), pipe)
                 for pipe in self.net.pipe_list ]
         extra.Sort_By_Tuple_0(most_current)
 
@@ -47,7 +50,7 @@ class Alien_Season(Quiet_Season):
 
         # Or they may choose to attack the node with the most
         # connections
-        most_conns = [ ((len(node.pipes), node.pos), node)
+        most_conns: List[Target] = [ ((len(node.pipes), node.pos), node)
                 for node in self.net.node_list ]
         extra.Sort_By_Tuple_0(most_conns)
 
@@ -59,10 +62,10 @@ class Alien_Season(Quiet_Season):
         # Or they might attack the busiest steam generator.
         busy_generator = [ ((sum([ abs(pipe.current_n1_to_n2)
                         for pipe in node.pipes]), node.pos), node)
-                for node in self.net.node_list 
-                if isinstance(node, Well_Node) ]
+                for node in self.net.node_list
+                if isinstance(node, map_items.Well_Node) ]
         extra.Sort_By_Tuple_0(busy_generator)
-        
+
         #print 'Busy generator:'
         #for (score, node) in busy_generator[ -m: ]:
         #    print score,node.pos
@@ -71,10 +74,10 @@ class Alien_Season(Quiet_Season):
         # TODO. Other attack strategies?
 
         # Aliens never attack the city.
-        self.target_list = [ item for (score, item) in target 
-                        if not isinstance(item, City_Node) ]
+        self.target_list = [ item for (score, item) in target
+                        if not isinstance(item, map_items.City_Node) ]
 
-    def Per_Period(self):
+    def Per_Period(self) -> None:
         if ( self.alien_tech_level >= 1.7 ):
             # More sophisticated aliens.
             # They replan their strategy before each wave.
@@ -86,20 +89,20 @@ class Alien_Season(Quiet_Season):
                 self.t2_announced = True
 
         # Make a wave of bug-eyed monsters. Here's where they start:
-        num_aliens = game_random.randint(2,2 + int(self.alien_tech_level))
-        alien_angle = game_random.random() * TWO_PI
+        num_aliens = self.net.demo.randint(2,2 + int(self.alien_tech_level))
+        alien_angle = self.net.demo.random() * TWO_PI
         (cx,cy) = GRID_CENTRE
         alien_radius = cx + cy
 
         # Here's where they end up
         x = cx + ( alien_radius * math.cos(alien_angle + math.pi) )
         y = cy + ( alien_radius * math.sin(alien_angle + math.pi) )
-        dest = Item("alien destination")
+        dest = map_items.Item("alien destination")
         dest.pos = (x,y)
 
         # Get target list for aliens
-        num_targets = game_random.randint(1,1 + int(self.alien_tech_level))
-        game_random.shuffle(self.target_list)
+        num_targets = self.net.demo.randint(1,1 + int(self.alien_tech_level))
+        self.net.demo.shuffle(self.target_list)
         alien_targets = self.target_list[ 0:num_targets ]
         alien_targets.append(dest)
 
@@ -110,7 +113,7 @@ class Alien_Season(Quiet_Season):
         for i in range(num_aliens):
             x = cx + ( alien_radius * math.cos(alien_angle) )
             y = cy + ( alien_radius * math.sin(alien_angle) )
-            a = Alien()
+            a = Alien(self.net)
             a.pos = (x,y)
             a.targets = [ item for item in alien_targets ]
             a.net = self.net
@@ -133,10 +136,10 @@ class Alien_Season(Quiet_Season):
         and ( self.alien_list[ 0 ].done )):
             self.alien_list.pop(0)
 
-    def Get_Period(self):
-        return 16 
+    def Get_Period(self) -> int:
+        return 16
 
-    def Per_Frame(self, frame_time):
+    def Per_Frame(self, frame_time: float) -> None:
         for alien in self.alien_list:
             alien.Per_Frame(frame_time)
 
@@ -144,12 +147,12 @@ class Alien_Season(Quiet_Season):
             sound.FX("ring")
             self.new_aliens = False
 
-    def Draw(self, output, update_area):
+    def Draw(self, output: SurfaceType, update_area: UpdateAreaMethod) -> None:
         for alien in self.alien_list:
             alien.Draw(output, update_area)
 
-        
-    def Get_Extra_Info(self):
+
+    def Get_Extra_Info(self) -> List[StatTuple]:
         count = len([ x for x in self.alien_list if x.rookie ])
         if ( count != 0 ):
             return [ ((255,0,0), 16, "Aliens approaching!" )]
@@ -157,23 +160,25 @@ class Alien_Season(Quiet_Season):
             return []
 
 class Alien:
-    def __init__(self):
-        self.pos = None             # set externally
-        self.targets = []           # ditto
-        self.net = None             # ditto
-        self.alien_tech_level = 1   # ditto
-        self.colour1 = self.colour2 = None
+    def __init__(self, net: network.Network) -> None:
+        self.pos: Optional[FloatSurfacePosition] = None  # set externally
+        self.targets: List[map_items.Item] = []     # ditto
+        self.net: Optional[network.Network] = None  # ditto
+        self.alien_tech_level = 1.0                 # ditto
+        self.colour1: Colour = (0, 0, 0)
+        self.colour2: Colour = (0, 0, 0)
+        self.net = net
 
         self.done = False
         self.rookie = True
-        self.laser = None
-        self.current_target = None
-        self.speed = 0
-        self.attack_angle = 0
+        self.laser: Optional[Tuple[SurfacePosition, SurfacePosition]] = None
+        self.current_target: Optional[map_items.Item] = None
+        self.speed = 0.0
+        self.attack_angle = 0.0
         self.points = [ (-1,-1) for i in range(3) ]
-        self.countdown = 0
-        self.rotation = 0.05 + ( game_random.random() * 0.05 )
-        self.bbox = None
+        self.countdown = 0.0
+        self.rotation = 0.05 + ( self.net.demo.random() * 0.05 )
+        self.bbox: Optional[RectType] = None
 
 
     ATTACK_DIST = 2.5
@@ -182,16 +187,18 @@ class Alien:
     MAX_TIME_PER_TARGET = 1.2
     SIZE = 1
 
-    def Per_Frame(self, frame_time):
+    def Per_Frame(self, frame_time: float) -> None:
+        assert self.net is not None
+        assert self.pos is not None
         self.laser = None
-        if ( self.current_target == None ):
+        if ( self.current_target is None ):
             # Retarget.
             if ( len(self.targets) == 0 ):
                 self.done = True
                 return
             self.current_target = self.targets.pop(0)
             self.countdown = self.MAX_TIME_PER_TARGET
-            
+
             # Compute initial attack angle
             (x, y) = self.pos
             (tx, ty) = self.current_target.pos
@@ -225,13 +232,14 @@ class Alien:
                     self.net.Destroy(self.current_target, "aliens")
                     self.current_target = None
                 else:
-                    self.net.Popup(self.current_target)
+                    if isinstance(self.current_target, map_items.Building):
+                        self.net.Popup(self.current_target)
                     fire = True
             else:
-                dist = game_random.hypot(tx - x, ty - y)
+                dist = self.net.demo.hypot(tx - x, ty - y)
                 if ( dist > 0.1 ):
                     # Still en-route to target zone
-                    self.speed += self.ACC_PER_SECOND_PER_SECOND 
+                    self.speed += self.ACC_PER_SECOND_PER_SECOND
                     if ( self.speed > self.MAX_DISTANCE_PER_SECOND ):
                         self.speed = self.MAX_DISTANCE_PER_SECOND
                     s = float(self.speed) * float(frame_time)
@@ -245,33 +253,38 @@ class Alien:
                 else:
                     self.in_zone = True
 
-            self.bbox = Rect(x,y,1,1)
+            self.bbox = pygame.Rect(x,y,1,1)
             for (i,a) in enumerate([ 0, TWO_THIRDS_PI, - TWO_THIRDS_PI ]):
-                px = x + ( math.cos(a + ha) * self.SIZE )
-                py = y + ( math.sin(a + ha) * self.SIZE )
+                px = int(x + ( math.cos(a + ha) * self.SIZE ))
+                py = int(y + ( math.sin(a + ha) * self.SIZE ))
                 (px,py) = Grid_To_Scr((px,py))
                 self.points[ i ] = (int(px), int(py))
-                self.bbox.union_ip(Rect(self.points[ i ], (1,1)))
+                self.bbox.union_ip(pygame.Rect(self.points[ i ], (1,1)))
 
             if ( fire ):
-                tgt = Grid_To_Scr(self.current_target.pos)
+                assert self.current_target is not None
+                px = int(self.current_target.pos[0])
+                py = int(self.current_target.pos[1])
+                tgt = Grid_To_Scr((px, py))
                 self.laser = (self.points[ 0 ], tgt)
-                self.bbox.union_ip(Rect(tgt, (1,1)))
+                self.bbox.union_ip(pygame.Rect(tgt, (1,1)))
 
             if ( fire and ( len(self.targets) != 0 )):
                 global alien_firing_sound
-                alien_firing_sound.Set(1.0)
+                if alien_firing_sound is not None:
+                    alien_firing_sound.Set(1.0)
 
-    def Draw(self, output, update_area):
-        pygame.draw.polygon(output, self.colour1, self.points) 
-        pygame.draw.polygon(output, self.colour2, self.points, 1) 
-        if ( self.laser != None ):
+    def Draw(self, output: SurfaceType, update_area: UpdateAreaMethod) -> None:
+        pygame.draw.polygon(output, self.colour1, self.points)
+        pygame.draw.polygon(output, self.colour2, self.points, 1)
+        if ( self.laser is not None ):
             (a,b) = self.laser
             pygame.draw.line(output, (255, 255, 255), a, b)
-        update_area(self.bbox)
+        if ( self.bbox is not None ):
+            update_area(self.bbox)
 
 
-def Init_Aliens():
+def Init_Aliens() -> None:
     global alien_firing_sound
     alien_firing_sound = sound.Persisting_Sound("clicker")
 

@@ -1,24 +1,25 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 
-import pygame , sys , math , time , webbrowser , urllib , os
+import pygame , sys , math , time , webbrowser , urllib.request , os
 import getopt
-from pygame.locals import *
+
 
 import game , stats , storms , extra , save_menu , resource , menu
 import config , startup , sound , alien_invasion , quakes
 from primitives import *
+from game_types import *
 from game_random import PlaybackEOF
 import primitives
 
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
 DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
-                
 
-def Main(data_dir):
+
+def Main(data_dir: str) -> None:
 
     n = "20,000 Light-Years Into Space"
     print("")
@@ -29,7 +30,7 @@ def Main(data_dir):
     sys.stdout.flush()
 
     resource.DATA_DIR = data_dir
-    
+
     (opts_list, args) = getopt.getopt(
             sys.argv[1:], "",
             ["safe", "fullscreen",
@@ -43,7 +44,7 @@ def Main(data_dir):
     # Pygame things
     flags = 0
     if ("--fullscreen" in opts):
-        flags |= FULLSCREEN
+        flags |= pygame.FULLSCREEN
 
     bufsize = 2048
 
@@ -76,13 +77,13 @@ def Main(data_dir):
     pygame.init()
     pygame.font.init()
 
-    if flags & FULLSCREEN:
+    if flags & pygame.FULLSCREEN:
         # Ensure that all resolutions are supported by the system
         for resolution in RESOLUTIONS:
             if resolution[:2] not in pygame.display.list_modes():
                 RESOLUTIONS.remove(resolution)
 
-        
+
     if ( no_sound ):
         resource.No_Sound()
     else:
@@ -130,7 +131,7 @@ def Main(data_dir):
     while ( not quit ):
         if ( config.cfg.resolution != (width, height) ):
 
-            # As the toggle mode thing doesn't work outside of Unix, 
+            # As the toggle mode thing doesn't work outside of Unix,
             # the fallback strategy is to do set_mode again.
             # But if you set the same mode, then nothing happens.
             # So:
@@ -149,7 +150,8 @@ def Main(data_dir):
     pygame.quit()
 
 
-def Main_Menu_Loop(name, clock, screen, width_height):
+def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
+                   width_height: SurfacePosition) -> bool:
     # Further initialisation
     (width, height) = width_height
     menu_image = resource.Load_Image("mainmenu.jpg")
@@ -159,7 +161,7 @@ def Main_Menu_Loop(name, clock, screen, width_height):
 
     stats.Set_Font_Scale(config.cfg.font_scale)
 
-    main_menu = current_menu = menu.Menu([ 
+    main_menu = current_menu = menu.Menu([
                 (None, None, []),
                 (MENU_TUTORIAL, "Play Tutorial", []),
                 (MENU_NEW_GAME, "Play New Game", []),
@@ -170,15 +172,15 @@ def Main_Menu_Loop(name, clock, screen, width_height):
                 (MENU_MANUAL, "View Manual", []),
                 (MENU_UPDATES, "Check for Updates", []),
                 (None, None, []),
-                (MENU_QUIT, "Exit to " + extra.Get_OS(), 
-                    [ K_ESCAPE , K_F10 ])])
-    resolution_menu = menu.Menu( 
-                [(None, None, [])] + [
+                (MENU_QUIT, "Exit to " + extra.Get_OS(),
+                    [ pygame.K_ESCAPE , pygame.K_F10 ])])
+    resolution_menu = menu.Menu(typing.cast(List[MenuItem],
+                [(None, None, [])]) + [
                 (w, "%u x %u" % (w,h), [])
                     for (w, h, fs) in RESOLUTIONS ] +
                 [(None, None, []),
                 (-1, "Cancel", [])])
-    difficulty_menu = menu.Menu( 
+    difficulty_menu = menu.Menu(
                 [(None, None, []),
                 (MENU_TUTORIAL, "Tutorial", []),
                 (None, None, []),
@@ -192,7 +194,7 @@ def Main_Menu_Loop(name, clock, screen, width_height):
 
     copyright = [ name,
             "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
-            None,
+            "",
             "Game version " + startup.Get_Game_Version() ]
 
     # off we go.
@@ -202,11 +204,11 @@ def Main_Menu_Loop(name, clock, screen, width_height):
         # Main menu
         screen.fill((0,0,0))
         screen.blit(menu_image, (0,0))
-      
+
         y = 5
         sz = 11
         for text in copyright:
-            if ( text == None ):
+            if ( text == "" ):
                 sz = 7
                 continue
             img = stats.Get_Font(sz).render(text, True, (200, 200, 128))
@@ -216,7 +218,7 @@ def Main_Menu_Loop(name, clock, screen, width_height):
             img_r.top = y
             screen.blit(img, img_r.topleft)
             y += img_r.height
-       
+
         (quit, cmd) = extra.Simple_Menu_Loop(screen, current_menu,
                 (( width * 3 ) // 4, 10 + ( height // 2 )))
 
@@ -262,7 +264,7 @@ def Main_Menu_Loop(name, clock, screen, width_height):
                     # Debian manual present
                     url = 'file://' + DEB_MANUAL
                 else:
-                    base = os.path.abspath(resource.Path(os.path.join("..", 
+                    base = os.path.abspath(resource.Path(os.path.join("..",
                             "manual", "index.html")))
                     if os.path.isfile(base):
                         # Upstream package manual present
@@ -275,9 +277,9 @@ def Main_Menu_Loop(name, clock, screen, width_height):
                     webbrowser.open(url, True, True)
                 except:
                     pass
-                
-                
-        elif ( cmd != None ):
+
+
+        elif ( cmd is not None ):
             if ( current_menu == resolution_menu ):
                 for (w, h, fs) in RESOLUTIONS:
                     if ( w == cmd ):
@@ -305,12 +307,12 @@ def Main_Menu_Loop(name, clock, screen, width_height):
                             playback_file=None,
                             record_file=None)
 
-            current_menu = main_menu 
+            current_menu = main_menu
 
     return True
 
-def Update_Feature(screen, menu_image):
-    def Message(msg_list):
+def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
+    def Message(msg_list: List[str]) -> None:
         screen.blit(menu_image, (0,0))
 
         y = screen.get_rect().centery
@@ -325,36 +327,36 @@ def Update_Feature(screen, menu_image):
             y += img_r.height
         pygame.display.flip()
 
-    def Finish(cerror=None):
-        if ( cerror != None ):
+    def Finish(cerror: Optional[str] = None) -> None:
+        if ( cerror is not None ):
             Message(["Connection error:", cerror])
 
         ok = True
         timer = 4000
         while (( ok ) and ( timer > 0 )):
             e = pygame.event.poll()
-            while ( e.type != NOEVENT ):
-                if (( e.type == MOUSEBUTTONDOWN )
-                or ( e.type == KEYDOWN )
-                or ( e.type == QUIT )):
+            while ( e.type != pygame.NOEVENT ):
+                if (( e.type == pygame.MOUSEBUTTONDOWN )
+                or ( e.type == pygame.KEYDOWN )
+                or ( e.type == pygame.QUIT )):
                     ok = False
                 e = pygame.event.poll()
 
             pygame.time.wait( 40 )
             timer -= 40
-   
+
     Message(["Connecting to Website..."])
     url = ( CGISCRIPT + "a=1" )
     new_version = None
     try:
-        f = urllib.urlopen(url)
+        f = urllib.request.urlopen(url)
         new_version = f.readline()
         f.close()
     except Exception as x:
         Finish(str(x))
         return False
 
-    if (( new_version == None )
+    if (( new_version is None )
     or ( type(new_version) != str )
     or ( len(new_version) < 2 )
     or ( len(new_version) > 10 )
@@ -366,7 +368,7 @@ def Update_Feature(screen, menu_image):
     new_version = new_version.strip()
 
     # Protect user from possible malicious tampering
-    # via a man-in-the-middle attack. I don't want to 
+    # via a man-in-the-middle attack. I don't want to
     # render an unfiltered string.
     for i in new_version:
         if (( i != '.' )

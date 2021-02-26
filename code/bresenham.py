@@ -1,8 +1,9 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
+from game_types import *
 
 
 # Line drawing algorithm. Produces a list. This is useful for all sorts
@@ -10,10 +11,10 @@
 #
 # Page 78, Computer Graphics Principles and Practice (2nd. Ed), Foley et al.
 
-def Line(arg1, arg2):
+def Line(arg1: GridPosition, arg2: GridPosition) -> List[GridPosition]:
     (x1,y1) = arg1
     (x2,y2) = arg2
-   
+
     x1 = int(x1)
     y1 = int(y1)
     x2 = int(x2)
@@ -50,7 +51,7 @@ def Line(arg1, arg2):
             d += incr_ne # move northeast
             y += direction
         l.append((x,y))
-    
+
     if ( y != y2 ):
         l.append((x2,y2))
 

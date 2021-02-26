@@ -1,12 +1,12 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 
 import math
-
-from pygame.locals import *
+import pygame
+import game_types
 
 # Developers's controls:
 DEBUG = False # enables cheats
@@ -111,10 +111,10 @@ CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
 
 # things that are set by the difficulty mode:
 class Difficulty:
-    def __init__(self):
+    def __init__(self) -> None:
         self.Set(MENU_INTERMEDIATE)
-    
-    def Set(self, level):
+
+    def Set(self, level: int) -> None:
         if ( level in [ MENU_BEGINNER , MENU_TUTORIAL ] ):
             self.DAMAGE_FACTOR = 1.0
             self.CITY_UPGRADE_WORK_PER_LEVEL = 2
@@ -145,23 +145,32 @@ class Difficulty:
 
 
 DIFFICULTY = Difficulty()
+__grid_size = 0
+__grid_size_1 = 0
+__h_grid_size = 0
+__h_grid_size_1 = 0
 
-def Scr_To_Grid(xy):
+def Scr_To_Grid(xy: game_types.SurfacePosition) -> game_types.GridPosition:
     (x,y) = xy
     return (x // __grid_size, y // __grid_size)
 
-def Grid_To_Scr(xy):
+def Grid_To_Scr(xy: game_types.GridPosition) -> game_types.SurfacePosition:
     (x,y) = xy
     return (( x * __grid_size ) + __h_grid_size,
             ( y * __grid_size ) + __h_grid_size )
 
-def Grid_To_Scr_Rect(xy):
+def Float_Grid_To_Scr(xy: game_types.FloatGridPosition) -> game_types.FloatSurfacePosition:
+    (x,y) = xy
+    return (( x * __grid_size ) + __h_grid_size,
+            ( y * __grid_size ) + __h_grid_size )
+
+def Grid_To_Scr_Rect(xy: game_types.GridPosition) -> game_types.RectType:
     (x,y) = xy
     (cx,cy) = Grid_To_Scr((x,y))
-    return Rect(cx - __h_grid_size_1, cy - __h_grid_size_1, 
+    return pygame.Rect(cx - __h_grid_size_1, cy - __h_grid_size_1,
             __grid_size_1, __grid_size_1)
 
-def Set_Grid_Size(sz):
+def Set_Grid_Size(sz: int) -> None:
     global __grid_size, __grid_size_1, __h_grid_size, __h_grid_size_1
     assert type(sz) == int
     __grid_size = sz
@@ -169,9 +178,8 @@ def Set_Grid_Size(sz):
     __h_grid_size = sz // 2
     __h_grid_size_1 = __h_grid_size - 1
 
-def Get_Grid_Size():
+def Get_Grid_Size() -> int:
     return __grid_size
 
 Set_Grid_Size(10)
-
 

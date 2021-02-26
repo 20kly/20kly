@@ -1,36 +1,37 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 
-import pygame 
-from pygame.locals import *
+import pygame
 
+
+from game_types import *
 import resource, config
 
 
 
-def FX(name):
+def FX(name: str) -> None:
     s = resource.Load_Sound(name) # (comes from a cache)
-    if ( s != None ) and not config.cfg.mute:
+    if ( s is not None ) and not config.cfg.mute:
         s.play()
 
 
 class Persisting_Sound:
-    def __init__(self, name, secondary=None):
+    def __init__(self, name: str, secondary: Optional[str] = None) -> None:
         self.sobj = resource.Load_Sound(name)
-        if ( secondary != None ):
+        if ( secondary is not None ):
             # A different, less annoying mode.
             self.sobj2 = resource.Load_Sound(secondary)
-        else: 
+        else:
             self.sobj2 = self.sobj
 
-        self.schan = None
+        self.schan: Optional[pygame.Channel] = None
 
-    def Set(self, volume):
-        if (( self.sobj == None )
-        or ( self.sobj2 == None )):
+    def Set(self, volume: float) -> None:
+        if (( self.sobj is None )
+        or ( self.sobj2 is None )):
             return
 
         if config.cfg.mute:
@@ -42,17 +43,17 @@ class Persisting_Sound:
         else:
             self.sobj.set_volume(volume)
             self.sobj2.set_volume(volume)
-            if (( self.schan == None )
-            or ( not ( self.schan.get_sound() 
+            if (( self.schan is None )
+            or ( not ( self.schan.get_sound()
                             in [ self.sobj , self.sobj2 ] ))):
                 self.schan = self.sobj.play()
             if self.schan:
                 self.schan.queue(self.sobj2)
 
-    def Fade_Out(self):
-        if (( self.sobj == None )
-        or ( self.sobj2 == None )
-        or ( self.schan == None )):
+    def Fade_Out(self) -> None:
+        if (( self.sobj is None )
+        or ( self.sobj2 is None )
+        or ( self.schan is None )):
             return
 
         self.schan.queue(self.sobj2)

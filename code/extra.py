@@ -1,23 +1,26 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
 #
-# Here lie various pieces of shared code that 
+#
+# Here lie various pieces of shared code that
 # don't merit their own modules.
 
 
 import pygame , sys , time , os
 
 import intersect , bresenham , resource
+import menu
 from primitives import *
-from game_random import game_random
+from game_types import *
+import game_random
 
 # The function returns (x,y), a point on the line between
 # (x1,y1) and (x2,y2), such that a / b of the line
 # is between (x,y) and (x1,y1).
 
-def Partial_Vector(arg1, arg2, arg3):
+def Partial_Vector(arg1: FloatSurfacePosition, arg2: FloatSurfacePosition,
+                   arg3: Tuple[float, float]) -> FloatSurfacePosition:
     (x1,y1) = arg1
     (x2,y2) = arg2
     (a,b) = arg3
@@ -27,11 +30,11 @@ def Partial_Vector(arg1, arg2, arg3):
 
 
 # I'm always wanting to sort lists of tuples.
-def Sort_By_Tuple_0(list_of_tuples):
+def Sort_By_Tuple_0(list_of_tuples: List[typing.Any]) -> None:
     list_of_tuples.sort(key=lambda x: x[0])
     return None
 
-def More_Accurate_Line(arg1, arg2):
+def More_Accurate_Line(arg1: GridPosition, arg2: GridPosition) -> List[GridPosition]:
     (x1,y1) = arg1
     (x2,y2) = arg2
     def A(i):
@@ -41,18 +44,18 @@ def More_Accurate_Line(arg1, arg2):
             bresenham.Line((A(x1), A(y1)), (A(x2), A(y2))) ]
 
 # Check line (a,b) against given grid pos
-def Intersect_Grid_Square(gpos, ab):
+def Intersect_Grid_Square(gpos: GridPosition, ab: Tuple[GridPosition, GridPosition]) -> bool:
     (a,b) = ab
-    (x,y) = gpos
-    x -= 0.5
-    y -= 0.5
+    (x1,y1) = gpos
+    x = float(x1) - 0.5
+    y = float(y1) - 0.5
     for (c,d) in [ ((x,y), (x+1,y+1)), ((x+1,y),(x,y+1)) ]:
-        if ( intersect.Intersect((a,b), (c,d)) != None ):
+        if ( intersect.Intersect((a,b), (c,d)) is not None ):
             return True
 
     return False
 
-def Tile_Texture(output, name, rect):
+def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
     cr = output.get_clip()
     output.set_clip(rect)
 
@@ -64,14 +67,14 @@ def Tile_Texture(output, name, rect):
 
     output.set_clip(cr)
 
-def Edge_Effect(output, rect):
+def Edge_Effect(output: SurfaceType, rect: RectType) -> None:
     bolt = resource.Load_Image("bolt.png")
     margin = 2
     for x in [ rect.left + margin , rect.right - ( margin + 3 ) ]:
         for y in [ rect.top + margin , rect.bottom - ( margin + 3 ) ]:
             output.blit(bolt, (x,y))
 
-def Line_Edging(screen, r, deflate):
+def Line_Edging(screen: SurfaceType, r: RectType, deflate: bool) -> None:
     for c in [ (75, 63, 31), (125, 99, 30), (160, 120, 40), (75, 63, 31), (0, 0, 0) ]:
         pygame.draw.rect(screen, c, r, 1)
         if ( deflate ):
@@ -82,7 +85,7 @@ def Line_Edging(screen, r, deflate):
 
 # Generate start/finish of a quake line.
 # Also used by storms.
-def Make_Quake_SF_Points(off):
+def Make_Quake_SF_Points(demo: game_random.Game_Random, off: int) -> List[SurfacePosition]:
     # Quake fault lines must stay well away from the centre:
     # that's enforced here.
     crosses_centre = True
@@ -93,51 +96,52 @@ def Make_Quake_SF_Points(off):
     (w,h) = GRID_SIZE
 
     while ( crosses_centre ):
-        if ( game_random.randint(0,1) == 0 ):
-            start = (game_random.randint(0,w - 1), -off)
-            finish = (game_random.randint(0,w - 1), h + off)
+        if ( demo.randint(0,1) == 0 ):
+            start = (demo.randint(0,w - 1), -off)
+            finish = (demo.randint(0,w - 1), h + off)
         else:
-            start = (-off, game_random.randint(0,h - 1))
-            finish = (h + off, game_random.randint(0,h - 1))
+            start = (-off, demo.randint(0,h - 1))
+            finish = (h + off, demo.randint(0,h - 1))
 
-        crosses_centre = ( 
-                intersect.Intersect((start, finish),
-                    (check[ 0 ], check[ 1 ]))
-                or intersect.Intersect((start, finish),
-                    (check[ 2 ], check[ 3 ])) )
+        crosses_centre = (
+                (intersect.Intersect((start, finish),
+                    (check[ 0 ], check[ 1 ])) is not None)
+                or (intersect.Intersect((start, finish),
+                    (check[ 2 ], check[ 3 ])) is not None) )
     return [start, finish]
 
 
-def Simple_Menu_Loop(screen, current_menu, xy):
+def Simple_Menu_Loop(screen: SurfaceType, current_menu: menu.Menu,
+                     xy: SurfacePosition) -> Tuple[bool, Optional[int]]:
     (x,y) = xy
     cmd = None
     quit = False
 
-    while (( cmd == None ) and not quit ):
+    while (( cmd is None ) and not quit ):
         current_menu.Draw(screen, (x,y))
         pygame.display.flip()
 
         e = pygame.event.wait()
-        while ( e.type != NOEVENT ):
-            if e.type == QUIT:
+        while ( e.type != pygame.NOEVENT ):
+            if e.type == pygame.QUIT:
                 quit = True
-            elif ( e.type == MOUSEBUTTONDOWN ):
+            elif ( e.type == pygame.MOUSEBUTTONDOWN ):
                 current_menu.Mouse_Down(e.pos)
-            elif ( e.type == MOUSEMOTION ):
+            elif ( e.type == pygame.MOUSEMOTION ):
                 current_menu.Mouse_Move(e.pos)
-            elif e.type == KEYDOWN:
+            elif e.type == pygame.KEYDOWN:
                 current_menu.Key_Press(e.key)
             e = pygame.event.poll()
 
         cmd = current_menu.Get_Command()
-        current_menu.Select(None) # consume 
+        current_menu.Select(None) # consume
 
     return (quit, cmd)
 
 
 # Support functions.
 
-def Get_OS():
+def Get_OS() -> str:
     # On my machine, sys.platform reports 'linux2'. Remove digits.
     pf = sys.platform.title()
     for i in range(len(pf)):
@@ -149,18 +153,18 @@ def Get_OS():
         pf = 'Windows'
     return pf
 
-def Get_System_Info():
+def Get_System_Info() -> str:
     # Some information about the run-time environment.
     # This gets included in savegames - it may be useful for
     # debugging problems using a savegame as a starting point.
-    return repr([time.asctime(), sys.platform, sys.version, 
+    return repr([time.asctime(), sys.platform, sys.version,
             pygame.version.ver, sys.path, sys.prefix, sys.executable])
 
 
-def Get_Home():
+def Get_Home() -> Optional[str]:
     for i in [ "HOME", "APPDATA" ]:
         home = os.getenv(i)
-        if ( home != None ):
+        if ( home is not None ):
             return home
     return None
 

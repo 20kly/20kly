@@ -1,8 +1,10 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
+
+from game_types import *
 
 # Line intersection algorithm. Thanks to page 113 of
 # Computer Graphics Principles and Practice (2nd. Ed), Foley et al.
@@ -10,7 +12,8 @@
 # Note 1: it's not an intersection if the two lines share an endpoint.
 # Note 2: Can't detect overlapping parallel lines.
 
-def Intersect(arg1, arg2):
+def Intersect(arg1: Tuple[FloatGridPosition, FloatGridPosition],
+              arg2: Tuple[FloatGridPosition, FloatGridPosition]) -> Optional[FloatGridPosition]:
     ((xa1,ya1),(xa2,ya2)) = arg1
     ((xb1,yb1),(xb2,yb2)) = arg2
     xa = xa2 - xa1
@@ -22,7 +25,7 @@ def Intersect(arg1, arg2):
     if ( a == 0 ):
         return None
 
-    b = ((( xa * ya1 ) + ( xb1 * ya ) - ( xa1 * ya )) - ( xa * yb1 )) 
+    b = ((( xa * ya1 ) + ( xb1 * ya ) - ( xa1 * ya )) - ( xa * yb1 ))
     tb = float(b) / float(a)
 
     if (( tb <= 0 ) or ( tb >= 1 )):
@@ -37,14 +40,14 @@ def Intersect(arg1, arg2):
 
     if (( ta <= 0 ) or ( ta >= 1 )):
         return None # doesn't intersect
-    
+
     x = xb1 + ( xb * tb )
     y = yb1 + ( yb * tb )
     return (x,y)
 
 
 
-def Test():
+def Test() -> None:
     import random , math
 
     def BT(xp, line1, line2):
@@ -67,7 +70,7 @@ def Test():
         ya2 = ya1 + ( math.sin(aang) * 10.0 )
         yb2 = yb1 + ( math.sin(bang) * 10.0 )
 
-        z = Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2))) 
+        z = Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2)))
         (xi, yi) = z
         assert math.hypot(xi - x, yi - y) < 0.0001
 
@@ -76,10 +79,10 @@ def Test():
     BT((2,2),((1,1),(3,3)),((1,3),(3,1)))   # X
     BT(None,((1,1),(3,3)),((2,2),(4,4)))    # parallel lines, on top of each other
 
-    for i in xrange(10000):
+    for i in range(10000):
         Rnd()
 
 if ( __name__ == "__main__" ):
-    Test() 
-            
+    Test()
+
 

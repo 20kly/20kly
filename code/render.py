@@ -1,17 +1,18 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 
 import pygame
-from pygame.locals import *
+
 
 import stats
+from game_types import *
 
 # A font renderer that supports the familiar & marker for a hotkey.
 
-def Render(text, size, colour, hcolour):
-   
+def Render(text: str, size: int, colour: Colour, hcolour: Colour) -> SurfaceType:
+
     i = text.find('&')
     if ( i < 0 ):
         # not found, do normal render
@@ -20,7 +21,7 @@ def Render(text, size, colour, hcolour):
     f = stats.Get_Font(size)
     # do normal render up to &.
     s1 = f.render(text[ : i ], True, colour)
-    
+
     i += 1
     s2 = f.render(text[ i ], True, hcolour)
 

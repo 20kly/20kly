@@ -1,23 +1,25 @@
-# 
+#
 # 20,000 Light Years Into Space
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
-# 
+#
 # 4 hours remaining.
 # For a new player, the game is confusing and difficult to understand.
 # Solution: tutorial mode.
 # Can it be done?
 
 import pygame , time
-from pygame.locals import *
+
 
 import stats , extra , resource
+import map_items
+import game
 from primitives import *
-from map_items import *
+from game_types import *
 
 
 __tutor = None
 
-def On(width):
+def On(width: int) -> None:
     global __tutor
     __tutor = Tutor_Memory(width)
 
@@ -31,20 +33,20 @@ def On(width):
         False)
 
 
-def City_Selected():
+def City_Selected() -> None:
     Message("welcome", "citysel",
         "Your City",
         "To win the game, you must upgrade the city. Upgrades " +
         "raise the Technology Level of the City. Currently, the City " +
         "is at level 1 - you can see this on the right hand side of " +
-        "the screen ('Tech Level'). When the City's Tech Level " + 
+        "the screen ('Tech Level'). When the City's Tech Level " +
         "reaches " + str(DIFFICULTY.CITY_MAX_TECH_LEVEL) + ", you win.\n" +
         "You can upgrade the City at any time, but you should wait " +
         "until you have secured some more supplies of steam.\n" +
         "Now click on the structure to the right of the City.",
         False)
 
-def Steam_Maker_Selected(first):
+def Steam_Maker_Selected(first: bool) -> None:
     if ( first ):
         Message("citysel", "steamsel",
             "The First Steam Maker",
@@ -75,9 +77,9 @@ def Steam_Maker_Selected(first):
             "then on the new Steam Maker.",
             False)
 
-def Pipe_Added():
+def Pipe_Added() -> None:
     Message("newsteam", "building",
-        "Building", 
+        "Building",
         "Now you've planned the beginnings of your network. " +
         "You have two Steam Makers, one operational, the other " +
         "under construction, and Pipes linking them to the City.\n" +
@@ -87,15 +89,15 @@ def Pipe_Added():
         "them, including the progress of construction!",
         False)
 
-def All_Nodes_Finished():
+def All_Nodes_Finished() -> None:
     Message("building", "nodesready",
-        "Building Complete!", 
+        "Building Complete!",
         "Great! Your City is now supplied with Steam from two sources.\n" +
         "You can safely upgrade it now. Click 'Upgrade', and then " +
         "click on the City. The upgrade will begin immediately.",
         False)
 
-def City_Upgrade_Running():
+def City_Upgrade_Running() -> None:
     Message("nodesready", "upgraderunning",
         "Upgrade In Progress",
         "The City upgrade is now in progress. As soon as you started " +
@@ -115,8 +117,8 @@ def City_Upgrade_Running():
         "Click 'Build Node' and then click on the position of " +
         "your new node.",
         False)
-        
-def Node_Selected():
+
+def Node_Selected() -> None:
     Message("upgraderunning", "makinglinks",
         "Making New Links",
         "Your network's strength depends on the number of links. " +
@@ -125,11 +127,11 @@ def Node_Selected():
         "during construction and repair. Don't worry about that for now.\n" +
         "Now build three new Pipes, each running " +
         "from your new Node: one to the City, and two for the two " +
-        "Steam Makers. These connections make your network stronger. " + 
+        "Steam Makers. These connections make your network stronger. " +
         "Wait for these to be built.",
         False)
 
-def Number_Of_Pipes_Is(pipe_count):
+def Number_Of_Pipes_Is(pipe_count: int) -> None:
     if ( pipe_count >= 5 ):
         Message("makinglinks", "networkbasics",
             "Almost There...",
@@ -139,7 +141,7 @@ def Number_Of_Pipes_Is(pipe_count):
             "Please click on one of the pipes.",
             False)
 
-def Pipe_Selected():
+def Pipe_Selected() -> None:
     Message("networkbasics", "networkbasics2",
         "Steam is Water..",
         "To understand the network, it helps to imagine that the steam " +
@@ -153,7 +155,7 @@ def Pipe_Selected():
         "Now click on one of the nodes.",
         False)
 
-def Any_Node_Selected():
+def Any_Node_Selected() -> None:
     Message("networkbasics2", "networkbasics3",
         "Pressure..",
         "Water always finds it's own level. If you have two water tanks " +
@@ -171,7 +173,7 @@ def Any_Node_Selected():
         "Beginner mode). To avoid that, ensure that Supply matches Demand.\n" +
         "We're almost done. Please click on a pipe again.",False)
 
-def Pipe_Selected_2():
+def Pipe_Selected_2() -> None:
     Message("networkbasics3", "networkbasics4",
         "Rules Of Thumb",
         "The steam pressures in your Nodes will never equalise, because " +
@@ -190,7 +192,7 @@ def Pipe_Selected_2():
         "Now you're ready to experience an attack. Please click on your " +
         "City.", False)
 
-def City_Selected_2():
+def City_Selected_2() -> None:
     Message("networkbasics4", "attack",
         "Alien Attack",
         "The Aliens are coming!\n" +
@@ -204,7 +206,7 @@ def City_Selected_2():
         "When you're ready for them, " +
         "click on the planet's surface.", False)
 
-def Nothing_Selected():
+def Nothing_Selected() -> None:
     Message("attack", "running",
         "Alien Attack",
         "Remember:\n" +
@@ -214,7 +216,7 @@ def Nothing_Selected():
         "The Aliens disappear after 2 minutes. Good luck." , True)
 
 
-def Aliens_Gone():
+def Aliens_Gone() -> None:
     Message("running", "ended",
         "You Survived",
         "Good work! You survived the attack.\n" +
@@ -225,46 +227,46 @@ def Aliens_Gone():
 
 
 
-def Notify_Select(item):
+def Notify_Select(item: Optional[map_items.Item]) -> None:
     global __tutor
-    if ( __tutor == None ):
+    if ( __tutor is None ):
         return
 
-    if ( isinstance(item, Node) ):
+    if ( isinstance(item, map_items.Node) ):
         Any_Node_Selected()
 
 
-    if ( isinstance(item, City_Node) ):
+    if ( isinstance(item, map_items.City_Node) ):
         City_Selected()
         City_Selected_2()
-    elif ( isinstance(item, Well_Node) ):
+    elif ( isinstance(item, map_items.Well_Node) ):
         first = item.tutor_special
         Steam_Maker_Selected(first) # note change of terminology :(
-    elif ( isinstance(item, Node) ):
+    elif ( isinstance(item, map_items.Node) ):
         Node_Selected()
-    elif ( isinstance(item, Pipe) ):
+    elif ( isinstance(item, map_items.Pipe) ):
         Pipe_Selected()
         Pipe_Selected_2()
-    elif ( item == None ):
+    elif ( item is None ):
         Nothing_Selected()
 
-def Notify_Add_Pipe():
+def Notify_Add_Pipe() -> None:
     global __tutor
-    if ( __tutor == None ):
+    if ( __tutor is None ):
         return
 
     Pipe_Added()
 
-def Notify_Add_Node(n):
+def Notify_Add_Node(n: map_items.Item) -> None:
     global __tutor
-    if ( __tutor == None ):
+    if ( __tutor is None ):
         return
 
     #Node_Added(n)
 
-def Examine_Game(g):
+def Examine_Game(g: "game.Game_Data") -> None:
     global __tutor
-    if ( __tutor == None ):
+    if ( __tutor is None ):
         return
 
     # test 1 - are all nodes finished?
@@ -292,43 +294,43 @@ def Examine_Game(g):
 
     Number_Of_Pipes_Is(pipe_count)
 
-def Off():
+def Off() -> None:
     global __tutor
     __tutor = None
 
-def Message(previous_msg_name, this_msg_name, 
-            title, text, sf):
+def Message(previous_msg_name: Optional[str], this_msg_name: str,
+            title: str, text: str, sf: bool) -> None:
     global __tutor
     t = __tutor
-    if ( t != None ):
+    if ( t is not None ):
         t.Add_Message((previous_msg_name, this_msg_name,
                 title, text, sf))
 
-def Draw(screen, g):
+def Draw(screen: SurfaceType, g: "game.Game_Data") -> None:
     global __tutor
     t = __tutor
-    if ( t != None ):
+    if ( t is not None ):
         t.Draw(screen, g)
 
-def Permit_Season_Change():
+def Permit_Season_Change() -> bool:
     global __tutor
     t = __tutor
-    if ( t != None ):
+    if ( t is not None ):
         return t.Permit_Season_Change()
     else:
         return True
 
-def Frozen():
+def Frozen() -> bool:
     return False
 
-def Active():
+def Active() -> bool:
     global __tutor
-    return ( __tutor != None )
+    return ( __tutor is not None )
 
-def Has_Changed():
+def Has_Changed() -> bool:
     global __tutor
     t = __tutor
-    if ( t != None ):
+    if ( t is not None ):
         x = t.update
         t.update = False
         return x
@@ -337,15 +339,15 @@ def Has_Changed():
 
 
 class Tutor_Memory:
-    def __init__(self, w):
-        self.current_msg_name = None
-        self.current_msg_surf = None
+    def __init__(self, w: int) -> None:
+        self.current_msg_name: Optional[str] = None
+        self.current_msg_surf: Optional[SurfaceType] = None
         self.current_msg_popup = False
         self.width = w
         self.update = False
         self.permit_season_change = False
 
-    def Add_Message(self, arg):
+    def Add_Message(self, arg: Tuple[Optional[str], str, str, str, bool]) -> None:
         (previous_msg_name, this_msg_name, title, text, sf) = arg
 
         if ( self.current_msg_name == previous_msg_name ):
@@ -355,22 +357,22 @@ class Tutor_Memory:
             self.update = True
             self.permit_season_change = sf
 
-    def Permit_Season_Change(self):
+    def Permit_Season_Change(self) -> bool:
         return self.permit_season_change
 
-    def Draw(self, screen, g):
-        if ( self.current_msg_popup ):
+    def Draw(self, screen: SurfaceType, g: "game.Game_Data") -> None:
+        if ( self.current_msg_popup and ( self.current_msg_surf is not None )):
             r = self.current_msg_surf.get_rect()
             r.top = r.left = 30
             screen.blit(self.current_msg_surf, r)
 
-    def __Draw(self, title, text):
+    def __Draw(self, title: str, text: str) -> SurfaceType:
         height = 10
         (surf, height) = self.__Draw_H(title, text, height)
         (surf, height) = self.__Draw_H(title, text, height)
         return surf
-    
-    def __Draw_H(self, title, text, height):
+
+    def __Draw_H(self, title: str, text: str, height: int) -> Tuple[SurfaceType, int]:
         width = self.width
         margin = 10
         fs1 = 12
@@ -380,7 +382,7 @@ class Tutor_Memory:
         surf = pygame.Surface((width, height))
         bbox = surf.get_rect()
         extra.Tile_Texture(surf, "006metal.jpg", bbox)
-        
+
         tsurf = stats.Get_Font(fs1).render(title, True, (250,250,200))
         tsurf_r = tsurf.get_rect()
         tsurf_r.center = bbox.center
@@ -390,12 +392,12 @@ class Tutor_Memory:
 
         y = tsurf_r.bottom + margin
         # line edging for title
-        extra.Line_Edging(surf, Rect(0,0,width,y), True)
+        extra.Line_Edging(surf, pygame.Rect(0,0,width,y), True)
 
         y += margin
         x = margin
         height = y
-        
+
         while ( len(text) != 0 ):
             newline = False
             i = text.find(' ')
