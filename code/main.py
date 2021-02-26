@@ -94,6 +94,9 @@ def Main(data_dir: str) -> None:
     else:
         pygame.display.set_icon(resource.Load_Image("32.png"))
 
+    # Screensaver is not disabled
+    pygame.display.set_allow_screensaver(True)
+
     # Game begins.. show loading image
     screen.fill((0,0,0))
     pygame.display.flip()

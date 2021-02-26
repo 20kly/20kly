@@ -15,7 +15,7 @@ import game_random, grid
 from primitives import *
 from game_types import *
 from quiet_season import Quiet_Season
-from alien_invasion import Alien_Season
+import alien_invasion
 from quakes import Quake_Season
 from storms import Storm_Season
 from steam_model import Steam_Model
@@ -26,7 +26,7 @@ from difficulty import DIFFICULTY
 
 
 class Game_Data:
-    def __init__(self, demo: game_random.Game_Random, challenge: MenuCommand) -> None:
+    def __init__(self, demo: "game_random.Game_Random", challenge: MenuCommand) -> None:
         self.version = startup.Get_Game_Version()
         self.sysinfo = extra.Get_System_Info()
         teaching = ( challenge == MenuCommand.TUTORIAL )
@@ -411,7 +411,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
             elif (( g.season == Season.QUIET )
             or ( g.season == Season.STORM )):
                 g.season = Season.ALIEN
-                g.season_fx = Alien_Season(g.net, g.difficulty_level)
+                g.season_fx = alien_invasion.Alien_Season(g.net, g.difficulty_level)
                 sound.FX("aliensappr")
             elif ( g.season == Season.ALIEN ):
                 g.season = Season.QUAKE

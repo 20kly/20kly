@@ -47,16 +47,18 @@ def Intersect(arg1: Tuple[FloatGridPosition, FloatGridPosition],
 
 
 
-def Test() -> None:
-    import random , math
+def test_Intersect() -> None:
+    import random, math
+
+    r = random.Random(1)
 
     def BT(xp, line1, line2):
         assert Intersect(line1, line2) == xp
         assert Intersect(line2, line1) == xp
 
-    def Rnd():
+    def Rnd() -> None:
         def RP():
-            return (random.random(), random.random())
+            return (r.random(), r.random())
 
         (x,y) = RP() # choose intersection point.
         (xa1,ya1) = RP() # line 1 source
@@ -71,6 +73,7 @@ def Test() -> None:
         yb2 = yb1 + ( math.sin(bang) * 10.0 )
 
         z = Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2)))
+        assert z is not None
         (xi, yi) = z
         assert math.hypot(xi - x, yi - y) < 0.0001
 
@@ -81,8 +84,3 @@ def Test() -> None:
 
     for i in range(10000):
         Rnd()
-
-if ( __name__ == "__main__" ):
-    Test()
-
-

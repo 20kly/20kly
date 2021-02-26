@@ -85,7 +85,7 @@ def Line_Edging(screen: SurfaceType, r: RectType, deflate: bool) -> None:
 
 # Generate start/finish of a quake line.
 # Also used by storms.
-def Make_Quake_SF_Points(demo: game_random.Game_Random, off: int) -> List[SurfacePosition]:
+def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[SurfacePosition]:
     # Quake fault lines must stay well away from the centre:
     # that's enforced here.
     crosses_centre = True

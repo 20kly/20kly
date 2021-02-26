@@ -1,7 +1,10 @@
 #!/bin/bash -xe
 
-export L="python lightyears --playback"
 
+python -m mypy code/*.py
+python -m pytest code/*.py
+
+export L="python lightyears --playback"
 $L tests/tutorial_die
 $L tests/tutorial_die_2
 $L tests/beginner
