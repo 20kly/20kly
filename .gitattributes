@@ -4,3 +4,4 @@
 *.sh text eol=lf
 lightyears text eol=lf
 .gitattributes text eol=lf
+pytest.ini text eol=lf

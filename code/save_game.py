@@ -40,6 +40,7 @@ def Load(g: "game.Game_Data", slot: MenuCommand) -> "Tuple[Optional[game.Game_Da
     if ( g2.version != g.version ):
         return (None, "Restore error: wrong version")
 
+    g2.net.demo.Post_Restore()
     return (g2, None)
 
 def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[str]:
@@ -50,6 +51,7 @@ def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[st
     else:
         label += ( b" " * ( HEADER_SIZE - l ))
 
+    g.net.demo.Prepare_To_Save()
     name = Make_Save_Name(slot)
     try:
         f = open(name, "wb")
@@ -64,7 +66,7 @@ def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[st
 def Get_Number(slot: MenuCommand) -> int:
     i = slot.value 
     if MenuCommand.SAVE0.value <= i <= MenuCommand.SAVE9.value:
-        return i
+        return i - MenuCommand.SAVE0.value
     else:
         return -1
 

@@ -106,9 +106,11 @@ def Main(data_dir: str) -> None:
     quakes.Init_Quakes()
 
     quit = False
+    return_code = 0
     if playback_mode != PlayMode.OFF:
         # record/playback
         try:
+            return_code = 1 # Assume playback did not complete
             game.Main_Loop(screen=screen, clock=clock,
                     width_height=(width, height), restore_pos=None,
                     challenge=record_challenge,
@@ -117,6 +119,8 @@ def Main(data_dir: str) -> None:
                     record_file=record_file)
         except PlaybackEOF:
             print("End of playback")
+            return_code = 0
+
         quit = True
 
     while ( not quit ):
@@ -128,6 +132,7 @@ def Main(data_dir: str) -> None:
     if not no_sound:
         pygame.mixer.quit()
     pygame.quit()
+    sys.exit(return_code)
 
 
 def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
@@ -252,7 +257,7 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 if ( cmd != MenuCommand.CANCEL ):
                     quit = game.Main_Loop(screen=screen, clock=clock,
                             width_height=(width, height), restore_pos=None,
-                            challenge=typing.cast(MenuCommand, cmd),
+                            challenge=cmd,
                             playback_mode=PlayMode.OFF,
                             playback_file=None,
                             record_file=None)
@@ -262,7 +267,7 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                     # Start game from saved position
                     quit = game.Main_Loop(screen=screen, clock=clock,
                             width_height=(width, height),
-                            restore_pos=typing.cast(int, cmd), challenge=None,
+                            restore_pos=cmd, challenge=None,
                             playback_mode=PlayMode.OFF,
                             playback_file=None,
                             record_file=None)
@@ -358,7 +363,3 @@ def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
             "'New' version is " + new_version + ": your version is " + old_version])
         Finish(None)
         return False
-
-
-
-

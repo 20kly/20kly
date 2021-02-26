@@ -21,11 +21,12 @@ WRITE_HEADER_NUMBER = 20210214
 
 class Game_Random:
     def __init__(self) -> None:
-        self.rng = random.Random()
+        self.rng: Optional[random.Random] = random.Random()
         self.record: Optional[bz2.BZ2File] = None
         self.play: Optional[typing.IO[bytes]] = None
 
     def random(self) -> float:
+        assert self.rng is not None
         x = self.rng.random()
         if self.play:
             (x, ) = self.read_specific("RANDOM", "<d")
@@ -36,6 +37,7 @@ class Game_Random:
         return x
 
     def randint(self, a: int, b: int) -> int:
+        assert self.rng is not None
         x = self.rng.randint(a, b)
         assert a <= x <= b
         assert abs(a) <= (1 << 31)
@@ -169,6 +171,14 @@ class Game_Random:
         for i in range(len(neighbour_list)):
             (neighbour, resist) = neighbour_list[i]
             self.read_and_write("n", "<dd", resist, currents[i])
+
+    def Prepare_To_Save(self) -> None:
+        self.record = None
+        self.play = None
+        self.rng = None
+
+    def Post_Restore(self) -> None:
+        self.rng = random.Random()
 
     def hypot(self, dy, dx):
         result = math.hypot(dy, dx)

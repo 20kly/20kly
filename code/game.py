@@ -23,6 +23,7 @@ from network import Network
 from ui import User_Interface
 from mail import New_Mail
 from difficulty import DIFFICULTY
+import unit_test
 
 
 class Game_Data:
@@ -53,7 +54,7 @@ class Game_Data:
         self.wu_integral = 0
 
 def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePosition,
-              restore_pos: Optional[int], challenge: Optional[MenuCommand],
+              restore_pos: Optional[MenuCommand], challenge: Optional[MenuCommand],
               playback_mode: PlayMode, playback_file: Optional[str],
               record_file: Optional[str]) -> bool:
     # Initialisation of screen things.
@@ -218,24 +219,9 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
 
     # Almost ready to start... but are we starting
     # from a savegame?
-    def Restore(g, cmd):
-        (g2, result) = save_game.Load(g, cmd)
-        if ( result is None ):
-            g = g2
-            ui.net = g.net
-            mail.Initialise()
-            mail.Set_Day(g.game_time.Get_Day())
-            assert g.challenge is not None
-            DIFFICULTY.Set(g.challenge)
-            New_Mail("Game restored. It is the " +
-                g.season_fx.name + " season.")
-        else:
-            New_Mail(result)
-        return g
-
     if ( restore_pos is not None ):
         g.challenge = MenuCommand.INTERMEDIATE
-        g = Restore(g, restore_pos)
+        g = Restore(ui, g, restore_pos)
 
     assert g.challenge is not None
     Summary(g)
@@ -564,7 +550,7 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
                 and ( cmd != MenuCommand.UNUSED )
                 and ( cmd != MenuCommand.CANCEL )):
                     if ( not current_menu.Is_Saving() ):
-                        g = Restore(g, cmd)
+                        g = Restore(ui, g, cmd)
 
                     else:
                         label = "Day %u - %s season - %s" % (g.game_time.Get_Day(),
@@ -598,4 +584,22 @@ def Main_Loop(screen: SurfaceType, clock: ClockType, width_height: SurfacePositi
         review.Review(screen, (width, height), g, g.historian)
 
     return quit
+
+
+def Restore(ui: User_Interface, g: Game_Data, cmd: MenuCommand) -> Game_Data:
+    (g2, result) = save_game.Load(g, cmd)
+    if ( result is None ) and ( g2 is not None ):
+        g = g2
+        ui.net = g.net
+        mail.Initialise()
+        mail.Set_Day(g.game_time.Get_Day())
+        assert g.challenge is not None
+        DIFFICULTY.Set(g.challenge)
+        New_Mail("Game restored. It is the " +
+            g.season_fx.name + " season.")
+    else:
+        assert result is not None
+        New_Mail(result)
+    return g
+
 
