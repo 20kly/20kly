@@ -3,11 +3,11 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
-import resource, os, pygame
-import game_random, game, save_game
-from ui import User_Interface
-from primitives import *
-from game_types import *
+import os, pygame
+from . import game_random, game, save_game, resource
+from .ui import User_Interface
+from .primitives import *
+from .game_types import *
 
 
 def Setup_For_Unit_Test() -> SurfaceType:

@@ -4,9 +4,8 @@
 #
 
 from pygame import Rect
-from game_types import *
-import network
-import game_random
+from .game_types import *
+from . import network
 
 class Quiet_Season:
     # The quiet season is... very quiet.

@@ -8,8 +8,8 @@
 import pygame
 
 
-import stats , extra , resource , render , sound
-from game_types import *
+from . import stats, extra, resource, render, sound
+from .game_types import *
 
 
 class Menu:

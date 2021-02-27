@@ -6,17 +6,17 @@
 # Items that you will find on the map.
 # All inherit from the basic Item.
 
-import pygame , math
+import pygame, math
 
 
-import bresenham , intersect , extra , stats , resource , draw_obj , sound
-from primitives import *
-from game_types import *
-import steam_model
-from mail import New_Mail
-import network
-from difficulty import DIFFICULTY
-from grid import Grid_To_Scr, Get_Grid_Size, Grid_To_Scr_Rect
+from . import bresenham, intersect, extra, stats, resource, draw_obj, sound
+from .primitives import *
+from .game_types import *
+from . import steam_model
+from .mail import New_Mail
+from . import network
+from .difficulty import DIFFICULTY
+from .grid import Grid_To_Scr, Get_Grid_Size, Grid_To_Scr_Rect
 
 class Item:
     def __init__(self, name: str) -> None:

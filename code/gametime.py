@@ -4,7 +4,7 @@
 #
 
 
-from game_types import *
+from .game_types import *
 
 
 class Game_Time:

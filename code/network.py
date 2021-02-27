@@ -6,15 +6,12 @@
 # Sorry, this isn't anything to do with IP: the Network is
 # the steam transport network.
 
-import math , time , sound
+import math, time
 
-import extra
-import map_items
-from primitives import *
-from game_types import *
-from mail import New_Mail
-import game_random
-import intersect
+from . import extra, map_items, sound, game_random, intersect
+from .primitives import *
+from .game_types import *
+from .mail import New_Mail
 
 
 class Network:

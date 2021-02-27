@@ -6,10 +6,9 @@
 # A model for the movement of steam within the system.
 
 
-from primitives import *
-from game_types import *
-import map_items
-import network
+from .primitives import *
+from .game_types import *
+from . import network
 
 
 class Steam_Model:

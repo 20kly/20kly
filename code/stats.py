@@ -7,8 +7,8 @@
 import pygame
 
 
-import resource
-from game_types import *
+from . import resource
+from .game_types import *
 
 __font_objects: Dict[int, pygame.font.Font] = dict()
 

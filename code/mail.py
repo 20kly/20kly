@@ -4,11 +4,11 @@
 #
 
 
-import pygame , time , sys
+import pygame, time, sys
 
 
-import stats
-from game_types import *
+from . import stats
+from .game_types import *
 
 __messages: List[MessageType] = []
 __day = 0

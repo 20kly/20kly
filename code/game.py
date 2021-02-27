@@ -1,29 +1,28 @@
 #
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 #
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame , sys , math , time , pickle
+import pygame, sys, math, time, pickle
 
-import bresenham , intersect , extra , stats , mail , gametime
-import menu , startup , save_menu , save_game , config , resource
-import review , sound , tutor , draw_obj
-import game_random, grid
-from primitives import *
-from game_types import *
-from quiet_season import Quiet_Season
-import alien_invasion
-from quakes import Quake_Season
-from storms import Storm_Season
-from steam_model import Steam_Model
-from network import Network
-from ui import User_Interface
-from mail import New_Mail
-from difficulty import DIFFICULTY
-import unit_test
+from . import extra, stats, mail, gametime
+from . import menu, startup, save_menu, save_game, config, resource
+from . import review, sound, tutor, draw_obj
+from . import game_random, grid, alien_invasion
+from .primitives import *
+from .game_types import *
+from .quiet_season import Quiet_Season
+from .quakes import Quake_Season
+from .storms import Storm_Season
+from .steam_model import Steam_Model
+from .network import Network
+from .ui import User_Interface
+from .mail import New_Mail
+from .difficulty import DIFFICULTY
+from . import unit_test
 
 
 class Game_Data:

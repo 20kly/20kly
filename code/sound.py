@@ -7,8 +7,8 @@
 import pygame
 
 
-from game_types import *
-import resource, config
+from .game_types import *
+from . import resource, config
 
 
 

@@ -11,13 +11,13 @@
 import math , pygame
 
 
-import extra , intersect , sound
-from quiet_season import Quiet_Season
-from primitives import *
-from game_types import *
-import network
-import mail
-from grid import Float_Grid_To_Scr
+from . import extra, intersect, sound
+from .quiet_season import Quiet_Season
+from .primitives import *
+from .game_types import *
+from . import network
+from . import mail
+from .grid import Float_Grid_To_Scr
 
 quake_sound: sound.Persisting_Sound
 

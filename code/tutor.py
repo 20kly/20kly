@@ -7,15 +7,15 @@
 # Solution: tutorial mode.
 # Can it be done?
 
-import pygame , time
+import pygame, time
 
 
-import stats , extra , resource
-import map_items
-import game
-from primitives import *
-from game_types import *
-from difficulty import DIFFICULTY
+from . import stats, extra, resource
+from . import map_items
+from . import game
+from .primitives import *
+from .game_types import *
+from .difficulty import DIFFICULTY
 
 
 __tutor = None

@@ -8,11 +8,11 @@
 # Particle animations are precomputed and put onto colour-keyed surfaces.
 #
 
-import pygame , math , random
+import pygame, math, random
 
-import resource
-from primitives import *
-from game_types import *
+from . import resource
+from .primitives import *
+from .game_types import *
 
 
 MAX_STEAM_SIZE = 20

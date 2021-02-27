@@ -4,7 +4,7 @@
 #
 
 import pygame
-import game_types
+from . import game_types
 
 __grid_size = 0
 __grid_size_1 = 0

@@ -6,12 +6,12 @@
 # Game statistics review.. no RTS game would be complete without one!
 #
 
-import pygame , sys , math , time , pickle
+import pygame, sys, math, time, pickle
 
 
-import extra , resource , stats , menu , game
-from primitives import *
-from game_types import *
+from . import extra, resource, stats, menu, game
+from .primitives import *
+from .game_types import *
 
 class Historical_Record:
     def __init__(self, g: "game.Game_Data") -> None:

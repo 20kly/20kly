@@ -4,17 +4,15 @@
 #
 
 
-import pygame , sys , math , time , webbrowser , urllib.request , os
+import pygame, sys, math, time, webbrowser, urllib.request, os
 import getopt
 
 
-import game , stats , storms , extra , save_menu , resource , menu
-import config , startup , sound , alien_invasion , quakes
-from primitives import *
-from game_types import *
-from game_random import PlaybackEOF
-import primitives
-import sdl
+from . import game, stats, storms, extra, save_menu, resource, menu
+from . import config, startup, sound, alien_invasion, quakes, sdl
+from .primitives import *
+from .game_types import *
+from .game_random import PlaybackEOF
 
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
 DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'

@@ -7,9 +7,9 @@
 import pygame, os, sys
 
 
-from mail import New_Mail
-from primitives import *
-from game_types import *
+from .mail import New_Mail
+from .primitives import *
+from .game_types import *
 
 try:
     SoundType = pygame.mixer.Sound  # pygame.mixer might not be available

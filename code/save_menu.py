@@ -4,9 +4,9 @@
 #
 
 
-import menu, save_game
+from . import menu, save_game
 
-from game_types import *
+from .game_types import *
 
 class Save_Menu(menu.Menu):
     def __init__(self, saving: bool) -> None:

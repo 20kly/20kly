@@ -5,14 +5,14 @@
 
 # Do you believe in the users?
 
-import pygame , random
+import pygame, random
 
 
-import stats , menu , draw_obj , mail , particle , tutor
-from primitives import *
-from game_types import *
-import game_random, network, resource, quiet_season, map_items
-from grid import Grid_To_Scr, Grid_To_Scr_Rect, Scr_To_Grid
+from . import stats, menu, draw_obj, mail, particle, tutor
+from .primitives import *
+from .game_types import *
+from . import game_random, network, resource, quiet_season, map_items
+from .grid import Grid_To_Scr, Grid_To_Scr_Rect, Scr_To_Grid
 
 
 class User_Interface:

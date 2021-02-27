@@ -3,7 +3,7 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 #
 
-from primitives import *
+from .primitives import *
 
 # things that are set by the difficulty mode:
 class Difficulty:

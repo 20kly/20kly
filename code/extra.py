@@ -7,13 +7,13 @@
 # don't merit their own modules.
 
 
-import pygame , sys , time , os
+import pygame, sys, time, os
 
-import intersect , bresenham , resource
-import menu
-from primitives import *
-from game_types import *
-import game_random
+from . import intersect, bresenham, resource
+from . import menu
+from .primitives import *
+from .game_types import *
+from . import game_random
 
 # The function returns (x,y), a point on the line between
 # (x1,y1) and (x2,y2), such that a / b of the line

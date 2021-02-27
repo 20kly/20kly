@@ -10,20 +10,13 @@ import glob
 import os
 
 def main() -> None:
-    restore = os.getcwd()
-    try:
-        os.chdir("code")
-        rc = subprocess.call([sys.executable, "-m", "mypy"] +
-                              sorted(glob.glob("*.py")))
-        if rc != 0:
-            sys.exit(1)
-
-    finally:
-        os.chdir(restore)
+    rc = subprocess.call([sys.executable, "-m", "mypy", "code", "lightyears"])
+    if rc != 0:
+        sys.exit(1)
 
     rc = subprocess.call([sys.executable, "-m", "pytest"] +
-                          sorted(glob.glob("code/*.py")) +
-                          ["tests/regression_test.py"])
+                         sorted(glob.glob("code/*.py")) +
+                         ["tests/regression_test.py"])
     if rc != 0:
         sys.exit(1)
 

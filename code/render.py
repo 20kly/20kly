@@ -6,8 +6,8 @@
 import pygame
 
 
-import stats
-from game_types import *
+from . import stats
+from .game_types import *
 
 # A font renderer that supports the familiar & marker for a hotkey.
 

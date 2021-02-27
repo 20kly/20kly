@@ -9,12 +9,12 @@ import struct
 import bz2
 import math
 
-import map_items
-import steam_model
-import game
-import ui
-from primitives import *
-from game_types import *
+from . import map_items
+from . import steam_model
+from . import game
+from . import ui
+from .primitives import *
+from .game_types import *
 
 READ_HEADER_NUMBER = 20210214
 WRITE_HEADER_NUMBER = 20210214

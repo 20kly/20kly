@@ -6,13 +6,13 @@
 # Simple animation of map objects
 
 
-import pygame , math
+import pygame, math
 
 
-import resource
-from primitives import *
-from game_types import *
-from grid import Get_Grid_Size, Grid_To_Scr
+from . import resource
+from .primitives import *
+from .game_types import *
+from .grid import Get_Grid_Size, Grid_To_Scr
 
 
 class Abstract_Draw_Obj:

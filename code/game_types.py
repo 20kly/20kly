@@ -7,7 +7,7 @@ import pygame
 import typing
 
 from typing import List, Dict, Tuple, Union, Optional
-from primitives import MenuCommand
+from .primitives import MenuCommand
 
 SurfaceType = pygame.surface.Surface
 Colour = Tuple[int, int, int]

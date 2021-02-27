@@ -3,7 +3,7 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 #
 
-from game_types import *
+from .game_types import *
 
 
 # Line drawing algorithm. Produces a list. This is useful for all sorts

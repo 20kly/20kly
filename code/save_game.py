@@ -3,11 +3,11 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 #
 
-import pickle, extra, os
+import pickle, os
 
-from game_types import *
-from primitives import MenuCommand
-import game
+from .game_types import *
+from .primitives import MenuCommand
+from . import game, extra
 
 
 HEADER_SIZE = 100

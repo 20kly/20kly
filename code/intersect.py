@@ -4,7 +4,7 @@
 #
 
 
-from game_types import *
+from .game_types import *
 
 # Line intersection algorithm. Thanks to page 113 of
 # Computer Graphics Principles and Practice (2nd. Ed), Foley et al.
