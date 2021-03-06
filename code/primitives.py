@@ -7,10 +7,6 @@
 import math
 import enum
 
-# Developers's controls:
-DEBUG = False # enables cheats
-DEBUG_UPDATES = False
-DEBUG_GRID = False
 
 
 # Arbitrary constants
@@ -113,4 +109,9 @@ CITY_BOX_SIZE = 10
 CITY_COLOUR = (192,128,0)
 RESOLUTION = (1024, 768)
 CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
+
+# Debian paths
+DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
+DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
+DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
 

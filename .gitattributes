@@ -5,3 +5,5 @@
 lightyears text eol=lf
 .gitattributes text eol=lf
 pytest.ini text eol=lf
+.coveragerc text eol=lf
+lightyears.spec text eol=lf

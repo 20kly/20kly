@@ -3,8 +3,9 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
-import os, pygame
-from . import game_random, game, save_game, resource
+import os, pygame, pickle
+from . import game_random, game, save_game, resource, config, startup, extra
+from . import events, menu, main, mail, map_items, network, grid, quiet_season
 from .ui import User_Interface
 from .primitives import *
 from .game_types import *
@@ -17,21 +18,60 @@ def Setup_For_Unit_Test() -> SurfaceType:
     pygame.font.init()
     return pygame.display.set_mode(RESOLUTION, pygame.SCALED | pygame.RESIZABLE)
 
-def test_game() -> None:
-    test_screen = Setup_For_Unit_Test()
-    demo = game_random.Game_Random()
-    g = game.Game_Data(demo, MenuCommand.INTERMEDIATE)
-    ui = User_Interface(g.net, demo, RESOLUTION)
-    assert ui.net == g.net
-    g.historian_time = 999.0
-    result = save_game.Save(g, MenuCommand.SAVE9, "test save")
-    assert result is None
-    g.historian_time = 123.0
+class Click(events.Event):
+    def __init__(self, pos: SurfacePosition) -> None:
+        events.Event.__init__(self, pos=pos,
+                              t=pygame.MOUSEBUTTONDOWN, button=1)
 
-    g2 = game.Restore(ui, g, MenuCommand.SAVE9)
-    assert g2 != g
-    assert g2.net != g.net                  # network reloaded
-    assert ui.net == g2.net                 # ui is updated correctly
-    assert g2.historian_time == 999.0       # value restored correctly
-    assert g2.net.demo.random() >= -1.0     # check that random numbers can be generated
+class RightClick(events.Event):
+    def __init__(self, pos: SurfacePosition) -> None:
+        events.Event.__init__(self, pos=pos,
+                              t=pygame.MOUSEBUTTONDOWN, button=2)
 
+class Move(events.Event):
+    def __init__(self, pos: SurfacePosition) -> None:
+        events.Event.__init__(self, pos=pos, t=pygame.MOUSEMOTION)
+
+class Push(events.Event):
+    def __init__(self, key: int) -> None:
+        events.Event.__init__(self, key=key, t=pygame.KEYDOWN)
+
+class Other(events.Event):
+    def __init__(self) -> None:
+        events.Event.__init__(self, t=pygame.KEYUP)
+
+class Quit(events.Event):
+    def __init__(self) -> None:
+        events.Event.__init__(self, t=pygame.QUIT)
+
+class NoEvent(events.Event):
+    pass
+
+class Fake_Events(events.Events):
+    def __init__(self, event_list: List[events.Event]) -> None:
+        events.Events.__init__(self)
+        self.event_list = event_list
+        self.index = 0
+        self.is_testing = True
+
+    def real_poll(self) -> None:
+        e = pygame.event.poll()
+        while e.type != pygame.NOEVENT:
+            e = pygame.event.poll()
+
+    def wait(self) -> events.Event:
+        self.real_poll()
+        return self.poll()
+
+    def poll(self) -> events.Event:
+        self.real_poll()
+        assert self.index < len(self.event_list)
+        self.index += 1
+        return self.event_list[self.index - 1]
+
+    def webbrowser_open(self, url: str) -> None:
+        mail.New_Mail("OPEN URL " + url)
+
+    def check_update(self, url: str) -> str:
+        mail.New_Mail("CHECK UPDATE URL " + url)
+        return "9.9"

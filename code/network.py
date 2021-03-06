@@ -51,8 +51,8 @@ class Network:
         self.Add_Finished_Node(cn)
 
         # Pipe links the two
-        self.Add_Pipe(cn,wn)
-        pipe = cn.pipes[ 0 ]
+        pipe = self.Add_Pipe(cn,wn)
+        assert pipe is not None
         pipe.health = pipe.max_health
         pipe.Do_Work()
 
@@ -84,7 +84,7 @@ class Network:
                 if ( pipe.Is_Destroyed() ):
                     continue
 
-                if ( extra.Intersect_Grid_Square(gpos,
+                if ( intersect.Intersect_Grid_Square(gpos,
                             (pipe.n1.pos, pipe.n2.pos)) ):
                     if ( not inhibit_effects ):
                         New_Mail("Can't build there - pipe in the way!")
@@ -107,7 +107,7 @@ class Network:
             self.well_list.append(item)
             self.ground_grid[ gpos ] = item
         else:
-            assert False # unknown type!
+            return False # unknown type!
 
         return True
 
@@ -158,42 +158,46 @@ class Network:
             n.Steam_Think(self)
 
 
-    def Add_Pipe(self, n1: "map_items.Node", n2: "map_items.Node") -> bool:
+    def Add_Pipe(self, n1: "map_items.Node", n2: "map_items.Node") -> "Optional[map_items.Pipe]":
 
         if ( n1.Is_Destroyed() or n2.Is_Destroyed() ):
             sound.FX("error")
             New_Mail("Nodes are destroyed.")
-            return False
+            return None
 
         # What's in the pipe's path?
         path = extra.More_Accurate_Line(n1.pos, n2.pos)
 
-        other_pipes = set([])
-        other_items = set([])
+        other_pipes = set()
+        other_items = set()
         for gpos in path:
-            if ( self.pipe_grid.get(gpos, None) ):
-                other_pipes |= set(self.pipe_grid[ gpos ])
-            elif ( self.ground_grid.get(gpos, None) ):
-                other_items |= set([self.ground_grid[ gpos ]])
-        other_items -= set([n1,n2])
-        if ( len(other_items) != 0 ):
-            sound.FX("error")
-            New_Mail("Pipe collides with other items.")
-            print(repr(other_items))
-            return False
+            pg = self.pipe_grid.get(gpos, None)
+            if pg is not None:
+                other_pipes |= set(pg)
+            n = self.ground_grid.get(gpos, None)
+            if n is not None:
+                other_items.add(n)
+
+        other_items.discard(n1)
+        other_items.discard(n2)
+        for n in other_items:
+            if not n.Is_Destroyed():
+                sound.FX("error")
+                New_Mail("Pipe collides with other items.")
+                return None
 
         for p in other_pipes:
-            if ( not p.Is_Destroyed () ):
+            if not p.Is_Destroyed ():
                 if ((( p.n1 == n1 ) and ( p.n2 == n2 ))
                 or (( p.n1 == n2 ) and ( p.n2 == n1 ))):
                     sound.FX("error")
                     New_Mail("There is already a pipe there.")
-                    return False
+                    return None
                 if ( intersect.Intersect((p.n1.pos,p.n2.pos),
                             (n1.pos,n2.pos)) is not None ):
                     sound.FX("error")
                     New_Mail("That crosses an existing pipe.")
-                    return False
+                    return None
 
         sound.FX("bamboo1")
         pipe = map_items.Pipe(n1, n2, self)
@@ -204,7 +208,7 @@ class Network:
                 self.pipe_grid[ gpos ] = [pipe]
             else:
                 self.pipe_grid[ gpos ].append(pipe)
-        return True
+        return pipe
 
     def Remove_Destroyed_Pipes(self, gpos: GridPosition) -> None:
         if ( not self.pipe_grid.get(gpos, None) ):
@@ -236,26 +240,21 @@ class Network:
             l.append(out)
             return out
 
-    def Pipe_Possible(self, arg1: GridPosition, arg2: GridPosition) -> bool:
-        # no restrictions
-        return True
-
     def Destroy(self, node: "map_items.Item", by="") -> None:
         if ( isinstance(node, map_items.Pipe) ):
             self.__Destroy_Pipe(node)
             return
 
         if (( node == self.hub )
-        or ( not isinstance(node, map_items.Building) )):
+        or ( not isinstance(node, map_items.Node) )):
             return # indestructible
 
         sound.FX("destroy")
 
-        if ( isinstance(node, map_items.Node) ):
-            # work on a copy, as __Destroy_Pipe will change the list.
-            pipe_list = [ pipe for pipe in node.pipes ]
-            for pipe in pipe_list:
-                self.__Destroy_Pipe(pipe)
+        # work on a copy, as __Destroy_Pipe will change the list.
+        pipe_list = [ pipe for pipe in node.pipes ]
+        for pipe in pipe_list:
+            self.__Destroy_Pipe(pipe)
 
         gpos = node.pos
         if ( not self.ground_grid.get( gpos, None ) ):
@@ -265,7 +264,7 @@ class Network:
 
         self.dirty = True
 
-        if ( by is not None ):
+        if ( by != "" ):
             New_Mail(node.name_type + " destroyed by " + by + ".")
 
         node.Prepare_To_Die()
@@ -283,16 +282,6 @@ class Network:
         self.__List_Destroy(self.pipe_list, pipe)
         self.__List_Destroy(pipe.n1.pipes, pipe)
         self.__List_Destroy(pipe.n2.pipes, pipe)
-
-
-        #path = bresenham.Line(pipe.n1.pos, pipe.n2.pos)
-        #for gpos in path:
-        #    if ( self.pipe_grid.has_key(gpos) ):
-        #        l = self.pipe_grid[ gpos ]
-        #        self.__List_Destroy(l, pipe)
-        #        if ( len(l) == 0 ):
-        #            del self.pipe_grid[ gpos ]
-
 
     def __List_Destroy(self, lst: List[typing.Any], itm: typing.Any) -> None:
         l = len(lst)
@@ -316,11 +305,15 @@ class Network:
         w = map_items.Well((x,y))
         self.Add_Grid_Item(w, inhibit_effects or teaching)
 
-
-    def Make_Ready_For_Save(self) -> None:
+    def Pre_Save(self) -> None:
         for p in self.pipe_list:
-            p.Make_Ready_For_Save()
+            p.Pre_Save()
+        self.demo.Pre_Save()
 
+    def Post_Load(self) -> None:
+        self.demo.Post_Load()
 
-
+    def Lose(self) -> None:
+        for n in self.node_list:
+            n.Lose()
 

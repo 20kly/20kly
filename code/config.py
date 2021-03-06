@@ -12,7 +12,7 @@ class Config:
     def __init__(self) -> None:
         self.version = startup.Get_Game_Version()
         self.mute = True
-        self.seen_before = False
+        self.test = 0
 
 cfg = Config()
 
@@ -23,8 +23,8 @@ def Initialise(delete_file: bool) -> None:
 
     version = startup.Get_Game_Version()
     home = extra.Get_Home()
-    if ( home is None ):
-        FILENAME = "config.dat"
+    if ( home is None ):            # NO-COV
+        FILENAME = "config.dat"     # NO-COV
     else:
         FILENAME = os.path.join(home, ".lightyears.cfg")
 

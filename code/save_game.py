@@ -21,7 +21,7 @@ def Make_Save_Name(slot: MenuCommand) -> str:
     name = "save" + str(Get_Number(slot)) + ".dat"
     home = extra.Get_Home()
     if ( home is None ):
-        return name
+        return name  # NO-COV
     else:
         return os.path.join(home, ".lightyears." + name)
 
@@ -37,29 +37,31 @@ def Load(g: "game.Game_Data", slot: MenuCommand) -> "Tuple[Optional[game.Game_Da
         print(y)
         return (None, y)
 
-    if ( g2.version != g.version ):
+    if ( g2.version != g.version ):  # NO-COV
         return (None, "Restore error: wrong version")
 
-    g2.net.demo.Post_Restore()
+    g2.Post_Load()
     return (g2, None)
 
 def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[str]:
     label = label_text.encode("utf-8")
     l = len(label)
     if ( l > HEADER_SIZE ):
-        label = label[ 0:HEADER_SIZE ]
+        label = label[ 0:HEADER_SIZE ]  # NO-COV
     else:
         label += ( b" " * ( HEADER_SIZE - l ))
 
-    g.net.demo.Prepare_To_Save()
+    g.Pre_Save()
     name = Make_Save_Name(slot)
     try:
         f = open(name, "wb")
         f.write(label)
         pickle.dump(g,f)
         f.close()
-    except Exception as x:
+    except Exception as x:  # NO-COV
         return "Error saving file: " + repr(x) + str(x)
+    finally:
+        g.Post_Load()
 
     return None
 
@@ -68,7 +70,7 @@ def Get_Number(slot: MenuCommand) -> int:
     if MenuCommand.SAVE0.value <= i <= MenuCommand.SAVE9.value:
         return i - MenuCommand.SAVE0.value
     else:
-        return -1
+        return -1  # NO-COV
 
 def Get_Info(slot: MenuCommand) -> Optional[str]:
     name = Make_Save_Name(slot)
@@ -81,7 +83,7 @@ def Get_Info(slot: MenuCommand) -> Optional[str]:
         # File not found, probably.. who cares.
         return None
 
-    if ( len(label) == 0 ):
+    if ( len(label) == 0 ):  # NO-COV
         return None
     return label
 

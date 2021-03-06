@@ -9,7 +9,7 @@
 import pygame, sys, math, time, pickle
 
 
-from . import extra, resource, stats, menu, game
+from . import extra, resource, stats, menu, game, events
 from .primitives import *
 from .game_types import *
 
@@ -33,7 +33,8 @@ def Analyse_Network(game_object: "game.Game_Data") -> Historical_Record:
 # Called at the end of the game, to display statistics:
 def Review(screen: SurfaceType, width_height: SurfacePosition,
         game_object: "game.Game_Data",
-        historian: List[Historical_Record]) -> None:
+        historian: List[Historical_Record],
+        event: events.Events) -> None:
 
     (width, height) = width_height
     g = game_object
@@ -70,7 +71,7 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
     lev[ MenuCommand.PEACEFUL ] = "Peaceful"
     level = lev.get(g.challenge, "??")
 
-    score = float(g.net.hub.total_steam) / float(g.game_time.Get_Day())
+    score = float(g.net.hub.total_steam) / max(1.0, float(g.game_time.Get_Day()))
     if ( g.win ):
         score *= 8
 
@@ -123,39 +124,30 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
         graph_subwin.height -= text_margin
         graph_subwin.top += text_margin
 
-        if ( len(historian) == 0 ):
-            print("Historian has no data - no graph available")
-            return
+        assert len(historian) != 0
 
-
-        max_gt = max_gy = 0
+        max_gt = max_gy = 1
         values = []
         for hr in historian:
             try:
                 gy = getattr(hr, attribute)
-            except AttributeError:
+            except AttributeError:  # NO-COV
                 print("Attribute",attribute,"not present")
                 return
 
-            if ( gy < 0 ):
+            if ( gy < 0 ):  # NO-COV
                 gy = 0 # This should not happen
             gt = hr.day
 
             values.append((gt, gy))
 
-            if ( gt > max_gt ):
-                max_gt = gt
-            if ( gy > max_gy ):
-                max_gy = gy
-
-        if (( max_gt <= 0 ) or ( max_gy <= 0 )):
-            print("Graph not available (/0)")
-            return
+            max_gt = max(int(math.ceil(gt)), max_gt)
+            max_gy = max(int(math.ceil(gy)), max_gy)
 
         def Calc_Step_Max(maximum: float,
                           number_of_steps: float) -> Tuple[int, int]:
             step = int((float(maximum) / float(number_of_steps)) + 1)
-            if ( step < 1 ):
+            if ( step < 1 ):  # NO-COV
                 step = 1
 
             return (step, int( step * number_of_steps ))
@@ -209,15 +201,15 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
 
     proceed = menu.Menu(
                 [(None, None, []),
-                (MenuCommand.PREV, "Previous Graph", []),
-                (MenuCommand.NEXT, "Next Graph", []),
+                (MenuCommand.PREV, "Previous Graph", [pygame.K_LEFT]),
+                (MenuCommand.NEXT, "Next Graph", [pygame.K_RIGHT]),
                 (None, None, []),
                 (MenuCommand.MENU, "Continue", [ pygame.K_ESCAPE ])])
 
     quit = False
     while ( not quit ):
-        (quit, cmd) = extra.Simple_Menu_Loop(screen,
-                    proceed, (( width * 3 ) // 4, height // 2 ))
+        (quit, cmd) = menu.Simple_Menu_Loop(screen,
+                    proceed, (( width * 3 ) // 4, height // 2 ), event)
 
         if ( cmd == MenuCommand.MENU ):
             quit = True
@@ -225,7 +217,7 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
             graph_num = (( graph_num + len(available_graphs) - 1 )
                                 % len(available_graphs))
             Regraph(available_graphs[ graph_num ])
-        elif ( cmd == MenuCommand.NEXT ):
+        else:
             graph_num = ( graph_num + 1 ) % len(available_graphs)
             Regraph(available_graphs[ graph_num ])
 

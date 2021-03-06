@@ -22,26 +22,22 @@ class Item:
     def __init__(self, name: str) -> None:
         self.pos: Union[GridPosition, FloatGridPosition]
         self.name_type = name
-        self.draw_obj: draw_obj.Draw_Obj
         self.emits_steam = False
         self.tutor_special = False
 
     def Draw(self, output: SurfaceType) -> None:
-        self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), (0,0))
-
-    def Draw_Mini(self, output: SurfaceType, soffset: SurfacePosition) -> None:
-        self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), soffset)
-
-    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         return None
 
-    def Draw_Popup(self, output: SurfaceType) -> Optional[RectType]:
+    def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]: # NO-COV
+        return None
+
+    def Draw_Popup(self, output: SurfaceType) -> Optional[RectType]: # NO-COV
         return None
 
     def Get_Information(self) -> List[StatTuple]:
         return [ ((255,255,0), 20, self.name_type) ]
 
-    def Prepare_To_Die(self) -> None:
+    def Prepare_To_Die(self) -> None: # NO-COV
         pass
 
     def Take_Damage(self, dmg_level=1) -> bool:
@@ -51,7 +47,7 @@ class Item:
     def Is_Destroyed(self) -> bool:
         return False
 
-    def Sound_Effect(self) -> None:
+    def Sound_Effect(self) -> None: # NO-COV
         pass
 
     def Manhattan_Distance_From(self, other: "Item") -> float:
@@ -144,12 +140,6 @@ class Building(Item):
 
     def Get_Health_Meter(self) -> BarMeterStatTuple:
         return (self.health, (0,255,0), self.max_health, (255,0,0))
-
-    def Draw_Popup(self, output) -> Optional[RectType]:
-        (x,y) = Grid_To_Scr(self.pos)
-        x -= 16
-        y -= 12
-        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
 
     def Get_Tech_Level(self) -> str:
         return ("Tech Level %d" % self.tech_level)
@@ -271,15 +261,26 @@ class Node(Building):
     def Get_Pressure(self) -> float:
         return self.steam.Get_Pressure()
 
+    def Draw(self, output: SurfaceType) -> None:
+        self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), (0,0))
+
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         ra = ( Get_Grid_Size() // 2 ) + 2
         pygame.draw.circle(output, highlight,
             Grid_To_Scr(self.pos), ra , 2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
 
+    def Draw_Popup(self, output) -> Optional[RectType]:
+        (x,y) = Grid_To_Scr(self.pos)
+        x -= 16
+        y -= 12
+        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
+
     def Sound_Effect(self) -> None:
         sound.FX("bamboo")
 
+    def Lose(self) -> None:
+        self.steam.Lose()
 
 class City_Node(Node):
     def __init__(self, xy: GridPosition, name="City") -> None:
@@ -302,16 +303,12 @@ class City_Node(Node):
         # This isn't suitable for cities: you lose if your
         # city is out of action. We use a special system.
         if ( self.city_upgrade == 0 ):
-            if ( self.tech_level < DIFFICULTY.CITY_MAX_TECH_LEVEL ):
-                sound.FX("mechanical_1")
+            sound.FX("mechanical_1")
 
-                self.city_upgrade = self.city_upgrade_start = (
-                    ( CITY_UPGRADE_WORK + ( self.tech_level *
-                    DIFFICULTY.CITY_UPGRADE_WORK_PER_LEVEL )) * HEALTH_UNIT )
-                self.avail_work_units += 1 # Extra steam demand
-            else:
-                New_Mail("City is fully upgraded.")
-                sound.FX("error")
+            self.city_upgrade = self.city_upgrade_start = (
+                ( CITY_UPGRADE_WORK + ( self.tech_level *
+                DIFFICULTY.CITY_UPGRADE_WORK_PER_LEVEL )) * HEALTH_UNIT )
+            self.avail_work_units += 1 # Extra steam demand
         else:
             New_Mail("City is already being upgraded.")
             sound.FX("error")
@@ -465,10 +462,9 @@ class Pipe(Building):
     def Flowing_From(self, node: Node, current: float) -> None:
         if ( node == self.n1 ):
             self.current_n1_to_n2 = current
-        elif ( node == self.n2 ):
-            self.current_n1_to_n2 = - current
         else:
-            assert False
+            assert node == self.n2
+            self.current_n1_to_n2 = - current
 
     def Take_Damage(self, dmg_level=1) -> bool:
         # Pipes have health proportional to their length.
@@ -476,35 +472,6 @@ class Pipe(Building):
         # pipes is multiplied by their length. Pipes are
         # a very soft target.
         return Building.Take_Damage(self, dmg_level * (self.length + 1.0))
-
-    def Draw_Mini(self, output: SurfaceType, xy: GridPosition) -> None:
-        (x,y) = xy
-        (x1,y1) = Grid_To_Scr(self.n1.pos)
-        (x2,y2) = Grid_To_Scr(self.n2.pos)
-        x1 -= x ; x2 -= x
-        y1 -= y ; y2 -= y
-
-        if ( self.Needs_Work() ):
-            c = (255,0,0)
-        else:
-            c = self.Get_Diagram_Colour()
-
-        pygame.draw.line(output, c, (x1,y1), (x2,y2), 2)
-
-        if ( not self.Needs_Work() ):
-            mx = ( x1 + x2 ) // 2
-            my = ( y1 + y2 ) // 2
-            if ( output.get_rect().collidepoint((mx,my)) ):
-                info_text = "%1.1f U" % abs(self.current_n1_to_n2)
-                info_surf = stats.Get_Font(12).render(info_text, True, c)
-                r2 = info_surf.get_rect()
-                r2.center = (mx,my)
-                r = pygame.Rect(r2)
-                r.width += 4
-                r.center = (mx,my)
-                pygame.draw.rect(output, (0, 40, 0), r)
-                output.blit(info_surf, r2.topleft)
-
 
     def Draw(self, output: SurfaceType) -> None:
         (x1,y1) = Grid_To_Scr(self.n1.pos)
@@ -560,17 +527,8 @@ class Pipe(Building):
         else:
             self.dot_drawing_offset = self.dot_drawing_offset % self.SFACTOR
 
-    def Make_Ready_For_Save(self) -> None:
+    def Pre_Save(self) -> None:
         self.dot_positions = []
-
-    def __Draw_Original(self, output: SurfaceType) -> None:
-        (x1,y1) = Grid_To_Scr(self.n1.pos)
-        (x2,y2) = Grid_To_Scr(self.n2.pos)
-        if ( self.Needs_Work() ):
-            c = (255,0,0)
-        else:
-            c = self.Get_Diagram_Colour()
-        pygame.draw.line(output, c, (x1,y1), (x2,y2), 2)
 
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         p1 = Grid_To_Scr(self.n1.pos)

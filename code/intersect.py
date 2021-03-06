@@ -32,8 +32,7 @@ def Intersect(arg1: Tuple[FloatGridPosition, FloatGridPosition],
         return None # doesn't intersect
 
     if ( xa == 0 ):
-        if ( ya == 0 ):
-            return None # you've confused a line with a point.
+        # xa and ya can't both be zero - if they are, a == 0 too
         ta = ( yb1 + ( yb * tb ) - ya1 ) / float(ya)
     else:
         ta = ( xb1 + ( xb * tb ) - xa1 ) / float(xa)
@@ -46,41 +45,14 @@ def Intersect(arg1: Tuple[FloatGridPosition, FloatGridPosition],
     return (x,y)
 
 
+# Check line (a,b) against given grid pos
+def Intersect_Grid_Square(gpos: GridPosition, ab: Tuple[GridPosition, GridPosition]) -> bool:
+    (a,b) = ab
+    (x1,y1) = gpos
+    x = float(x1) - 0.5
+    y = float(y1) - 0.5
+    for (c,d) in [ ((x,y), (x+1,y+1)), ((x+1,y),(x,y+1)) ]:
+        if ( Intersect((a,b), (c,d)) is not None ):
+            return True
 
-def test_Intersect() -> None:
-    import random, math
-
-    r = random.Random(1)
-
-    def BT(xp, line1, line2):
-        assert Intersect(line1, line2) == xp
-        assert Intersect(line2, line1) == xp
-
-    def Rnd() -> None:
-        def RP():
-            return (r.random(), r.random())
-
-        (x,y) = RP() # choose intersection point.
-        (xa1,ya1) = RP() # line 1 source
-        (xb1,yb1) = RP() # line 2 source
-
-        aang = math.atan2( y - ya1 , x - xa1 ) # line 1 angle
-        bang = math.atan2( y - yb1 , x - xb1 ) # line 2 angle
-
-        xa2 = xa1 + ( math.cos(aang) * 10.0 )
-        xb2 = xb1 + ( math.cos(bang) * 10.0 )
-        ya2 = ya1 + ( math.sin(aang) * 10.0 )
-        yb2 = yb1 + ( math.sin(bang) * 10.0 )
-
-        z = Intersect(((xa1,ya1),(xa2,ya2)),((xb1,yb1),(xb2,yb2)))
-        assert z is not None
-        (xi, yi) = z
-        assert math.hypot(xi - x, yi - y) < 0.0001
-
-    BT((3,2),((3,1),(3,5)),((2,2),(4,2)))   # cross
-    BT(None,((3,1),(3,5)),((1,1),(1,5)))    # parallel lines
-    BT((2,2),((1,1),(3,3)),((1,3),(3,1)))   # X
-    BT(None,((1,1),(3,3)),((2,2),(4,4)))    # parallel lines, on top of each other
-
-    for i in range(10000):
-        Rnd()
+    return False

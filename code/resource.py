@@ -13,7 +13,7 @@ from .game_types import *
 
 try:
     SoundType = pygame.mixer.Sound  # pygame.mixer might not be available
-except Exception:
+except Exception:       # NO-COV
     pass
 
 __img_cache: Dict[str, SurfaceType] = dict()
@@ -59,7 +59,7 @@ def Load_Image(name: str) -> SurfaceType:
     fname = Path(name)
     try:
         img = pygame.image.load(fname)
-    except Exception as r:
+    except Exception as r:  # NO-COV
         s = "WARNING: Unable to load image '" + fname + "': " + str(r)
         print("")
         print(s)
@@ -72,7 +72,6 @@ def Load_Image(name: str) -> SurfaceType:
     return i
 
 
-DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
 def Load_Font(size: int) -> pygame.font.Font:
     # ----------------------------------------------------------
     # This function was modified by Siegfried Gevatter, the
@@ -84,7 +83,7 @@ def Load_Font(size: int) -> pygame.font.Font:
     # because with this last one the size of the text changed unexpectedly
     # ----------------------------------------------------------
 
-    if os.path.isfile(DEB_FONT):
+    if os.path.isfile(DEB_FONT):  # NO-COV
         return pygame.font.Font(DEB_FONT, size)
 
     return pygame.font.Font(Path("Vera.ttf"), size)
@@ -95,16 +94,16 @@ def Load_Sound(name: str) -> "Optional[SoundType]":
     if ( __snd_disabled ):
         return None
 
-    if ( __snd_cache.get(name, None) ):
-        return __snd_cache[ name ]
+    f: "Optional[SoundType]" = __snd_cache.get(name, None)
+    if f is not None:  # NO-COV
+        return f
 
     #print "Caching new sound:",name
     fname = AUDIO_TRANS_TBL.get(name, name)
     fname = Path(fname + ".ogg", True)
-    f: "Optional[SoundType]" = None
     try:
         f = pygame.mixer.Sound(fname)
-    except Exception as x:
+    except Exception as x:  # NO-COV
         print("")
         print("WARNING: Error loading sound effect " + fname)
         print("Real name: " + name)
@@ -120,9 +119,3 @@ def Load_Sound(name: str) -> "Optional[SoundType]":
 def No_Sound() -> None:
     global __snd_disabled
     __snd_disabled = True
-
-def Has_Sound() -> bool:
-    global __snd_disabled
-    return not __snd_disabled
-
-

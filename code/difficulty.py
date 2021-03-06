@@ -27,17 +27,14 @@ class Difficulty:
             self.BASIC_STEAM_PRODUCTION = 6
             self.STEAM_PRODUCTION_PER_LEVEL = 4
 
-        elif ( level == MenuCommand.EXPERT ):
+        else:
+            assert level == MenuCommand.EXPERT
             self.DAMAGE_FACTOR = 1.7
             self.CITY_UPGRADE_WORK_PER_LEVEL = 4
             self.GRACE_TIME = 5
             self.CITY_MAX_TECH_LEVEL = 15
             self.BASIC_STEAM_PRODUCTION = 4
             self.STEAM_PRODUCTION_PER_LEVEL = 3
-
-        else:
-            print('Invalid level',level)
-            assert False
 
 DIFFICULTY = Difficulty()
 

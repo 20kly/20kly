@@ -20,8 +20,8 @@ READ_HEADER_NUMBER = 20210214
 WRITE_HEADER_NUMBER = 20210214
 
 class Game_Random:
-    def __init__(self) -> None:
-        self.rng: Optional[random.Random] = random.Random()
+    def __init__(self, seed: Optional[int] = None) -> None:
+        self.rng: Optional[random.Random] = random.Random(seed)
         self.record: Optional[bz2.BZ2File] = None
         self.play: Optional[typing.IO[bytes]] = None
 
@@ -31,7 +31,7 @@ class Game_Random:
         if self.play:
             (x, ) = self.read_specific("RANDOM", "<d")
 
-        if self.record:
+        if self.record: # NO-COV
             self.write_specific("RANDOM", "<d", x)
 
         return x
@@ -81,19 +81,18 @@ class Game_Random:
         if not self.play:
             return
 
-        while True:
-            (name, payload) = self.peek_any()
-            if name.startswith("ACTION_"):
-                if self.record:
-                    self.read_and_write(name,
-                                "<" + str(len(payload)) + "s", payload)
-                else:
-                    self.read_any()
-                name = name[7:]
-                object_data = struct.unpack("<" + str(len(payload)) + "B", payload)
-                ui.Playback_Action(name, *object_data)
+        (name, payload) = self.peek_any()
+        while name.startswith("ACTION_"):
+            if self.record: # NO-COV
+                self.read_and_write(name,
+                            "<" + str(len(payload)) + "s", payload)
             else:
-                break
+                self.read_any()
+
+            name = name[7:]
+            object_data = struct.unpack("<" + str(len(payload)) + "B", payload)
+            ui.Playback_Action(name, *object_data)
+            (name, payload) = self.peek_any()
 
     def timestamp(self, g: "game.Game_Data") -> None:
         supply = g.net.hub.Get_Steam_Supply()
@@ -118,7 +117,7 @@ class Game_Random:
             g.net.Remove_Destroyed_Pipes(pos)
             try:
                 self.read_and_write("G", "<BBBB", x2, y2, len(pipes), node_code)
-            except PlaybackError as e:
+            except PlaybackError as e: # NO-COV
                 bad.append(str(e))
 
             for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
@@ -126,23 +125,24 @@ class Game_Random:
                 (x3, y3) = pipe.n2.pos
                 try:
                     self.read_and_write("P", "<BBBB", x1, y1, x3, y3)
-                except PlaybackError as e:
+                except PlaybackError as e: # NO-COV
                     bad.append(str(e))
             if 1 <= node_code <= 2:
                 assert isinstance(node, map_items.Node)
                 try:
                     self.read_and_write("N", "<id",
                                         node.health, node.steam.charge)
-                except PlaybackError as e:
+                except PlaybackError as e: # NO-COV
                     bad.append(str(e))
 
-            if len(bad):
+            if len(bad):    # NO-COV
                 for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
-                    bad.append("\nexpected pipe: " + repr((pipe.n1.pos, pipe.n2.pos, pipe.destroyed, pipe.health)) + "\n")
-
+                    bad.append("\nexpected pipe: " +
+                            repr((pipe.n1.pos, pipe.n2.pos,
+                                pipe.destroyed, pipe.health)) + "\n")
                 raise PlaybackError("".join(bad))
 
-    def Action(self, name, *objects) -> None:
+    def Action(self, name, *objects) -> None:       # NO-COV
         object_data = []
         for obj in objects:
             if isinstance(obj, map_items.Pipe):
@@ -172,12 +172,12 @@ class Game_Random:
             (neighbour, resist) = neighbour_list[i]
             self.read_and_write("n", "<dd", resist, currents[i])
 
-    def Prepare_To_Save(self) -> None:
+    def Pre_Save(self) -> None:
         self.record = None
         self.play = None
         self.rng = None
 
-    def Post_Restore(self) -> None:
+    def Post_Load(self) -> None:
         self.rng = random.Random()
 
     def hypot(self, dy, dx):
@@ -197,7 +197,7 @@ class Game_Random:
         if self.play:
             loc = self.play.tell()
             readback = self.read_specific(name, fmt)
-            if readback != data:
+            if readback != data:        # NO-COV
                 raise PlaybackError("When reading packet at 0x%x, name '%s' matched, "
                                     "but data did not:\n"
                                     "expected data %s\n"
@@ -228,13 +228,13 @@ class Game_Random:
         header = self.play.read(2)
         if len(header) == 0:
             raise PlaybackEOF()
-        if len(header) != 2:
+        if len(header) != 2: # NO-COV
             raise PlaybackError("When reading packet header at 0x%x - unexpected EOF" % loc)
 
         (len_name, len_payload) = struct.unpack("<BB", header)
         name = self.play.read(len_name).decode("utf-8")
         payload = self.play.read(len_payload)
-        if len(payload) != len_payload:
+        if len(payload) != len_payload: # NO-COV
             raise PlaybackError("When reading packet payload at 0x%x - unexpected EOF" % loc)
 
         return (name, payload)
@@ -243,14 +243,14 @@ class Game_Random:
         loc = self.play.tell()
         (read_name, read_payload) = self.read_any()
 
-        if read_name != name:
+        if read_name != name: # NO-COV
             raise PlaybackError("When reading packet at 0x%x, name did not match:\n"
                                 "expected name '%s'\n"
                                 "actually read '%s'\n" % (loc, name, read_name))
 
         try:
             return struct.unpack(fmt, read_payload)
-        except Exception:
+        except Exception: # NO-COV
             raise PlaybackError("When reading packet at 0x%x, name '%s' matched, but "
                                 "payload was not decoded" % (loc, name))
 

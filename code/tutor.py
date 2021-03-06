@@ -248,7 +248,7 @@ def Notify_Select(item: Optional[map_items.Item]) -> None:
     elif ( isinstance(item, map_items.Pipe) ):
         Pipe_Selected()
         Pipe_Selected_2()
-    elif ( item is None ):
+    else:
         Nothing_Selected()
 
 def Notify_Add_Pipe() -> None:
@@ -303,9 +303,9 @@ def Message(previous_msg_name: Optional[str], this_msg_name: str,
             title: str, text: str, sf: bool) -> None:
     global __tutor
     t = __tutor
-    if ( t is not None ):
-        t.Add_Message((previous_msg_name, this_msg_name,
-                title, text, sf))
+    assert ( t is not None )
+    t.Add_Message((previous_msg_name, this_msg_name,
+            title, text, sf))
 
 def Draw(screen: SurfaceType, g: "game.Game_Data") -> None:
     global __tutor
@@ -320,9 +320,6 @@ def Permit_Season_Change() -> bool:
         return t.Permit_Season_Change()
     else:
         return True
-
-def Frozen() -> bool:
-    return False
 
 def Active() -> bool:
     global __tutor
@@ -362,7 +359,7 @@ class Tutor_Memory:
         return self.permit_season_change
 
     def Draw(self, screen: SurfaceType, g: "game.Game_Data") -> None:
-        if ( self.current_msg_popup and ( self.current_msg_surf is not None )):
+        if ( self.current_msg_popup and ( self.current_msg_surf is not None )): # NO-COV
             r = self.current_msg_surf.get_rect()
             r.top = r.left = 30
             screen.blit(self.current_msg_surf, r)

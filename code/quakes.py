@@ -126,10 +126,9 @@ class Quake_Season(Quiet_Season):
             for (fx, fy) in self.fault_lines:
                 distance = min([abs(fx - nx), abs(fy - ny), distance])
 
-            dmg = (( max_dist - distance ) * self.damage )
-            if ( dmg > 0 ):
-                if ( node.Take_Damage(dmg) ):
-                    self.net.Destroy(node, "quakes")
+            dmg = max(0, (( max_dist - distance ) * self.damage ))
+            if ( node.Take_Damage(dmg) ):
+                self.net.Destroy(node, "quakes")
 
         if ( self.damage < 2.0 ):
             # Some Wells are created.

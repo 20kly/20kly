@@ -74,12 +74,20 @@ if __name__ == "__main__":
         LIGHTYEARS_DIR = os.path.abspath(LIGHTYEARS_DIR)
 
     data_dir = os.path.join(LIGHTYEARS_DIR, 'data')
+    code_dir = os.path.join(LIGHTYEARS_DIR, 'code')
 
     # Go
-    try:
-        from code import Main
-        assert os.path.isdir(data_dir)
-    except Exception:
+    if (os.path.isdir(data_dir)
+    and os.path.isdir(code_dir)
+    and os.path.isfile(os.path.join(code_dir, "startup.py"))
+    and os.path.isfile(os.path.join(code_dir, "main.py"))
+    and os.path.isfile(os.path.join(data_dir, "bolt.png"))
+    and os.path.isfile(os.path.join(data_dir, "well.png"))):
+        from code import Main, Events
+        Check_Version()
+        Main(data_dir=data_dir, args=sys.argv[1:],
+             event=Events())
+    else:
         sys.stderr.write("Unable to find LightYears code & data in:")
         for p in sys.path:
             sys.stderr.write('  ')
@@ -88,7 +96,5 @@ if __name__ == "__main__":
         sys.stderr.write("\n")
         sys.exit(1)
 
-    Check_Version()
-    Main(data_dir)
     
 

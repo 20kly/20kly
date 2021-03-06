@@ -102,12 +102,6 @@ class User_Interface:
                 self.Add_Steam_Effect(output, w.pos)
 
         else:
-            if ( DEBUG_UPDATES ):
-                x = output.get_rect().width
-                for y in range(0,output.get_rect().height,2):
-                    pygame.draw.line(output, (0,0,0),
-                        (0,y), (x,y))
-
             for u in self.update_area_list:
                 output.blit(self.background, u.topleft, u)
 
@@ -154,9 +148,6 @@ class User_Interface:
                 ep = Grid_To_Scr(gpos)
                 colour = (80,80,50)
 
-                if ( not self.net.Pipe_Possible(self.selection.pos, gpos) ):
-                    colour = (100,0,0)
-
                 r = pygame.Rect(sp,(2,2)).union(pygame.Rect(ep,(2,2)))
                 self.Update_Area(r)
 
@@ -172,21 +163,6 @@ class User_Interface:
             self.blink = 0x80 | ( 0xff & ( self.blink + 0x10 ))
             self.steam_effect_frame = (
                 self.steam_effect_frame + 1 ) % len(self.steam_effect)
-
-        if ( DEBUG_GRID ):
-            self.Debug_Grid(output)
-
-    def Draw_Selection(self, output: SurfaceType) -> None:
-        output.fill((20,0,0))
-        if ( self.selection is not None ):
-            r = output.get_rect()
-            r.center = Grid_To_Scr(self.selection.pos)
-
-            for p in self.net.pipe_list:
-                p.Draw_Mini(output, r.topleft)
-
-            for n in self.net.node_list:
-                n.Draw_Mini(output, r.topleft)
 
     def Draw_Stats(self, output: SurfaceType, default_stats: List[StatTuple]) -> None:
         if ( self.selection is None ):
@@ -270,30 +246,20 @@ class User_Interface:
         and ( self.selection.Is_Destroyed() )):
             self.selection = None
 
-        if ( DEBUG ):
-            print('Selection:',self.selection)
-            for (i,n) in enumerate(self.net.node_list):
-                if ( n == self.selection ):
-                    print('Found: node',i)
-            for (i,p) in enumerate(self.net.pipe_list):
-                if ( p == self.selection ):
-                    print('Found: pipe',i)
-            print('End')
-
-
-        if ( not self.net.ground_grid.get(gpos, None) ):
+        here = self.net.ground_grid.get(gpos, None)
+        if here is None:
+            # empty grid square (possibly containing pipes)
             self.selection = self.net.Get_Pipe(gpos)
 
-            # empty (may contain pipes)
             if ( self.mode == MenuCommand.BUILD_NODE ):
                 # create new node!
                 n = map_items.Node(gpos)
                 n.Sound_Effect()
                 self.selection = None
                 self.demo.Action("Build_Node", n)
-                if ( self.net.Add_Grid_Item(n) ):
-                    self.selection = n
-                    tutor.Notify_Add_Node(n)
+                self.net.Add_Grid_Item(n)
+                self.selection = n
+                tutor.Notify_Add_Node(n)
 
             elif ( self.mode == MenuCommand.DESTROY ):
                 # I presume you are referring to a pipe?
@@ -314,10 +280,10 @@ class User_Interface:
             elif ( self.selection is not None ):
                 self.selection.Sound_Effect()
 
-        elif ( isinstance(self.net.ground_grid[ gpos ], map_items.Node)):
-            # Contains node
+        elif isinstance(here, map_items.Node):
+            # grid square contains a node
 
-            n = typing.cast(map_items.Node, self.net.ground_grid[ gpos ])
+            n = typing.cast(map_items.Node, here)
             if ( self.mode == MenuCommand.BUILD_PIPE ):
                 if (( self.selection is None )
                 or ( isinstance(self.selection, map_items.Pipe))):
@@ -325,8 +291,7 @@ class User_Interface:
                     self.selection = n
                     n.Sound_Effect()
 
-                elif (( isinstance(n, map_items.Node) )
-                and ( isinstance(self.selection, map_items.Node) )
+                elif (( isinstance(self.selection, map_items.Node) )
                 and ( n != self.selection )):
                     # end pipe here
                     self.demo.Action("Add_Pipe", self.selection, n)
@@ -351,17 +316,17 @@ class User_Interface:
                 self.selection = n
                 n.Sound_Effect()
 
-        elif ( isinstance(self.net.ground_grid[ gpos ], map_items.Well)):
-            # Contains well (unimproved)
-            w = self.net.ground_grid[ gpos ]
-            if ( self.mode == MenuCommand.BUILD_NODE ):
+        else:
+            # A non-empty, non-Node grid square must be a well
+            assert isinstance(here, map_items.Well)
+            if self.mode == MenuCommand.BUILD_NODE:
                 # A node is planned on top of the well.
                 self.selection = None
                 n = map_items.Well_Node(gpos)
                 self.demo.Action("Build_Node", n)
-                if ( self.net.Add_Grid_Item(n) ):
-                    self.selection = n
-                    self.selection.Sound_Effect()
+                self.net.Add_Grid_Item(n)
+                self.selection = n
+                self.selection.Sound_Effect()
 
 
         if self.selection is None:
@@ -375,16 +340,6 @@ class User_Interface:
         self.mouse_pos = Scr_To_Grid(spos)
         if ( self.control_menu is not None ):
             self.control_menu.Mouse_Move(None)
-
-    def Debug_Grid(self, output: SurfaceType) -> None:
-        (mx, my) = GRID_SIZE
-        for y in range(my):
-            for x in range(mx):
-                if ( self.net.pipe_grid.get( (x,y), None ) ):
-                    r = Grid_To_Scr_Rect((x,y))
-                    pygame.draw.rect(output, (55,55,55), r, 1)
-                    r.width = len(self.net.pipe_grid[ (x,y) ]) + 1
-                    pygame.draw.rect(output, (255,0,0), r)
 
     def Add_Steam_Effect(self, output: SurfaceType, pos: GridPosition) -> None:
         sfx = self.steam_effect[ self.steam_effect_frame ]
@@ -437,14 +392,14 @@ class User_Interface:
                         break
 
         if name == "Destroy":
-            if not self.selection:
+            if not self.selection:  # NO-COV
                 raise game_random.PlaybackError(
                         "Destroy must always reference a valid "
                         "selection: got " + repr(payload))
             self.net.Destroy(self.selection)
 
         elif name == "Upgrade":
-            if not self.selection:
+            if not self.selection:  # NO-COV
                 raise game_random.PlaybackError(
                         "Upgrade must always reference a valid "
                         "selection: got " + repr(payload))
@@ -466,8 +421,7 @@ class User_Interface:
             assert len(payload) >= 4
             assert isinstance(objects[0], map_items.Node)
             assert isinstance(objects[1], map_items.Node)
-            rc = self.net.Add_Pipe(objects[0], objects[1])
-            if rc:
+            if self.net.Add_Pipe(objects[0], objects[1]) is not None:
                 tutor.Notify_Add_Pipe()
 
         elif name == "Select":
@@ -475,12 +429,10 @@ class User_Interface:
             self.net.Popup(self.selection)
             tutor.Notify_Select(self.selection)
 
-        elif name == "Unselect":
+        else:
+            assert name == "Unselect"
             assert not self.selection
             self.net.Popup(self.selection)
             tutor.Notify_Select(self.selection)
-
-        else:
-            assert False, name
 
         self.selection = None

@@ -12,7 +12,7 @@ from . import resource, config
 
 
 
-def FX(name: str) -> None:
+def FX(name: str) -> None:  # NO-COV
     s = resource.Load_Sound(name) # (comes from a cache)
     if ( s is not None ) and not config.cfg.mute:
         s.play()
@@ -29,7 +29,7 @@ class Persisting_Sound:
 
         self.schan: Optional[pygame.Channel] = None
 
-    def Set(self, volume: float) -> None:
+    def Set(self, volume: float) -> None:  # NO-COV
         if (( self.sobj is None )
         or ( self.sobj2 is None )):
             return
@@ -50,7 +50,7 @@ class Persisting_Sound:
             if self.schan:
                 self.schan.queue(self.sobj2)
 
-    def Fade_Out(self) -> None:
+    def Fade_Out(self) -> None:  # NO-COV
         if (( self.sobj is None )
         or ( self.sobj2 is None )
         or ( self.schan is None )):

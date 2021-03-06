@@ -20,16 +20,16 @@ MAX_STORM_SIZE = 70
 
 
 class Abstract_Particle:
-    def Next(self) -> NextParticleType:
+    def Next(self) -> NextParticleType: # NO-COV
         return ((0, 0), (0, 0, 0, 0))
 
-    def Max_Size(self) -> int:
+    def Max_Size(self) -> int:          # NO-COV
         return 0
 
-    def Num_Particles(self) -> int:
+    def Num_Particles(self) -> int:     # NO-COV
         return 0
 
-    def Particle_Size(self) -> int:
+    def Particle_Size(self) -> int:     # NO-COV
         return 0
 
 # A puff of steam coming out of a vent or steam maker.

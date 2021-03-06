@@ -118,14 +118,14 @@ class Storm:
                 key = (x,y)
 
                 global storm_sound
+                assert storm_sound is not None
 
                 if ( self.net.pipe_grid.get(key, None) ):
                     for pipe in self.net.pipe_grid[ key ]:
                         if (( not pipe.Is_Destroyed() )
                         and ( pipe.Take_Damage(dmg) )):
                             self.net.Destroy(pipe, "storms")
-                            if storm_sound is not None:
-                                storm_sound.Set(1.0)
+                            storm_sound.Set(1.0)
 
                 if ( self.net.ground_grid.get(key, None) ):
                     node = self.net.ground_grid[ key ]
@@ -133,8 +133,7 @@ class Storm:
                     if (( not node.Is_Destroyed() )
                     and ( node.Take_Damage(dmg) )):
                         self.net.Destroy(node, "storms")
-                        if storm_sound is not None:
-                            storm_sound.Set(1.0)
+                        storm_sound.Set(1.0)
 
         # Move
         (px,py) = self.pos

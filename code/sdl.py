@@ -11,7 +11,7 @@ def SDL_SetHintWithPriority(name: str, value: str, priority: int) -> bool:
     try:
         sdl2 = ctypes.CDLL("SDL2")
         fn = sdl2.SDL_SetHintWithPriority
-    except Exception:
+    except Exception:  # NO-COV
         print("unable to set", name, "hint (no SDL2?)")
         return False
 
@@ -20,7 +20,7 @@ def SDL_SetHintWithPriority(name: str, value: str, priority: int) -> bool:
     rc = fn(ctypes.create_string_buffer(name.encode("ascii")),
        ctypes.create_string_buffer(value.encode("ascii")),
        priority)
-    if rc == 0:
+    if rc == 0:  # NO-COV
         print("unable to set", name, "hint (returned 0)")
         return False
     return True

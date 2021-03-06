@@ -107,9 +107,9 @@ class Alien_Season(Quiet_Season):
         alien_targets = self.target_list[ 0:num_targets ]
         alien_targets.append(dest)
 
-        if ( len(alien_targets) == 1 ):
-            # No targets! Therefore, no aliens.
-            return
+        if ( len(alien_targets) == 1 ):             # NO-COV
+            # No targets! Therefore, no aliens.     # NO-COV
+            return                                  # NO-COV
 
         for i in range(num_aliens):
             x = cx + ( alien_radius * math.cos(alien_angle) )
@@ -272,8 +272,8 @@ class Alien:
 
             if ( fire and ( len(self.targets) != 0 )):
                 global alien_firing_sound
-                if alien_firing_sound is not None:
-                    alien_firing_sound.Set(1.0)
+                assert alien_firing_sound is not None
+                alien_firing_sound.Set(1.0)
 
     def Draw(self, output: SurfaceType, update_area: UpdateAreaMethod) -> None:
         pygame.draw.polygon(output, self.colour1, self.points)

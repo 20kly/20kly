@@ -17,7 +17,7 @@ from .grid import Get_Grid_Size, Grid_To_Scr
 
 class Abstract_Draw_Obj:
     def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
-        pass
+        pass  # NO-COV
 
 cache: Dict[DrawObjKey, Abstract_Draw_Obj] = dict()
 frame = 0

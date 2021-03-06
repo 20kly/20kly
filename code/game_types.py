@@ -18,7 +18,6 @@ SurfacePosition = Tuple[int, int]
 FloatSurfacePosition = Tuple[float, float]
 GridPosition = Tuple[int, int]
 FloatGridPosition = Tuple[float, float]
-MessageType = Tuple[float, SurfaceType]
 DrawObjKey = Tuple[str, int]
 RectType = pygame.rect.Rect
 UpdateAreaMethod = typing.Callable[[RectType], None]

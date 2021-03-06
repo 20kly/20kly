@@ -71,3 +71,7 @@ class Steam_Model:
 
     def Capacity_Upgrade(self) -> None:
         self.capacity += CAPACITY_UPGRADE
+
+    def Lose(self) -> None:
+        self.charge = 0.0
+

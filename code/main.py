@@ -4,41 +4,37 @@
 #
 
 
-import pygame, sys, math, time, webbrowser, urllib.request, os
+import pygame, sys, math, time, os
 import getopt
 
 
-from . import game, stats, storms, extra, save_menu, resource, menu
-from . import config, startup, sound, alien_invasion, quakes, sdl
+from . import game, stats, storms, save_menu, resource, menu, events
+from . import config, startup, sound, alien_invasion, quakes, sdl, mail
 from .primitives import *
 from .game_types import *
 from .game_random import PlaybackEOF
 
-DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
-DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
 
-
-def Main(data_dir: str) -> None:
+def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     n = "20,000 Light-Years Into Space"
     print("")
     print(n)
     print("Copyright (C) Jack Whitham 2006-21")
     print("Version " + startup.Get_Game_Version())
-    print("")
-    sys.stdout.flush()
+    print("", flush=True)
 
     resource.DATA_DIR = data_dir
 
     (opts_list, args) = getopt.getopt(
-            sys.argv[1:], "",
+            args, "",
             ["safe",
                 "no-sound", "playback=", "record=",
-                "challenge="])
+                "challenge=", "is-testing"])
     opts = dict(opts_list)
-    sys.stdout.flush()
 
     config.Initialise("--safe" in opts)
+    mail.Initialise()
 
     # This allows the window to be scaled to any size
     # The game itself always uses a native resolution of 1024x768
@@ -47,13 +43,14 @@ def Main(data_dir: str) -> None:
     # Pygame things
     bufsize = 2048
 
+    event.is_testing = event.is_testing or ( "--is-testing" in opts )
     no_sound = ( "--no-sound" in opts)
     if not no_sound:
         try:
             pygame.mixer.get_init()
             pygame.mixer.pre_init(22050, -16, 2, bufsize)
             pygame.mixer.init()
-        except pygame.error as message:
+        except pygame.error as message: # NO-COV
             print('Sound initialization failed. %s' % message)
             no_sound = True
 
@@ -65,11 +62,12 @@ def Main(data_dir: str) -> None:
 
     record_file = opts.get("--record", None)
     if record_file is not None:
-        if playback_mode == PlayMode.PLAYBACK:
+        if playback_mode == PlayMode.PLAYBACK: # NO-COV
             playback_mode = PlayMode.PLAYTHRU
         else:
             playback_mode = PlayMode.RECORD
-            record_challenge = MenuCommand(opts.get("--challenge", "BEGINNER").upper())
+            record_challenge = MenuCommand[opts.get("--challenge",
+                                        "BEGINNER").upper()]
 
     pygame.init()
     pygame.font.init()
@@ -87,7 +85,7 @@ def Main(data_dir: str) -> None:
     # Icon
     # The icon provided in the Debian package is different than the original one
     # (size and location changed)
-    if os.path.isfile(DEB_ICON):
+    if os.path.isfile(DEB_ICON): # NO-COV
         pygame.display.set_icon(resource.Load_Image(DEB_ICON))
     else:
         pygame.display.set_icon(resource.Load_Image("32.png"))
@@ -111,7 +109,7 @@ def Main(data_dir: str) -> None:
             return_code = 1 # Assume playback did not complete
             game.Main_Loop(screen=screen, clock=clock,
                     width_height=(width, height), restore_pos=None,
-                    challenge=record_challenge,
+                    challenge=record_challenge, event=event,
                     playback_mode=playback_mode,
                     playback_file=playback_file,
                     record_file=record_file)
@@ -122,52 +120,55 @@ def Main(data_dir: str) -> None:
         quit = True
 
     while ( not quit ):
-        quit = Main_Menu_Loop(n, clock, screen, (width, height))
+        quit = Main_Menu_Loop(n, clock, screen, (width, height), event)
 
     config.Save()
 
     # Bye bye Pygame.
-    if not no_sound:
+    if event.is_testing:
+        return return_code
+
+    if not no_sound: # NO-COV
         pygame.mixer.quit()
     pygame.quit()
-    sys.exit(return_code)
+    if return_code != 0: # NO-COV
+        sys.exit(return_code)
+
+    return return_code
 
 
 def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
-                   width_height: SurfacePosition) -> bool:
+                   width_height: SurfacePosition, event: events.Events) -> bool:
     # Further initialisation
     (width, height) = width_height
     menu_image = resource.Load_Image("mainmenu.jpg")
 
-    if ( menu_image.get_rect().width != width ):
-        menu_image = pygame.transform.scale(menu_image, (width, height))
-
     main_menu = current_menu = menu.Menu([
                 (None, None, []),
-                (MenuCommand.TUTORIAL, "Play Tutorial", []),
-                (MenuCommand.NEW_GAME, "Play New Game", []),
-                (MenuCommand.LOAD, "Restore Game", []),
+                (MenuCommand.TUTORIAL, "Play Tutorial", [pygame.K_t]),
+                (MenuCommand.NEW_GAME, "Play New Game", [pygame.K_n]),
+                (MenuCommand.LOAD, "Restore Game", [pygame.K_r]),
                 (None, None, []),
-                (MenuCommand.MUTE, "Toggle Sound", []),
-                (MenuCommand.MANUAL, "View Manual", []),
-                (MenuCommand.UPDATES, "Check for Updates", []),
+                (MenuCommand.MUTE, "Toggle Sound", [pygame.K_m]),
+                (MenuCommand.MANUAL, "View Manual", [pygame.K_v]),
+                (MenuCommand.UPDATES, "Check for Updates", [pygame.K_u]),
                 (None, None, []),
-                (MenuCommand.QUIT, "Exit to " + extra.Get_OS(),
+                (MenuCommand.QUIT, "Exit",
                     [ pygame.K_ESCAPE , pygame.K_F10 ])])
     difficulty_menu = menu.Menu(
                 [(None, None, []),
-                (MenuCommand.TUTORIAL, "Tutorial", []),
+                (MenuCommand.TUTORIAL, "Tutorial", [pygame.K_t]),
                 (None, None, []),
-                (MenuCommand.BEGINNER, "Beginner", []),
-                (MenuCommand.INTERMEDIATE, "Intermediate", []),
-                (MenuCommand.EXPERT, "Expert", []),
+                (MenuCommand.BEGINNER, "Beginner", [pygame.K_b]),
+                (MenuCommand.INTERMEDIATE, "Intermediate", [pygame.K_i]),
+                (MenuCommand.EXPERT, "Expert", [pygame.K_e]),
                 (None, None, []),
-                (MenuCommand.PEACEFUL, "Peaceful", []),
+                (MenuCommand.PEACEFUL, "Peaceful", [pygame.K_p]),
                 (None, None, []),
-                (MenuCommand.CANCEL, "Cancel", [])])
+                (MenuCommand.CANCEL, "Cancel", [pygame.K_ESCAPE])])
 
     copyright = [ name,
-            "Copyright (C) Jack Whitham 2006-11 - website: www.jwhitham.org",
+            "Copyright (C) Jack Whitham 2006-21 - website: www.jwhitham.org",
             "",
             "Game version " + startup.Get_Game_Version() ]
 
@@ -193,8 +194,8 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
             screen.blit(img, img_r.topleft)
             y += img_r.height
 
-        (quit, cmd) = extra.Simple_Menu_Loop(screen, current_menu,
-                (( width * 3 ) // 4, 10 + ( height // 2 )))
+        (quit, cmd) = menu.Simple_Menu_Loop(screen, current_menu,
+                (( width * 3 ) // 4, 10 + ( height // 2 )), event)
 
         if ( current_menu == main_menu ):
             if ( cmd == MenuCommand.NEW_GAME ):
@@ -203,7 +204,7 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
             elif ( cmd == MenuCommand.TUTORIAL ):
                 quit = game.Main_Loop(screen=screen, clock=clock,
                         width_height=(width, height), restore_pos=None,
-                        challenge=MenuCommand.TUTORIAL,
+                        challenge=MenuCommand.TUTORIAL, event=event,
                         playback_mode=PlayMode.OFF,
                         playback_file=None,
                         record_file=None)
@@ -219,21 +220,16 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 return False # update menu
 
             elif ( cmd == MenuCommand.UPDATES ):
-                if Update_Feature(screen, menu_image):
+                if Update_Feature(screen, menu_image, event):
                     url = ( CGISCRIPT + "v=" +
                             startup.Get_Game_Version() )
 
-                    pygame.display.iconify()
-                    try:
-                        webbrowser.open(url, True, True)
-                    except:
-                        pass
+                    event.webbrowser_open(url)
 
             elif ( cmd == MenuCommand.MANUAL ):
-                pygame.display.iconify()
                 if os.path.isfile(DEB_MANUAL):
                     # Debian manual present
-                    url = 'file://' + DEB_MANUAL
+                    url = 'file://' + DEB_MANUAL  # NO-COV
                 else:
                     base = os.path.abspath(resource.Path(os.path.join("..",
                             "manual", "index.html")))
@@ -242,39 +238,37 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                         url = 'file://' + base
                     else:
                         # No manual? Redirect to website.
-                        url = 'http://www.jwhitham.org/20kly/'
+                        url = 'http://www.jwhitham.org/20kly/'  # NO-COV
 
-                try:
-                    webbrowser.open(url, True, True)
-                except:
-                    pass
+                event.webbrowser_open(url)
 
+        elif ( current_menu == difficulty_menu ):
+            if ( cmd != MenuCommand.CANCEL ):
+                # start new game with specified difficulty
+                quit = game.Main_Loop(screen=screen, clock=clock,
+                        width_height=(width, height), restore_pos=None,
+                        challenge=cmd, event=event,
+                        playback_mode=PlayMode.OFF,
+                        playback_file=None,
+                        record_file=None)
 
-        elif ( cmd is not None ):
-            if ( current_menu == difficulty_menu ):
-                if ( cmd != MenuCommand.CANCEL ):
-                    quit = game.Main_Loop(screen=screen, clock=clock,
-                            width_height=(width, height), restore_pos=None,
-                            challenge=cmd,
-                            playback_mode=PlayMode.OFF,
-                            playback_file=None,
-                            record_file=None)
+            current_menu = main_menu
 
-            else: # Load menu
-                if ( cmd != MenuCommand.CANCEL ):
-                    # Start game from saved position
-                    quit = game.Main_Loop(screen=screen, clock=clock,
-                            width_height=(width, height),
-                            restore_pos=cmd, challenge=None,
-                            playback_mode=PlayMode.OFF,
-                            playback_file=None,
-                            record_file=None)
+        else: # Load menu
+            if ( cmd != MenuCommand.CANCEL ):
+                # Start game from saved position
+                quit = game.Main_Loop(screen=screen, clock=clock,
+                        width_height=(width, height),
+                        restore_pos=cmd, challenge=None, event=event,
+                        playback_mode=PlayMode.OFF,
+                        playback_file=None,
+                        record_file=None)
 
             current_menu = main_menu
 
     return True
 
-def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
+def Update_Feature(screen: SurfaceType, menu_image: SurfaceType, event: events.Events) -> bool:
     def Message(msg_list: List[str]) -> None:
         screen.blit(menu_image, (0,0))
 
@@ -297,25 +291,23 @@ def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
         ok = True
         timer = 4000
         while (( ok ) and ( timer > 0 )):
-            e = pygame.event.poll()
+            e = event.poll()
             while ( e.type != pygame.NOEVENT ):
                 if (( e.type == pygame.MOUSEBUTTONDOWN )
                 or ( e.type == pygame.KEYDOWN )
                 or ( e.type == pygame.QUIT )):
                     ok = False
-                e = pygame.event.poll()
+                e = event.poll()
 
-            pygame.time.wait( 40 )
-            timer -= 40
+            if ok: # NO-COV
+                pygame.time.wait( 40 )
+                timer -= 40
 
     Message(["Connecting to Website..."])
     url = ( CGISCRIPT + "a=1" )
     new_version = None
     try:
-        f = urllib.request.urlopen(url)
-        new_version_bytes = f.readline()
-        new_version = new_version_bytes.decode("ascii")
-        f.close()
+        new_version = event.check_update(url)
     except Exception as x:
         Finish(str(x))
         return False
@@ -338,7 +330,7 @@ def Update_Feature(screen: SurfaceType, menu_image: SurfaceType) -> bool:
             minor = int(version_code[1], 10)
             return (major, minor)
 
-        except Exception as x:
+        except Exception as x: # NO-COV
             return (0, 0)
 
     old_version = startup.Get_Game_Version()

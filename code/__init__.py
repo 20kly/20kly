@@ -4,4 +4,4 @@
 #
 
 from .main import Main
-
+from .events import Events

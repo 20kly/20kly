@@ -43,18 +43,6 @@ def More_Accurate_Line(arg1: GridPosition, arg2: GridPosition) -> List[GridPosit
     return [ (x // 2, y // 2) for (x,y) in
             bresenham.Line((A(x1), A(y1)), (A(x2), A(y2))) ]
 
-# Check line (a,b) against given grid pos
-def Intersect_Grid_Square(gpos: GridPosition, ab: Tuple[GridPosition, GridPosition]) -> bool:
-    (a,b) = ab
-    (x1,y1) = gpos
-    x = float(x1) - 0.5
-    y = float(y1) - 0.5
-    for (c,d) in [ ((x,y), (x+1,y+1)), ((x+1,y),(x,y+1)) ]:
-        if ( intersect.Intersect((a,b), (c,d)) is not None ):
-            return True
-
-    return False
-
 def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
     cr = output.get_clip()
     output.set_clip(rect)
@@ -111,47 +99,7 @@ def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[Surf
     return [start, finish]
 
 
-def Simple_Menu_Loop(screen: SurfaceType, current_menu: menu.Menu,
-        xy: SurfacePosition) -> Tuple[bool, Optional[MenuCommand]]:
-    (x,y) = xy
-    cmd = None
-    quit = False
-
-    while (( cmd is None ) and not quit ):
-        current_menu.Draw(screen, (x,y))
-        pygame.display.flip()
-
-        e = pygame.event.wait()
-        while ( e.type != pygame.NOEVENT ):
-            if e.type == pygame.QUIT:
-                quit = True
-            elif ( e.type == pygame.MOUSEBUTTONDOWN ):
-                current_menu.Mouse_Down(e.pos)
-            elif ( e.type == pygame.MOUSEMOTION ):
-                current_menu.Mouse_Move(e.pos)
-            elif e.type == pygame.KEYDOWN:
-                current_menu.Key_Press(e.key)
-            e = pygame.event.poll()
-
-        cmd = current_menu.Get_Command()
-        current_menu.Select(None) # consume
-
-    return (quit, cmd)
-
-
 # Support functions.
-
-def Get_OS() -> str:
-    # On my machine, sys.platform reports 'linux2'. Remove digits.
-    pf = sys.platform.title()
-    for i in range(len(pf)):
-        if ( not pf[ i ].isalpha() ):
-            pf = pf[0:i]
-            break
-
-    if ( pf == 'Win' ):
-        pf = 'Windows'
-    return pf
 
 def Get_System_Info() -> str:
     # Some information about the run-time environment.
@@ -162,9 +110,9 @@ def Get_System_Info() -> str:
 
 
 def Get_Home() -> Optional[str]:
-    for i in [ "HOME", "APPDATA" ]:
-        home = os.getenv(i)
-        if ( home is not None ):
-            return home
-    return None
+    for i in [ "HOME", "APPDATA" ]:     # NO-COV
+        home = os.getenv(i)             # NO-COV
+        if ( home is not None ):        # NO-COV
+            return home                 # NO-COV
+    return None                         # NO-COV
 

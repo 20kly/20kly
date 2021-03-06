@@ -8,7 +8,7 @@
 import pygame
 
 
-from . import stats, extra, resource, render, sound
+from . import stats, extra, resource, render, sound, events
 from .game_types import *
 
 
@@ -62,6 +62,7 @@ class Menu:
         x -= self.bbox.left
         y -= self.bbox.top
         for (num, r) in self.control_rects:
+            assert num is not None
             if ( r.collidepoint(x,y) ):
                 self.hover = num
                 if ( old_sel != self.hover ):
@@ -98,6 +99,7 @@ class Menu:
             output.blit(self.surf_store, self.bbox.topleft)
 
             for (num, r) in self.control_rects:
+                assert num is not None
                 r = pygame.Rect(r)
                 r.top += self.bbox.top
                 r.left += self.bbox.left
@@ -138,7 +140,6 @@ class Menu:
                 y += margin * 2
                 continue
 
-            assert num is not None
             txt = render.Render(name, 18, (50,200,20), (200,200,0))
             if ( th is None ):
                 th = txt.get_rect().height + ( margin * 2 )
@@ -152,11 +153,14 @@ class Menu:
 
             extra.Tile_Texture(surf, "greenrust.jpg", r)
             extra.Edge_Effect(surf, r)
-            self.Enhancement_Interface(surf, num, r, margin)
+            if num is not None:
+                self.Enhancement_Interface(surf, num, r, margin)
 
             surf.blit(txt, (x,y + margin - 1))
             y += th + margin
-            control_rects.append((num, r))
+
+            if num is not None:
+                control_rects.append((num, r))
 
             first_item = False
 
@@ -189,6 +193,34 @@ class Enhanced_Menu(Menu):
             img_r.center = rect.center
             img_r.left = rect.left + margin
             surf.blit(img, img_r.topleft)
+
+
+def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
+                     xy: SurfacePosition, event: events.Events) -> Tuple[bool, Optional[MenuCommand]]:
+    (x,y) = xy
+    cmd = None
+    quit = False
+
+    while (( cmd is None ) and not quit ):
+        current_menu.Draw(screen, (x,y))
+        pygame.display.flip()
+
+        e = event.wait()
+        while ( e.type != pygame.NOEVENT ):
+            if e.type == pygame.QUIT:
+                quit = True
+            elif ( e.type == pygame.MOUSEBUTTONDOWN ):
+                current_menu.Mouse_Down(e.pos)
+            elif ( e.type == pygame.MOUSEMOTION ):
+                current_menu.Mouse_Move(e.pos)
+            elif e.type == pygame.KEYDOWN:
+                current_menu.Key_Press(e.key)
+            e = event.poll()
+
+        cmd = current_menu.Get_Command()
+        current_menu.Select(None) # consume
+
+    return (quit, cmd)
 
 
 
