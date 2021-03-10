@@ -9,7 +9,7 @@
 import pygame, math
 
 
-from . import bresenham, intersect, extra, stats, resource, draw_obj, sound
+from . import extra, stats, resource, draw_obj, sound
 from .primitives import *
 from .game_types import *
 from . import steam_model
@@ -73,7 +73,6 @@ class Building(Item):
         self.max_health = 5 * HEALTH_UNIT
         self.base_colour = (255,255,255)
         self.connection_value = 0
-        self.other_item_stack: List[Item] = []
         self.popup_disappears_at = 0.0
         self.destroyed = False
         self.tech_level = 1
@@ -94,19 +93,6 @@ class Building(Item):
 
     def Begin_Upgrade(self) -> None:
         pass
-
-    def Save(self, other_item: Item) -> None:
-        # Used for things that stack on top of other things,
-        # e.g. steam maker on top of well
-        assert isinstance(other_item, Item)
-        assert other_item.pos == self.pos
-        self.other_item_stack.append(other_item)
-
-    def Restore(self) -> Optional[Item]:
-        if ( len(self.other_item_stack) != 0 ):
-            return self.other_item_stack.pop()
-        else:
-            return None
 
     def Exits(self) -> "typing.Sequence[Building]":
         return []

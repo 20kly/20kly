@@ -9,7 +9,7 @@
 
 import pygame, sys, time, os
 
-from . import intersect, bresenham, resource
+from . import intersect, resource
 from . import menu
 from .primitives import *
 from .game_types import *
@@ -33,15 +33,6 @@ def Partial_Vector(arg1: FloatSurfacePosition, arg2: FloatSurfacePosition,
 def Sort_By_Tuple_0(list_of_tuples: List[typing.Any]) -> None:
     list_of_tuples.sort(key=lambda x: x[0])
     return None
-
-def More_Accurate_Line(arg1: GridPosition, arg2: GridPosition) -> List[GridPosition]:
-    (x1,y1) = arg1
-    (x2,y2) = arg2
-    def A(i):
-        return ( 2 * i ) + 1
-
-    return [ (x // 2, y // 2) for (x,y) in
-            bresenham.Line((A(x1), A(y1)), (A(x2), A(y2))) ]
 
 def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
     cr = output.get_clip()
@@ -70,6 +61,9 @@ def Line_Edging(screen: SurfaceType, r: RectType, deflate: bool) -> None:
         else:
             r = r.inflate(2,2)
 
+def List_Destroy(lst: List[typing.Any], itm: typing.Any) -> None:
+    if itm in lst:
+        lst.remove(itm)
 
 # Generate start/finish of a quake line.
 # Also used by storms.
@@ -91,11 +85,8 @@ def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[Surf
             start = (-off, demo.randint(0,h - 1))
             finish = (h + off, demo.randint(0,h - 1))
 
-        crosses_centre = (
-                (intersect.Intersect((start, finish),
-                    (check[ 0 ], check[ 1 ])) is not None)
-                or (intersect.Intersect((start, finish),
-                    (check[ 2 ], check[ 3 ])) is not None) )
+        crosses_centre = (intersect.Lines_Intersect((start, finish), (check[0], check[1]))
+                or intersect.Lines_Intersect((start, finish), (check[2], check[3])))
     return [start, finish]
 
 

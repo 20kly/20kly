@@ -68,22 +68,29 @@ def test_UI() -> None:
     #
     #    n4      n3
     #
+    #    n5
     n1pos = (100, 100)
     n2pos = (200, 100)
     n3pos = (200, 200)
     n4pos = (100, 200)
+    n5pos = (100, 300)
     p12pos = (150, 100)
     missed = (250, 250)
 
+    # Build two nodes and a pipe; draw the pipe while we build it.
+    # Pipe is made by implicitly starting at the most recent node.
     ui.Key_Press(pygame.K_n)        # build node (n1pos)
     ui.Game_Mouse_Move(n1pos)
-    Draw_Things(False)              # draw pipe under construction
+    Draw_Things(False)
     ui.Game_Mouse_Down(n1pos)
     ui.Key_Press(pygame.K_n)        # build node (n2pos)
     ui.Game_Mouse_Down(n2pos)
     ui.Key_Press(pygame.K_p)        # build pipe from 2 to 1
     ui.Game_Mouse_Move(n1pos)
     Draw_Things(False)              # draw pipe under construction
+
+    # Build another node and another pipe; this time we make the pipe
+    # by explicitly clicking the start and finish nodes
     ui.Game_Mouse_Down(n1pos)
     ui.Key_Press(pygame.K_n)        # build node (n3pos)
     ui.Game_Mouse_Down(n3pos)
@@ -91,11 +98,20 @@ def test_UI() -> None:
     ui.Key_Press(pygame.K_p)
     ui.Game_Mouse_Down(n3pos)       # create pipe from 3 to 1
     ui.Game_Mouse_Down(n1pos)       # create pipe from 3 to 1
+
+    # Try to build a node in a place where we can't (pipe in the way)
+    ui.Key_Press(pygame.K_n)        # build node (p12pos)
+    ui.Game_Mouse_Down(p12pos)
+    assert ui.selection is None     # check it didn't work
+
+    # Select various things - nothing, a pipe, a pipe that's already selected
     ui.Right_Mouse_Down()           # neutral mode (deselect all)
     ui.Game_Mouse_Move(missed)
     Draw_Things(False)              # draw with nothing selected
     ui.Game_Mouse_Down(p12pos)      # click on pipe from 2 to 1 (select it)
     ui.Game_Mouse_Down(p12pos)      # click again (already selected)
+
+    # Test upgrade pipe, destroying nothing, and destroying a pipe
     ui.Right_Mouse_Down()           # neutral mode (deselect all)
     ui.Key_Press(pygame.K_u)
     ui.Game_Mouse_Down(p12pos)      # upgrade pipe from 2 to 1
@@ -104,6 +120,8 @@ def test_UI() -> None:
     ui.Game_Mouse_Down(p12pos)      # destroy pipe from 2 to 1
     ui.Key_Press(pygame.K_d)
     ui.Game_Mouse_Down(missed)      # destroy nothing (missed!)
+
+    # Test destroying a node, upgrading nothing, upgrading a node
     ui.Key_Press(pygame.K_d)
     ui.Game_Mouse_Down(n1pos)       # destroy node 1
     ui.Right_Mouse_Down()           # neutral mode
@@ -118,15 +136,21 @@ def test_UI() -> None:
     ui.Key_Press(pygame.K_d)        # destroy node 3
     Draw_Things(False)
 
-    # Make sure we have a well
-    w = map_items.Well(grid.Scr_To_Grid(n4pos))
-    net.Add_Grid_Item(w, True)
+    # Create a well. The user can't do this, so we reach into the grey box...
+    # Test building a well node
+    n4well = map_items.Well(grid.Scr_To_Grid(n4pos))
+    net.Add_Grid_Item(n4well, True)
+    assert net.ground_grid[grid.Scr_To_Grid(n4pos)] == n4well
     ui.Right_Mouse_Down()           # neutral mode (deselect all)
     ui.Key_Press(pygame.K_p)        # pipe mode
     ui.Game_Mouse_Down(n4pos)       # click on the well (nothing happens)
     ui.Key_Press(pygame.K_n)        # build node over the well
     ui.Game_Mouse_Down(n4pos)
+    n4 = net.ground_grid[grid.Scr_To_Grid(n4pos)]
+    assert n4 != n4well             # node replaces well
+    assert n4 == ui.selection       # new node is selected
 
+    # Test building more pipes
     ui.Right_Mouse_Down()           # neutral mode (deselect all)
     ui.Key_Press(pygame.K_p)        # try to build a pipe from a node to itself
     ui.Game_Mouse_Down(n2pos)
@@ -136,7 +160,8 @@ def test_UI() -> None:
     ui.Key_Press(pygame.K_p)        # build a pipe from 2 to 4
     ui.Game_Mouse_Down(n2pos)
     ui.Game_Mouse_Down(n4pos)
-    
+
+    # Recreate nodes destroyed earlier
     ui.Key_Press(pygame.K_n)        # build node (n1pos)
     ui.Game_Mouse_Down(n1pos)
     ui.Key_Press(pygame.K_n)        # build node (n3pos)
@@ -149,18 +174,21 @@ def test_UI() -> None:
     ui.Game_Mouse_Down(n1pos)
     ui.Game_Mouse_Down(n3pos)
 
-    # Select node 4 and then destroy it without informing the ui
+    # Select node 4 and then destroy it without informing the ui; a bit like if
+    # it were destroyed by the environment.
     ui.Right_Mouse_Down()           # neutral mode (deselect all)
     ui.Game_Mouse_Down(n4pos)
-    n4 = ui.selection
+    assert n4 == ui.selection
     assert n4 is not None
     net.Destroy(n4)
     assert ui.selection == n4
     ui.Game_Mouse_Down(n4pos)       # select it again - outcome: nothing selected
     assert ui.selection is None
+    assert net.ground_grid[grid.Scr_To_Grid(n4pos)] == n4well  # well has been restored
 
     # Test the control menu with mouse clicks
     centre_of: Dict[MenuCommand, SurfacePosition] = dict()
+    assert ui.control_menu is not None
     for (cmd, rect) in ui.control_menu.control_rects:
         (x, y) = rect.center
         x += ui.control_menu.bbox.left
@@ -184,4 +212,16 @@ def test_UI() -> None:
 
     # Earthquake!
     Draw_Things(True)
+
+    # Build a pipe from node 1 to new node 5, then try to build over the well at 4.
+    ui.Key_Press(pygame.K_n)        # build node (n5pos)
+    ui.Game_Mouse_Down(n5pos)
+    ui.Key_Press(pygame.K_p)        # create pipe from 5 to 1
+    ui.Game_Mouse_Down(n1pos)
+    assert ui.selection is None     # check pipe was created
+    ui.Key_Press(pygame.K_n)        # try to create well node at 4 (pipe is in the way)
+    ui.Game_Mouse_Down(n4pos)
+    assert ui.selection is None     # check well node was not created
+    assert net.ground_grid[grid.Scr_To_Grid(n4pos)] == n4well # well is still there
+    Draw_Things(False)
 

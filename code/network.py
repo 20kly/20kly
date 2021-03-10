@@ -1,6 +1,6 @@
 #
 # 20,000 Light Years Into Space
-# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
+# This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
 # Sorry, this isn't anything to do with IP: the Network is
@@ -8,7 +8,7 @@
 
 import math, time
 
-from . import extra, map_items, sound, game_random, intersect
+from . import map_items, sound, game_random, intersect, extra, pipe_grid
 from .primitives import *
 from .game_types import *
 from .mail import New_Mail
@@ -19,7 +19,8 @@ class Network:
                  teaching: bool) -> None:
         self.demo = demo
         self.ground_grid: Dict[GridPosition, map_items.Item] = dict()
-        self.pipe_grid: Dict[GridPosition, List[map_items.Pipe]] = dict()
+        self.pipe_grid = pipe_grid.Pipe_Grid()
+        self.storm_pipe_grid = pipe_grid.Storm_Pipe_Grid()
         self.well_list: List[map_items.Well] = []
         self.node_list: List[map_items.Node] = []
         self.pipe_list: List[map_items.Pipe] = []
@@ -77,22 +78,19 @@ class Network:
                 New_Mail("Item is destroyed.")
             return False
 
-        if ( self.pipe_grid.get(gpos, None) ):
-            # There might be a pipe in the way. Then again,
-            # it may have been destroyed already.
-            for pipe in self.pipe_grid[ gpos ]:
-                if ( pipe.Is_Destroyed() ):
-                    continue
+        # There might be a pipe in the way. Then again,
+        # it may have been destroyed already.
+        for pipe in self.pipe_grid.Get_Pipes(gpos):
+            if ( pipe.Is_Destroyed() ):
+                continue
 
-                if ( intersect.Intersect_Grid_Square(gpos,
-                            (pipe.n1.pos, pipe.n2.pos)) ):
-                    if ( not inhibit_effects ):
-                        New_Mail("Can't build there - pipe in the way!")
-                        sound.FX("error")
-                    return False
+            if intersect.Intersects_Node(gpos, (pipe.n1.pos, pipe.n2.pos)):
+                if ( not inhibit_effects ):
+                    New_Mail("Can't build there - pipe in the way!")
+                    sound.FX("error")
+                return False
 
-        if (( self.ground_grid.get(gpos, None) )
-        and ( isinstance(self.ground_grid[ gpos ], map_items.Building) )):
+        if ( isinstance(self.ground_grid.get(gpos, None), map_items.Building) ):
             if ( not inhibit_effects ):
                 New_Mail("Can't build there - building in the way!")
                 sound.FX("error")
@@ -100,12 +98,11 @@ class Network:
 
         if ( isinstance(item, map_items.Node) ):
             self.node_list.append(item)
-            if ( self.ground_grid.get( gpos, None )):
-                item.Save(self.ground_grid[ gpos ])
-            self.ground_grid[ gpos ] = item
+            self.ground_grid[gpos] = item
+
         elif ( isinstance(item, map_items.Well) ):
             self.well_list.append(item)
-            self.ground_grid[ gpos ] = item
+            self.ground_grid[gpos] = item
         else:
             return False # unknown type!
 
@@ -166,22 +163,22 @@ class Network:
             return None
 
         # What's in the pipe's path?
-        path = extra.More_Accurate_Line(n1.pos, n2.pos)
-
+        path = self.pipe_grid.Get_Path(n1, n2)
         other_pipes = set()
         other_items = set()
         for gpos in path:
-            pg = self.pipe_grid.get(gpos, None)
-            if pg is not None:
-                other_pipes |= set(pg)
+            other_pipes |= set(self.pipe_grid.Get_Pipes(gpos))
             n = self.ground_grid.get(gpos, None)
             if n is not None:
                 other_items.add(n)
 
         other_items.discard(n1)
         other_items.discard(n2)
+
         for n in other_items:
-            if not n.Is_Destroyed():
+            if ((not n.Is_Destroyed())
+            and (not isinstance(n, map_items.Well))
+            and intersect.Intersects_Node(n.pos, (n1.pos, n2.pos))):
                 sound.FX("error")
                 New_Mail("Pipe collides with other items.")
                 return None
@@ -193,8 +190,7 @@ class Network:
                     sound.FX("error")
                     New_Mail("There is already a pipe there.")
                     return None
-                if ( intersect.Intersect((p.n1.pos,p.n2.pos),
-                            (n1.pos,n2.pos)) is not None ):
+                if intersect.Lines_Intersect((p.n1.pos, p.n2.pos), (n1.pos, n2.pos)):
                     sound.FX("error")
                     New_Mail("That crosses an existing pipe.")
                     return None
@@ -203,42 +199,13 @@ class Network:
         pipe = map_items.Pipe(n1, n2, self)
         self.pipe_list.append(pipe)
 
-        for gpos in path:
-            if ( not self.pipe_grid.get(gpos, None) ):
-                self.pipe_grid[ gpos ] = [pipe]
-            else:
-                self.pipe_grid[ gpos ].append(pipe)
+        self.pipe_grid.Add_Pipe(pipe)
+        self.storm_pipe_grid.Add_Pipe(pipe)
+
         return pipe
 
-    def Remove_Destroyed_Pipes(self, gpos: GridPosition) -> None:
-        if ( not self.pipe_grid.get(gpos, None) ):
-            return
-        l = self.pipe_grid[ gpos ]
-
-        # Remove destroyed pipes
-        l2 = [ pipe for pipe in l if not pipe.Is_Destroyed() ]
-
-        # Did it change? Save it again if it did,
-        # to save future recomputation.
-        if ( len(l2) != len(l) ):
-            self.pipe_grid[ gpos ] = l = l2
-
     def Get_Pipe(self, gpos: GridPosition) -> "Optional[map_items.Pipe]":
-        if ( not self.pipe_grid.get(gpos, None) ):
-            return None
-
-        self.Remove_Destroyed_Pipes(gpos)
-        l = self.pipe_grid[ gpos ]
-
-        if ( len(l) == 0 ):
-            return None
-        elif ( len(l) == 1 ):
-            return l[ 0 ]
-        else:
-            # Juggle list
-            out = l.pop(0)
-            l.append(out)
-            return out
+        return self.pipe_grid.Get_Pipe_Rotate(gpos)
 
     def Destroy(self, node: "map_items.Item", by="") -> None:
         if ( isinstance(node, map_items.Pipe) ):
@@ -257,10 +224,16 @@ class Network:
             self.__Destroy_Pipe(pipe)
 
         gpos = node.pos
-        if ( not self.ground_grid.get( gpos, None ) ):
-            return # not on map
-        if ( self.ground_grid[ gpos ] != node ):
-            return # not on map (something else is there)
+        if self.ground_grid.get(gpos, None) != node:
+            # Node is not on the map
+            return
+
+        # Find the well beneath a well node (if applicable)
+        restore_node: Optional[map_items.Item] = None
+        if isinstance(node, map_items.Well_Node):
+            for n in self.well_list:
+                if n.pos == gpos:
+                    restore_node = n 
 
         self.dirty = True
 
@@ -268,33 +241,29 @@ class Network:
             New_Mail(node.name_type + " destroyed by " + by + ".")
 
         node.Prepare_To_Die()
-        self.__List_Destroy(self.node_list, node)
-        rnode = node.Restore()
+        extra.List_Destroy(self.node_list, node)
 
-        if ( rnode is None ):
-            del self.ground_grid[ gpos ]
+        # restore the well (if applicable)
+        if restore_node is not None:
+            self.ground_grid[gpos] = restore_node
         else:
-            self.ground_grid[ gpos ] = rnode
+            # space becomes blank
+            del self.ground_grid[gpos]
+
 
     def __Destroy_Pipe(self, pipe: "map_items.Pipe") -> None:
         self.dirty = True
         pipe.Prepare_To_Die()
-        self.__List_Destroy(self.pipe_list, pipe)
-        self.__List_Destroy(pipe.n1.pipes, pipe)
-        self.__List_Destroy(pipe.n2.pipes, pipe)
-
-    def __List_Destroy(self, lst: List[typing.Any], itm: typing.Any) -> None:
-        l = len(lst)
-        for i in reversed(range(l)):
-            if ( lst[ i ] == itm ):
-                lst.pop(i)
+        extra.List_Destroy(self.pipe_list, pipe)
+        extra.List_Destroy(pipe.n1.pipes, pipe)
+        extra.List_Destroy(pipe.n2.pipes, pipe)
 
     def Make_Well(self, teaching=False, inhibit_effects=False) -> None:
         self.dirty = True
         (x, y) = (cx, cy) = GRID_CENTRE
         (mx, my) = GRID_SIZE
 
-        while (( self.ground_grid.get( (x,y), None ))
+        while (( (x, y) in self.ground_grid )
         or ( self.demo.hypot( x - cx, y - cy ) < 10 )):
             x = self.demo.randint(0, mx - 1)
             y = self.demo.randint(0, my - 1)

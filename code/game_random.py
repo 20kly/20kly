@@ -16,8 +16,8 @@ from . import ui
 from .primitives import *
 from .game_types import *
 
-READ_HEADER_NUMBER = 20210214
-WRITE_HEADER_NUMBER = 20210214
+READ_HEADER_NUMBER = 20210307
+WRITE_HEADER_NUMBER = 20210307
 
 class Game_Random:
     def __init__(self, seed: Optional[int] = None) -> None:
@@ -97,50 +97,29 @@ class Game_Random:
     def timestamp(self, g: "game.Game_Data") -> None:
         supply = g.net.hub.Get_Steam_Supply()
         demand = g.net.hub.Get_Steam_Demand()
-        bad = []
-        grid_locs = sorted(set(g.net.pipe_grid) | set(g.net.ground_grid))
-        self.read_and_write("TIMESTAMP", "<dddI", g.game_time.time(), supply, demand, len(grid_locs))
 
-        for pos in grid_locs:
-            (x2, y2) = pos
-            pipes = g.net.pipe_grid.get(pos, [])
-            node = g.net.ground_grid.get(pos, None)
+        self.read_and_write("TS", "<dddIII", g.game_time.time(), supply, demand,
+                             len(g.net.well_list), len(g.net.node_list), len(g.net.pipe_list))
+
+        for well in sorted(g.net.well_list, key=lambda well: well.pos):
+            assert isinstance(well, map_items.Well)
+            (x2, y2) = well.pos
+            self.read_and_write("W", "<BB", x2, y2)
+
+        for node in sorted(g.net.node_list, key=lambda node: node.pos):
             if isinstance(node, map_items.Well_Node):
                 node_code = 1
-            elif isinstance(node, map_items.Node):
-                node_code = 2
-            elif isinstance(node, map_items.Well):
-                node_code = 3
             else:
-                node_code = 0
-
-            g.net.Remove_Destroyed_Pipes(pos)
-            try:
-                self.read_and_write("G", "<BBBB", x2, y2, len(pipes), node_code)
-            except PlaybackError as e: # NO-COV
-                bad.append(str(e))
-
-            for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
-                (x1, y1) = pipe.n1.pos
-                (x3, y3) = pipe.n2.pos
-                try:
-                    self.read_and_write("P", "<BBBB", x1, y1, x3, y3)
-                except PlaybackError as e: # NO-COV
-                    bad.append(str(e))
-            if 1 <= node_code <= 2:
                 assert isinstance(node, map_items.Node)
-                try:
-                    self.read_and_write("N", "<id",
-                                        node.health, node.steam.charge)
-                except PlaybackError as e: # NO-COV
-                    bad.append(str(e))
+                node_code = 2
+            (x2, y2) = node.pos
+            self.read_and_write("N", "<BBBid", x2, y2, node_code, node.health, node.steam.charge)
 
-            if len(bad):    # NO-COV
-                for pipe in sorted(pipes, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
-                    bad.append("\nexpected pipe: " +
-                            repr((pipe.n1.pos, pipe.n2.pos,
-                                pipe.destroyed, pipe.health)) + "\n")
-                raise PlaybackError("".join(bad))
+        for pipe in sorted(g.net.pipe_list, key=lambda pipe: (pipe.n1.pos, pipe.n2.pos)):
+            (x1, y1) = pipe.n1.pos
+            (x3, y3) = pipe.n2.pos
+            self.read_and_write("P", "<BBBBd", x1, y1, x3, y3, pipe.current_n1_to_n2)
+
 
     def Action(self, name, *objects) -> None:       # NO-COV
         object_data = []

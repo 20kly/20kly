@@ -38,7 +38,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     # This allows the window to be scaled to any size
     # The game itself always uses a native resolution of 1024x768
-    sdl.SDL_SetHintWithPriority("SDL_HINT_RENDER_SCALE_QUALITY", "best", 0)
+    sdl.SDL_SetHintWithPriority("SDL_HINT_RENDER_SCALE_QUALITY", "nearest", 0)
 
     # Pygame things
     bufsize = 2048

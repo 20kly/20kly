@@ -257,9 +257,9 @@ class User_Interface:
                 n.Sound_Effect()
                 self.selection = None
                 self.demo.Action("Build_Node", n)
-                self.net.Add_Grid_Item(n)
-                self.selection = n
-                tutor.Notify_Add_Node(n)
+                if self.net.Add_Grid_Item(n):
+                    self.selection = n
+                    tutor.Notify_Add_Node(n)
 
             elif ( self.mode == MenuCommand.DESTROY ):
                 # I presume you are referring to a pipe?
@@ -324,9 +324,9 @@ class User_Interface:
                 self.selection = None
                 n = map_items.Well_Node(gpos)
                 self.demo.Action("Build_Node", n)
-                self.net.Add_Grid_Item(n)
-                self.selection = n
-                self.selection.Sound_Effect()
+                if self.net.Add_Grid_Item(n):
+                    self.selection = n
+                    self.selection.Sound_Effect()
 
 
         if self.selection is None:

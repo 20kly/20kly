@@ -25,4 +25,6 @@ MenuItem = Tuple[Optional[MenuCommand], Optional[str], List[int]]
 ClockType = typing.Any
 ControlRectType = Tuple[MenuCommand, RectType]
 NextParticleType = Tuple[FloatSurfacePosition, Colour4]
+FloatGridLine = Tuple[FloatGridPosition, FloatGridPosition]
+GridLine = Tuple[GridPosition, GridPosition]
 

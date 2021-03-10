@@ -57,11 +57,11 @@ def test_intermediate_die() -> None:
 def test_tutorial() -> None:
     run_a_test("tutorial")
 
-def test_tutorial_die() -> None:
-    run_a_test("tutorial_die")
-
 def test_tutorial_die_2() -> None:
     run_a_test("tutorial_die_2")
+
+def test_placement() -> None:
+    run_a_test("placement")
 
 
 if __name__ == "__main__":
