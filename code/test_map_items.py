@@ -95,7 +95,7 @@ def Do_Building_Test(building: map_items.Building,
     building.Do_Work()
 
 def test_Building() -> None:
-    Do_Building_Test(map_items.Building("foobar"), False)
+    Do_Building_Test(map_items.Building((1, 1), "foobar"), False)
 
 def test_Node() -> None:
     Do_Building_Test(map_items.Node((1, 1)), False)

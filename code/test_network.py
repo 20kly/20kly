@@ -47,8 +47,7 @@ def test_Network() -> None:
     assert not net.Add_Grid_Item(n1, inhibit_effects=False)
 
     # Add a node of a weird type (not allowed)
-    i1 = map_items.Item("foobar")
-    i1.pos = (5, 5)
+    i1 = map_items.Item((5, 5), "foobar")
     assert not net.Add_Grid_Item(i1)
 
     # Add a node normally

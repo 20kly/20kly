@@ -19,8 +19,8 @@ from .difficulty import DIFFICULTY
 from .grid import Grid_To_Scr, Get_Grid_Size, Grid_To_Scr_Rect
 
 class Item:
-    def __init__(self, name: str) -> None:
-        self.pos: Union[GridPosition, FloatGridPosition]
+    def __init__(self, xy: GridPosition, name: str) -> None:
+        self.pos = xy
         self.name_type = name
         self.emits_steam = False
         self.tutor_special = False
@@ -57,16 +57,14 @@ class Item:
 
 class Well(Item):
     def __init__(self, xy: GridPosition, name="Well") -> None:
-        Item.__init__(self, name)
-        self.pos: GridPosition = xy
+        Item.__init__(self, xy, name)
         self.draw_obj = draw_obj.Draw_Obj("well.png", 1)
         self.emits_steam = True
 
 
 class Building(Item):
-    def __init__(self, name: str) -> None:
-        Item.__init__(self, name)
-        self.pos: GridPosition
+    def __init__(self, xy: GridPosition, name: str) -> None:
+        Item.__init__(self, xy, name)
         self.health = 0
         self.complete = False
         self.was_once_complete = False
@@ -127,6 +125,12 @@ class Building(Item):
     def Get_Health_Meter(self) -> BarMeterStatTuple:
         return (self.health, (0,255,0), self.max_health, (255,0,0))
 
+    def Draw_Popup(self, output) -> Optional[RectType]:
+        (x,y) = Grid_To_Scr(self.pos)
+        x -= 16
+        y -= 12
+        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
+
     def Get_Tech_Level(self) -> str:
         return ("Tech Level %d" % self.tech_level)
 
@@ -178,9 +182,8 @@ class Building(Item):
 
 class Node(Building):
     def __init__(self, xy: GridPosition, name="Node") -> None:
-        Building.__init__(self,name)
+        Building.__init__(self, xy, name)
         self.pipes: List[Pipe] = []
-        self.pos: GridPosition = xy
         self.max_health = NODE_HEALTH_UNITS * HEALTH_UNIT
         self.base_colour = (255,192,0)
         self.steam = steam_model.Steam_Model()
@@ -255,12 +258,6 @@ class Node(Building):
         pygame.draw.circle(output, highlight,
             Grid_To_Scr(self.pos), ra , 2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
-
-    def Draw_Popup(self, output) -> Optional[RectType]:
-        (x,y) = Grid_To_Scr(self.pos)
-        x -= 16
-        y -= 12
-        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
 
     def Sound_Effect(self) -> None:
         sound.FX("bamboo")
@@ -407,7 +404,7 @@ class Well_Node(Node):
 class Pipe(Building):
     def __init__(self, n1: Node, n2: Node,
                  net: "network.Network", name="Pipe") -> None:
-        Building.__init__(self,name)
+        Building.__init__(self, (0, 0), name)
         assert n1 != n2
         n1.pipes.append(self)
         n2.pipes.append(self)

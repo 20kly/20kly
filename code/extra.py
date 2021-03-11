@@ -28,12 +28,6 @@ def Partial_Vector(arg1: FloatSurfacePosition, arg2: FloatSurfacePosition,
     y = y1 + ((( y2 - y1 ) * a ) / b )
     return (x,y)
 
-
-# I'm always wanting to sort lists of tuples.
-def Sort_By_Tuple_0(list_of_tuples: List[typing.Any]) -> None:
-    list_of_tuples.sort(key=lambda x: x[0])
-    return None
-
 def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
     cr = output.get_clip()
     output.set_clip(rect)

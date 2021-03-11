@@ -35,6 +35,7 @@ def test_UI() -> None:
             def Is_Shaking(self) -> bool:
                 return shaking
 
+        ui.Update_Area(None)
         ui.Draw_Game(test_screen, Test_Season(net))
         ui.Draw_Stats(test_screen, [])
         pygame.display.flip()
