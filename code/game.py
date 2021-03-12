@@ -396,7 +396,9 @@ class Game:
 
             tutor.Draw(self.screen, g)
 
+            mail.Draw_Mail(self.game_screen_surf)
             pygame.display.flip()
+            mail.Undraw_Mail(self.game_screen_surf)
 
             if ( not menu_inhibit ):
                 g.season_fx.Per_Frame(rt_frame_length)
