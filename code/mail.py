@@ -19,8 +19,8 @@ class Message:
         self.text = text
         self.expiry_time = time.time() + MSG_EXPIRY_TIME
         self.colour = colour
-        self.draw = stats.Get_Font(20).render(text, True, colour)
-        self.undraw = pygame.Surface(self.draw.get_rect().size)
+        self.draw: SurfaceType = stats.Get_Font(20).render(text, True, colour)
+        self.undraw: SurfaceType = pygame.Surface((1, 1))
         self.area: RectType = pygame.Rect(0, 0, 1, 1)
 
 
@@ -58,8 +58,8 @@ class Mail:
             r = msg.draw.get_rect()
             r.topleft = (MSG_MARGIN, y)
             msg.area = r
+            msg.undraw = output.subsurface(r).copy()
             output.blit(msg.draw, r.topleft)
-            msg.undraw.blit(output.subsurface(r), (0, 0))
 
     def Undraw_Mail(self, output: SurfaceType) -> None:
         for msg in self.messages:
@@ -75,7 +75,6 @@ class Mail:
 __mail = Mail()
 
 def Initialise() -> None:
-    global __mail
     __mail.messages = []
     __mail.day = 0
     __mail.change = True

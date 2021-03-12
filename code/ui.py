@@ -156,8 +156,6 @@ class User_Interface:
             r = item.Draw_Popup(output)
             self.Update_Area(r)
 
-        mail.Draw_Mail(output)
-
         if ( not self.Is_Menu_Open () ):
             self.blink = 0x80 | ( 0xff & ( self.blink + 0x10 ))
             self.steam_effect_frame = (
