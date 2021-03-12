@@ -36,6 +36,18 @@ def test_Simple_Menu_Loop() -> None:
     assert quit
     assert cmd is None
 
+    # test video resize
+    test_menu = menu.Menu(menu_options, force_width=0)
+    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+                        (0, 0), Fake_Events([
+                            VideoResize(),
+                            NoEvent(),
+                            Quit(),
+                            NoEvent()
+                        ]))
+    assert not quit
+    assert cmd is None
+
     # test keypresses
     (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([

@@ -25,7 +25,7 @@ def test_UI() -> None:
     test_screen = Setup_For_Unit_Test()
     demo = game_random.Game_Random(1)
     net = network.Network(demo, False)
-    ui = User_Interface(net, demo, RESOLUTION)
+    ui = User_Interface(net, demo)
     controls_surf = pygame.Surface((200, 200))
 
     season_fx = quiet_season.Quiet_Season(net)

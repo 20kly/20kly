@@ -16,9 +16,7 @@ from .grid import Grid_To_Scr, Grid_To_Scr_Rect, Scr_To_Grid
 
 
 class User_Interface:
-    def __init__(self, net: "network.Network", demo: "game_random.Game_Random",
-                 width_height: SurfacePosition) -> None:
-        (width, height) = width_height
+    def __init__(self, net: "network.Network", demo: "game_random.Game_Random") -> None:
         self.net = net
         self.demo = demo
         self.control_menu: Optional[menu.Menu] = None
@@ -32,17 +30,8 @@ class User_Interface:
         self.Reset()
         self.blink = 0xff
 
-        img = resource.Load_Image("back.jpg").convert() # convert destroys a-channel
-
-        # Although there is only one base image, it is flipped and
-        # rotated on startup to create one of eight possible backdrops.
-        # (Note: These don't get saved, as they're part of the UI. That's bad.)
-
-        img = pygame.transform.rotate(img, 90 * random.randint(0,3))
-        if ( random.randint(0,1) == 0 ):
-            img = pygame.transform.flip(img, True, False)
-
-        self.background = pygame.transform.scale(img, (width, height))
+        self.background: SurfaceType = pygame.Surface((1, 1))
+        self.background.fill((0, 0, 0))
 
         self.steam_effect = particle.Make_Particle_Effect(particle.Steam_Particle)
         self.steam_effect_frame = 0
@@ -65,8 +54,18 @@ class User_Interface:
                     # Area overlaps an existing area, which gets expanded.
                     self.update_area_list[ ci ].union_ip(area)
 
-    def Update_All(self) -> None:
+    def Update_Game(self) -> None:
         self.full_update = True
+
+    def Update_All(self) -> None:
+        # force redraw of game window
+        self.Update_Game()
+
+        # force redraw of (upper) stats window
+        self.stats_hash = 0
+
+        # force redraw of control menu
+        self.control_menu = None
 
     def Draw_Game(self, output: SurfaceType, season_fx: quiet_season.Quiet_Season) -> None:
         blink = self.blink
@@ -80,14 +79,14 @@ class User_Interface:
             r.top += random.randint(-m, m)
             r = output.get_rect().clip(r)
             output = output.subsurface(r)
-            self.Update_All()
+            self.Update_Game()
 
         if ( self.net.dirty ):
-            self.Update_All()
+            self.Update_Game()
             self.net.dirty = False
 
         if ( mail.Has_New_Mail() or tutor.Has_Changed() ):
-            self.Update_All() # force update
+            self.Update_Game() # force update
 
         # These things may not need to be redrawn
         # as they are never animated and can't be selected.
@@ -201,7 +200,7 @@ class User_Interface:
                     self.net.Destroy(self.selection)
                     self.__Clear_Control_Selection()
                     self.selection = None
-                    self.Update_All()
+                    self.Update_Game()
 
                 elif ( self.mode == MenuCommand.UPGRADE ):
                     self.demo.Action("Upgrade", self.selection)
@@ -229,7 +228,7 @@ class User_Interface:
         self.__Clear_Control_Selection()
         self.stats_hash = 0
         self.__Update_Reset()
-        self.Update_All() # after a reset...
+        self.Update_Game() # after a reset...
 
     def __Update_Reset(self) -> None:
         self.full_update = False
@@ -268,7 +267,7 @@ class User_Interface:
                     self.demo.Action("Destroy", self.selection)
                     self.net.Destroy(pipe)
                     self.__Clear_Control_Selection()
-                    self.Update_All()
+                    self.Update_Game()
                 self.selection = None
 
             elif ( self.mode == MenuCommand.UPGRADE ):
@@ -304,7 +303,7 @@ class User_Interface:
                 self.net.Destroy(n)
                 self.selection = None
                 self.__Clear_Control_Selection()
-                self.Update_All()
+                self.Update_Game()
 
             elif ( self.mode == MenuCommand.UPGRADE ):
                 self.demo.Action("Upgrade", n)

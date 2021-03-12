@@ -16,7 +16,7 @@ def Setup_For_Unit_Test() -> SurfaceType:
     resource.No_Sound()
     pygame.init()
     pygame.font.init()
-    return pygame.display.set_mode(RESOLUTION, pygame.SCALED | pygame.RESIZABLE)
+    return pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 
 class Click(events.Event):
     def __init__(self, pos: SurfacePosition) -> None:
@@ -43,6 +43,10 @@ class Other(events.Event):
 class Quit(events.Event):
     def __init__(self) -> None:
         events.Event.__init__(self, t=pygame.QUIT)
+
+class VideoResize(events.Event):
+    def __init__(self) -> None:
+        events.Event.__init__(self, t=pygame.VIDEORESIZE)
 
 class NoEvent(events.Event):
     pass

@@ -215,6 +215,9 @@ def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
                 current_menu.Mouse_Move(e.pos)
             elif e.type == pygame.KEYDOWN:
                 current_menu.Key_Press(e.key)
+            elif e.type == pygame.VIDEORESIZE:
+                return (False, None)
+
             e = event.poll()
 
         cmd = current_menu.Get_Command()

@@ -31,73 +31,9 @@ def Analyse_Network(game_object: "game.Game_Data") -> Historical_Record:
     return Historical_Record(game_object)
 
 # Called at the end of the game, to display statistics:
-def Review(screen: SurfaceType, width_height: SurfacePosition,
-        game_object: "game.Game_Data",
+def Review(game_object: "game.Game_Data",
         historian: List[Historical_Record],
         event: events.Events) -> None:
-
-    (width, height) = width_height
-    g = game_object
-    extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
-
-    def Text(text: str, size: int,
-             xy: SurfacePosition, justify: int) -> int:
-        (x,y) = xy
-        img = stats.Get_Font(size).render(text, True, (255, 255, 255))
-
-        if ( justify == 0 ): # centre
-            x -= ( img.get_rect().width ) // 2
-        elif ( justify < 0 ): # right
-            x -= img.get_rect().width
-
-        screen.blit(img, (x,y))
-        y += img.get_rect().height
-        return y + 5
-
-
-    if ( g.win ):
-        y = Text("You have won the game!", 36, (width // 2, 10), 0)
-    else:
-        y = Text("You have lost the game!", 36, (width // 2, 10), 0)
-
-    Text("Thankyou for playing!", 15, (width // 2, y), 0)
-
-    y += height // 10
-
-    lev = dict()
-    lev[ MenuCommand.TUTORIAL ] = lev[ MenuCommand.BEGINNER ] = "Beginner"
-    lev[ MenuCommand.INTERMEDIATE ] = "Intermediate"
-    lev[ MenuCommand.EXPERT ] = "Expert"
-    lev[ MenuCommand.PEACEFUL ] = "Peaceful"
-    level = lev.get(g.challenge, "??")
-
-    score = float(g.net.hub.total_steam) / max(1.0, float(g.game_time.Get_Day()))
-    if ( g.win ):
-        score *= 8
-
-    score = int(score)
-
-    l = [ ( "Game length", "%u days" % g.game_time.Get_Day() ),
-        ( "Steam used", "%1.1f U" % g.net.hub.total_steam ),
-        ( "Unused work units", "%u" % g.wu_integral ),
-        ( "Game level", level ),
-        ( "Your " + level + " Score", "%u" % score ) ]
-
-    r: RectType = pygame.Rect(25, y, width // 2, 1)
-    y = Text("Summary", 18, r.center, 0)
-
-    for (key, data) in l:
-        Text(key, 18, (r.left, y), 1)
-        y = Text(data , 18, (r.right, y), -1)
-
-    r.height = y - r.top
-    r = r.inflate(10,10)
-    pygame.draw.rect(screen, (128, 128, 128), r, 2)
-
-    y = r.bottom + ( height // 10 )
-
-    graph_window = pygame.Rect(r.left, y, r.width, ( height - y ) - 25 )
-
 
     available_graphs = [
         ( "Steam Supply", "supply", (0,255,0) ),
@@ -109,7 +45,71 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
         ( "Work Unit Availability", "work_units_avail", (0,255,255) ),
         ( "City Steam Pressure", "city_pressure", (0,0,255) ) ]
 
-    def Regraph(arg: Tuple[str, str, Colour]) -> None:
+    def Regraph(arg: Tuple[str, str, Colour]) -> SurfaceType:
+        screen = event.resurface()
+        (width, height) = screen.get_rect().size
+        g = game_object
+        extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
+
+        def Text(text: str, size: int,
+                 xy: SurfacePosition, justify: int) -> int:
+            (x,y) = xy
+            img = stats.Get_Font(size).render(text, True, (255, 255, 255))
+
+            if ( justify == 0 ): # centre
+                x -= ( img.get_rect().width ) // 2
+            elif ( justify < 0 ): # right
+                x -= img.get_rect().width
+
+            screen.blit(img, (x,y))
+            y += img.get_rect().height
+            return y + 5
+
+
+        if ( g.win ):
+            y = Text("You have won the game!", 36, (width // 2, 10), 0)
+        else:
+            y = Text("You have lost the game!", 36, (width // 2, 10), 0)
+
+        Text("Thankyou for playing!", 15, (width // 2, y), 0)
+
+        y += height // 10
+
+        lev = dict()
+        lev[ MenuCommand.TUTORIAL ] = lev[ MenuCommand.BEGINNER ] = "Beginner"
+        lev[ MenuCommand.INTERMEDIATE ] = "Intermediate"
+        lev[ MenuCommand.EXPERT ] = "Expert"
+        lev[ MenuCommand.PEACEFUL ] = "Peaceful"
+        level = lev.get(g.challenge, "??")
+
+        score = float(g.net.hub.total_steam) / max(1.0, float(g.game_time.Get_Day()))
+        if ( g.win ):
+            score *= 8
+
+        score = int(score)
+
+        l = [ ( "Game length", "%u days" % g.game_time.Get_Day() ),
+            ( "Steam used", "%1.1f U" % g.net.hub.total_steam ),
+            ( "Unused work units", "%u" % g.wu_integral ),
+            ( "Game level", level ),
+            ( "Your " + level + " Score", "%u" % score ) ]
+
+        r: RectType = pygame.Rect(25, y, width // 2, 1)
+        y = Text("Summary", 18, r.center, 0)
+
+        for (key, data) in l:
+            Text(key, 18, (r.left, y), 1)
+            y = Text(data , 18, (r.right, y), -1)
+
+        r.height = y - r.top
+        r = r.inflate(10,10)
+        pygame.draw.rect(screen, (128, 128, 128), r, 2)
+
+        y = r.bottom + ( height // 10 )
+
+        graph_window = pygame.Rect(r.left, y, r.width, ( height - y ) - 25 )
+
+
         (heading, attribute, colour) = arg
         pygame.draw.rect(screen, (0, 0, 0), graph_window)
         pygame.draw.rect(screen, (128, 128, 128), graph_window, 2)
@@ -133,7 +133,7 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
                 gy = getattr(hr, attribute)
             except AttributeError:  # NO-COV
                 print("Attribute",attribute,"not present")
-                return
+                return screen
 
             if ( gy < 0 ):  # NO-COV
                 gy = 0 # This should not happen
@@ -193,8 +193,10 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
         pygame.draw.line(screen, (255,255,255),
                 graph_subwin.bottomright, graph_subwin.bottomleft)
 
+        return screen
 
-    Regraph(available_graphs[ 0 ])
+
+    screen = Regraph(available_graphs[ 0 ])
     graph_num = 0
 
     # then...
@@ -208,6 +210,9 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
 
     quit = False
     while ( not quit ):
+        screen = Regraph(available_graphs[ graph_num ])
+        (width, height) = screen.get_rect().size
+
         (quit, cmd) = menu.Simple_Menu_Loop(screen,
                     proceed, (( width * 3 ) // 4, height // 2 ), event)
 
@@ -216,11 +221,8 @@ def Review(screen: SurfaceType, width_height: SurfacePosition,
         elif ( cmd == MenuCommand.PREV ):
             graph_num = (( graph_num + len(available_graphs) - 1 )
                                 % len(available_graphs))
-            Regraph(available_graphs[ graph_num ])
-        else:
+        elif ( cmd == MenuCommand.NEXT ):
             graph_num = ( graph_num + 1 ) % len(available_graphs)
-            Regraph(available_graphs[ graph_num ])
-
 
     return
 

@@ -7,6 +7,7 @@ from . import game_random, game, save_game, unit_test
 from . import mail
 from .ui import User_Interface
 from .primitives import *
+from .unit_test import *
 
 
 def test_Save_Restore() -> None:
@@ -18,8 +19,15 @@ def test_Save_Restore() -> None:
 
     test_screen = unit_test.Setup_For_Unit_Test()
     demo = game_random.Game_Random(1)
-    g = game.Game_Data(demo, MenuCommand.INTERMEDIATE)
-    ui = User_Interface(g.net, demo, RESOLUTION)
+    clock = pygame.time.Clock()
+    game_loop = game.Game(clock=clock,
+                    restore_pos=None,
+                    challenge=MenuCommand.INTERMEDIATE, event=Fake_Events([]),
+                    playback_mode=PlayMode.OFF,
+                    playback_file=None,
+                    record_file=None)
+    g = game_loop.g
+    ui = game_loop.ui
     assert ui.net == g.net
     g.historian_time = 999.0
 
@@ -29,7 +37,7 @@ def test_Save_Restore() -> None:
     assert g.net.demo.random() >= -1.0
     g.historian_time = 123.0
 
-    g2 = game.Restore(ui, g, MenuCommand.SAVE9)
+    g2 = game_loop.Restore(MenuCommand.SAVE9)
     assert g2 != g
     assert g2.net != g.net                  # network reloaded
     assert ui.net == g2.net                 # ui is updated correctly
@@ -43,7 +51,6 @@ def test_Save_Restore() -> None:
     open(name, "wb").write(b"INVALID")
 
     # Try restoring - doesn't work
-    g2 = game.Restore(ui, g, MenuCommand.SAVE9)
+    g2 = game_loop.Restore(MenuCommand.SAVE9)
     assert g2 == g      # No reload
     assert "Error restoring file" in mail.Get_Messages()
-

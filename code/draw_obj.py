@@ -26,10 +26,12 @@ class Draw_Obj(Abstract_Draw_Obj):
     def __init__(self, img_name: str, grid_size: int) -> None:
         Abstract_Draw_Obj.__init__(self)
         self.key = (img_name, grid_size)
-        Make_Cache_Item(self.key)
 
     def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
-        cache[ self.key ].Draw(output, gpos, sxsy)
+        item = cache.get(self.key, None)
+        if item is None:
+            cache[self.key] = item = Make_Cache_Item(self.key)
+        item.Draw(output, gpos, sxsy)
 
 def Flush_Draw_Obj_Cache() -> None:
     global cache
@@ -39,10 +41,7 @@ def Next_Frame() -> None:
     global frame
     frame += 1
 
-def Make_Cache_Item(key: DrawObjKey) -> None:
-    if ( cache.get(key, None) ):
-        return  # Done already.
-
+def Make_Cache_Item(key: DrawObjKey) -> Abstract_Draw_Obj:
     class Real_Draw_Obj(Abstract_Draw_Obj):
         def __init__(self, key: DrawObjKey) -> None:
             Abstract_Draw_Obj.__init__(self)
@@ -87,5 +86,5 @@ def Make_Cache_Item(key: DrawObjKey) -> None:
                         out.set_at((x,y), (sub, 0, 0, a))
             return out
 
-    cache[ key ] = Real_Draw_Obj(key)
+    return Real_Draw_Obj(key)
 

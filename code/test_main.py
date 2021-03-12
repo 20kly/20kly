@@ -34,9 +34,13 @@ def test_Main_Peaceful_Save() -> None:
     event_list = [NoEvent(),
                   Push(pygame.K_n), # new game
                   NoEvent(),
+                  VideoResize(),
+                  NoEvent(),
                   Push(pygame.K_p), # peaceful
                   NoEvent(),
                   Push(pygame.K_ESCAPE), # open in-game menu
+                  NoEvent(),
+                  VideoResize(),
                   NoEvent(),
                   Push(pygame.K_s), # open save menu
                   NoEvent(),
@@ -55,6 +59,8 @@ def test_Main_Peaceful_Save() -> None:
     # now restore the save game - check restore message
     event_list = [NoEvent(),
                   Push(pygame.K_r), # open restore menu
+                  NoEvent(),
+                  VideoResize(),
                   NoEvent(),
                   Push(pygame.K_9), # restore slot 9
                   NoEvent(),
@@ -85,6 +91,8 @@ def test_Main_Peaceful_Save() -> None:
                   Push(pygame.K_ESCAPE), # open menu
                   NoEvent(),
                   Push(pygame.K_r), # open restore menu
+                  NoEvent(),
+                  VideoResize(),
                   NoEvent(),
                   Push(pygame.K_9), # restore slot 9
                   NoEvent(),

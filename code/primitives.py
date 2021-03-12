@@ -107,7 +107,9 @@ GRID_SIZE = (50,50)
 # misc:
 CITY_BOX_SIZE = 10
 CITY_COLOUR = (192,128,0)
-RESOLUTION = (1024, 768)
+MINIMUM_WIDTH = 1024
+MINIMUM_HEIGHT = 768
+EXPECTED_ASPECT_RATIO = 1024 / 768
 CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
 
 # Debian paths

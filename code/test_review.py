@@ -46,6 +46,8 @@ def test_Review_Stats() -> None:
 
     event_list += [Push(pygame.K_LEFT),
                    NoEvent(),
+                   VideoResize(),
+                   NoEvent(),
                    Other(),
                    NoEvent(),
                    Push(pygame.K_ESCAPE),

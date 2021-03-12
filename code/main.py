@@ -78,9 +78,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
         pygame.mixer.init(22050,-16,2,bufsize)
 
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode(RESOLUTION, pygame.SCALED | pygame.RESIZABLE)
-    height = screen.get_rect().height
-    width = screen.get_rect().width
+    screen = pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 
     # Icon
     # The icon provided in the Debian package is different than the original one
@@ -107,12 +105,12 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
         # record/playback
         try:
             return_code = 1 # Assume playback did not complete
-            game.Main_Loop(screen=screen, clock=clock,
-                    width_height=(width, height), restore_pos=None,
+            game.Game(clock=clock,
+                    restore_pos=None,
                     challenge=record_challenge, event=event,
                     playback_mode=playback_mode,
                     playback_file=playback_file,
-                    record_file=record_file)
+                    record_file=record_file).Main_Loop()
         except PlaybackEOF:
             print("End of playback")
             return_code = 0
@@ -120,7 +118,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
         quit = True
 
     while ( not quit ):
-        quit = Main_Menu_Loop(n, clock, screen, (width, height), event)
+        quit = Main_Menu_Loop(n, clock, event)
 
     config.Save()
 
@@ -137,11 +135,8 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     return return_code
 
 
-def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
-                   width_height: SurfacePosition, event: events.Events) -> bool:
-    # Further initialisation
-    (width, height) = width_height
-    menu_image = resource.Load_Image("mainmenu.jpg")
+def Main_Menu_Loop(name: str, clock: ClockType,
+                   event: events.Events) -> bool:
 
     main_menu = current_menu = menu.Menu([
                 (None, None, []),
@@ -177,7 +172,12 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
     quit = False
     while ( not quit ):
         # Main menu
-        screen.fill((0,0,0))
+        screen = event.resurface()
+        (width, height) = screen.get_rect().size
+        menu_image = resource.Load_Image("mainmenu.jpg")
+        if ( menu_image.get_rect().width != width ): # NO-COV
+            menu_image = pygame.transform.smoothscale(menu_image, (width, height))
+
         screen.blit(menu_image, (0,0))
 
         y = 5
@@ -202,12 +202,12 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 current_menu = difficulty_menu
 
             elif ( cmd == MenuCommand.TUTORIAL ):
-                quit = game.Main_Loop(screen=screen, clock=clock,
-                        width_height=(width, height), restore_pos=None,
+                quit = game.Game(clock=clock,
+                        restore_pos=None,
                         challenge=MenuCommand.TUTORIAL, event=event,
                         playback_mode=PlayMode.OFF,
                         playback_file=None,
-                        record_file=None)
+                        record_file=None).Main_Loop()
 
             elif ( cmd == MenuCommand.LOAD ):
                 current_menu = save_menu.Save_Menu(False)
@@ -220,7 +220,7 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 return False # update menu
 
             elif ( cmd == MenuCommand.UPDATES ):
-                if Update_Feature(screen, menu_image, event):
+                if Update_Feature(menu_image, event):
                     url = ( CGISCRIPT + "v=" +
                             startup.Get_Game_Version() )
 
@@ -243,32 +243,35 @@ def Main_Menu_Loop(name: str, clock: ClockType, screen: SurfaceType,
                 event.webbrowser_open(url)
 
         elif ( current_menu == difficulty_menu ):
-            if ( cmd != MenuCommand.CANCEL ):
+            if ( cmd != None ):
+                current_menu = main_menu
+
+            if (( cmd != None ) and ( cmd != MenuCommand.CANCEL )):
                 # start new game with specified difficulty
-                quit = game.Main_Loop(screen=screen, clock=clock,
-                        width_height=(width, height), restore_pos=None,
+                quit = game.Game(clock=clock,
+                        restore_pos=None,
                         challenge=cmd, event=event,
                         playback_mode=PlayMode.OFF,
                         playback_file=None,
-                        record_file=None)
-
-            current_menu = main_menu
+                        record_file=None).Main_Loop()
 
         else: # Load menu
-            if ( cmd != MenuCommand.CANCEL ):
+            if ( cmd != None ):
+                current_menu = main_menu
+
+            if (( cmd != None ) and ( cmd != MenuCommand.CANCEL )):
                 # Start game from saved position
-                quit = game.Main_Loop(screen=screen, clock=clock,
-                        width_height=(width, height),
+                quit = game.Game(clock=clock,
                         restore_pos=cmd, challenge=None, event=event,
                         playback_mode=PlayMode.OFF,
                         playback_file=None,
-                        record_file=None)
-
-            current_menu = main_menu
+                        record_file=None).Main_Loop()
 
     return True
 
-def Update_Feature(screen: SurfaceType, menu_image: SurfaceType, event: events.Events) -> bool:
+def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
+    screen = event.resurface()
+
     def Message(msg_list: List[str]) -> None:
         screen.blit(menu_image, (0,0))
 
