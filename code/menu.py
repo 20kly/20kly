@@ -8,7 +8,7 @@
 import pygame
 
 
-from . import stats, extra, resource, render, sound, events
+from . import stats, draw_effects, resource, render, sound, events, config
 from .game_types import *
 
 
@@ -23,23 +23,22 @@ class Menu:
         self.selection: Optional[MenuCommand] = None
         self.update_required = True
 
-        width_hint = height_hint = 10
+        self.width_hint = self.height_hint = 10
 
         if ( force_width > 0 ):
-            width_hint = force_width
+            self.width_hint = force_width
 
         # Two attempts at drawing required.
-        (_, _, (width_hint, height_hint)) = self.__Draw((width_hint, height_hint))
+        (_, _, (self.width_hint, self.height_hint)) = self.__Draw((self.width_hint, self.height_hint))
 
-        if ( width_hint < 150 ):
-            width_hint = 150
+        if ( self.width_hint < 150 ):
+            self.width_hint = 150
         if ( force_width > 0 ):
-            width_hint = force_width
+            self.width_hint = force_width
 
-        (self.surf_store, self.control_rects,
-            _) = self.__Draw((width_hint, height_hint))
+        self.Update_Surface()
 
-        self.bbox = pygame.Rect(0, 0, width_hint, height_hint)
+        self.bbox = pygame.Rect(0, 0, self.width_hint, self.height_hint)
 
     def Get_Command(self) -> Optional[MenuCommand]:
         return self.selection
@@ -70,7 +69,6 @@ class Menu:
                 return
 
     def Mouse_Down(self, spos: SurfacePosition) -> None:
-
         self.Mouse_Move(spos)
         if ( self.hover is not None ):
             self.selection = self.hover
@@ -83,6 +81,10 @@ class Menu:
                 self.update_required = True
                 sound.FX("click")
                 return
+
+    def Update_Surface(self) -> None:
+        (self.surf_store, self.control_rects, _) = self.__Draw(
+                    (self.width_hint, self.height_hint))
 
     def Draw(self, output: SurfaceType,
              centre: Optional[SurfacePosition] = None) -> None:
@@ -115,7 +117,7 @@ class Menu:
         surf = pygame.Surface((width_hint, height_hint))
         bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
-        extra.Tile_Texture(surf, "006metal.jpg", surf.get_rect())
+        draw_effects.Tile_Texture(surf, "006metal.jpg", surf.get_rect())
 
         margin = 8
         w = bbox.width - ( margin * 2 )
@@ -133,7 +135,7 @@ class Menu:
                     img_r.center = bbox.center
                     img_r.top = y
                     surf.blit(img, img_r.topleft)
-                    extra.Edge_Effect(surf, img_r)
+                    draw_effects.Edge_Effect(surf, img_r)
                     max_width = img_r.width + ( margin * 2 )
                     y += img_r.height
 
@@ -151,8 +153,8 @@ class Menu:
             r = pygame.Rect(x,y,w,th)
             x += self.Justify(w,txt.get_rect().width)
 
-            extra.Tile_Texture(surf, "greenrust.jpg", r)
-            extra.Edge_Effect(surf, r)
+            draw_effects.Tile_Texture(surf, "greenrust.jpg", r)
+            draw_effects.Edge_Effect(surf, r)
             if num is not None:
                 self.Enhancement_Interface(surf, num, r, margin)
 
@@ -166,7 +168,7 @@ class Menu:
 
 
         # Finalise drawing
-        extra.Line_Edging(surf, bbox, True)
+        draw_effects.Line_Edging(surf, bbox, True)
 
         return (surf, control_rects, (max_width, y))
 
@@ -193,6 +195,51 @@ class Enhanced_Menu(Menu):
             img_r.center = rect.center
             img_r.left = rect.left + margin
             surf.blit(img, img_r.topleft)
+
+
+# This menu offers an option to turn the sound on or off
+# which is updated when clicked. The option isn't present if
+# sound is disabled.
+TOGGLE_SOUND = (MenuCommand.MUTE, "Turn Sound ...", [pygame.K_m])
+
+class Toggle_Sound_Menu(Menu):
+    def __init__(self, menu_options: List[MenuItem], force_width=0) -> None:
+        self.options = menu_options[:]
+        self.toggle_sound_index = self.options.index(TOGGLE_SOUND)
+
+        if resource.Has_No_Sound():
+            self.options.pop(self.toggle_sound_index)
+            self.toggle_sound_index = -1
+        else:
+            self.Set_Sound_Item()
+
+        Menu.__init__(self, self.options, force_width)
+
+    def Mouse_Down(self, spos: SurfacePosition) -> None:
+        Menu.Mouse_Down(self, spos)
+        self.Check_Selection()
+
+    def Key_Press(self, k: int) -> None:
+        Menu.Key_Press(self, k)
+        self.Check_Selection()
+
+    def Check_Selection(self) -> None:
+        if self.selection == TOGGLE_SOUND[0]:
+            self.selection = None
+            config.cfg.mute = not config.cfg.mute
+            sound.FX("click")
+            self.Set_Sound_Item()
+            self.Update_Surface()
+
+    def Set_Sound_Item(self) -> None:
+        if config.cfg.mute:
+            text = "Turn Sound On"
+        else:
+            text = "Turn Sound Off"
+
+        assert self.toggle_sound_index >= 0
+        self.options[self.toggle_sound_index] = (
+                TOGGLE_SOUND[0], text, TOGGLE_SOUND[2])
 
 
 def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,

@@ -44,15 +44,15 @@ def test_Game_Events() -> None:
                   NoEvent(),
                   RightClick((60, 60)),
                   NoEvent(),
-                  Push(pygame.K_m),         # leave menu (clicking mute)
+                  Push(pygame.K_m),         # mute (stays in the menu)
                   NoEvent(),
-                  Push(pygame.K_ESCAPE),    # enter menu
+                  Push(pygame.K_m),         # mute again
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # leave menu (return to game)
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # enter menu
                   NoEvent(),
-                  Push(pygame.K_r),
+                  Push(pygame.K_r),         # restore
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # leave menu (cancelling restore)
                   NoEvent(),

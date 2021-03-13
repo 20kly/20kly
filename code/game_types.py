@@ -27,4 +27,5 @@ ControlRectType = Tuple[MenuCommand, RectType]
 NextParticleType = Tuple[FloatSurfacePosition, Colour4]
 FloatGridLine = Tuple[FloatGridPosition, FloatGridPosition]
 GridLine = Tuple[GridPosition, GridPosition]
+VersionType = Tuple[int, int, int]
 

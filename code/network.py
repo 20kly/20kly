@@ -8,7 +8,7 @@
 
 import math, time
 
-from . import map_items, sound, game_random, intersect, extra, pipe_grid
+from . import map_items, sound, game_random, intersect, pipe_grid
 from .primitives import *
 from .game_types import *
 from .mail import New_Mail
@@ -241,7 +241,7 @@ class Network:
             New_Mail(node.name_type + " destroyed by " + by + ".")
 
         node.Prepare_To_Die()
-        extra.List_Destroy(self.node_list, node)
+        List_Destroy(self.node_list, node)
 
         # restore the well (if applicable)
         if restore_node is not None:
@@ -254,9 +254,9 @@ class Network:
     def __Destroy_Pipe(self, pipe: "map_items.Pipe") -> None:
         self.dirty = True
         pipe.Prepare_To_Die()
-        extra.List_Destroy(self.pipe_list, pipe)
-        extra.List_Destroy(pipe.n1.pipes, pipe)
-        extra.List_Destroy(pipe.n2.pipes, pipe)
+        List_Destroy(self.pipe_list, pipe)
+        List_Destroy(pipe.n1.pipes, pipe)
+        List_Destroy(pipe.n2.pipes, pipe)
 
     def Make_Well(self, teaching=False, inhibit_effects=False) -> None:
         self.dirty = True
@@ -285,4 +285,8 @@ class Network:
     def Lose(self) -> None:
         for n in self.node_list:
             n.Lose()
+
+def List_Destroy(lst: List[typing.Any], itm: typing.Any) -> None:
+    if itm in lst:
+        lst.remove(itm)
 

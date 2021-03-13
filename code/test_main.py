@@ -4,7 +4,7 @@
 #
 
 import pygame
-from . import startup, main, mail
+from . import main, mail, version
 from .primitives import *
 from .game_types import *
 from .unit_test import *
@@ -165,7 +165,7 @@ def test_Update_Feature() -> None:
     by hooking both sides of the API."""
 
     def No_Update_1(url: str) -> str:
-        return startup.Get_Game_Version()
+        return version.Encode(VERSION)
 
     main.Main(data_dir="data", args=[], event=Fake_Update_Events(No_Update_1))
     assert not ("OPEN URL" in mail.Get_Messages())

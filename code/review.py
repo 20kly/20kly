@@ -9,7 +9,7 @@
 import pygame, sys, math, time, pickle
 
 
-from . import extra, resource, stats, menu, game, events
+from . import draw_effects, resource, font, menu, game, events
 from .primitives import *
 from .game_types import *
 
@@ -49,12 +49,12 @@ def Review(game_object: "game.Game_Data",
         screen = event.resurface()
         (width, height) = screen.get_rect().size
         g = game_object
-        extra.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
+        draw_effects.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
 
         def Text(text: str, size: int,
                  xy: SurfacePosition, justify: int) -> int:
             (x,y) = xy
-            img = stats.Get_Font(size).render(text, True, (255, 255, 255))
+            img = font.Get_Font(size).render(text, True, (255, 255, 255))
 
             if ( justify == 0 ): # centre
                 x -= ( img.get_rect().width ) // 2

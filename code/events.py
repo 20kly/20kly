@@ -6,6 +6,7 @@
 import pygame, webbrowser, urllib.request
 from .game_types import *
 from .primitives import *
+from . import mail, config
 
 
 class Event:
@@ -85,6 +86,7 @@ class Events:
             self.left_margin = (width - true_width) // 2
             assert self.left_margin >= 0
             screen = screen.subsurface(pygame.Rect(self.left_margin, 0, true_width, height))
+            width = true_width
 
         elif error < -0.01:
             # phone screen - black bars at the top/bottom
@@ -92,6 +94,12 @@ class Events:
             self.top_margin = (height - true_height) // 2
             assert self.top_margin >= 0
             screen = screen.subsurface(pygame.Rect(0, self.top_margin, width, true_height))
+            height = true_height
+
+        # Notify other components of size change
+        mail.Set_Screen_Height(height)
+        config.cfg.width = width
+        config.cfg.height = height
 
         return screen
 

@@ -63,7 +63,7 @@ if __name__ == "__main__":
     if ((LIGHTYEARS_DIR == None)
     or (not os.path.isdir(LIGHTYEARS_DIR))
     or (not os.path.isfile(os.path.join(LIGHTYEARS_DIR, 
-                            'code', 'startup.py')))):
+                            'code', '__init__.py')))):
         LIGHTYEARS_DIR = "."
 
     # Paths obtained
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # Go
     if (os.path.isdir(data_dir)
     and os.path.isdir(code_dir)
-    and os.path.isfile(os.path.join(code_dir, "startup.py"))
+    and os.path.isfile(os.path.join(code_dir, "__init__.py"))
     and os.path.isfile(os.path.join(code_dir, "main.py"))
     and os.path.isfile(os.path.join(data_dir, "bolt.png"))
     and os.path.isfile(os.path.join(data_dir, "well.png"))):

@@ -9,7 +9,7 @@
 import math , pygame
 
 
-from . import extra , sound
+from . import sound
 from .quiet_season import Quiet_Season
 from . import game_random
 from .primitives import *

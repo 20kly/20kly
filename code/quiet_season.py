@@ -3,13 +3,12 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-07.
 #
 
-from pygame import Rect
 from .game_types import *
 from . import network
 
 class Quiet_Season:
     # The quiet season is... very quiet.
-    def __init__(self, net: network.Network) -> None:
+    def __init__(self, net: "network.Network") -> None:
         self.net = net
         self.name = "Quiet"
 

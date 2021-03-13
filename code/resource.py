@@ -91,7 +91,7 @@ def Load_Font(size: int) -> pygame.font.Font:
 def Load_Sound(name: str) -> "Optional[SoundType]":
     global __snd_cache, __snd_disabled
 
-    if ( __snd_disabled ):
+    if __snd_disabled:
         return None
 
     f: "Optional[SoundType]" = __snd_cache.get(name, None)
@@ -115,6 +115,9 @@ def Load_Sound(name: str) -> "Optional[SoundType]":
 
     return f
 
+
+def Has_No_Sound() -> bool:
+    return __snd_disabled
 
 def No_Sound() -> None:
     global __snd_disabled

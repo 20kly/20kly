@@ -9,7 +9,7 @@
 import pygame, math
 
 
-from . import extra, stats, resource, draw_obj, sound
+from . import partial_vector, stats, resource, draw_obj, sound
 from .primitives import *
 from .game_types import *
 from . import steam_model
@@ -417,8 +417,8 @@ class Pipe(Building):
         self.length = net.demo.hypot(x1 - x2, y1 - y2)
         self.max_health = int(self.length + 1) * HEALTH_UNIT
         self.base_colour = (0,255,0)
-        self.resistance = ( self.length + 2.0 ) * RESISTANCE_FACTOR
-        self.current_n1_to_n2 = 0.0
+        self.resistance: float = ( self.length + 2.0 ) * RESISTANCE_FACTOR
+        self.current_n1_to_n2: float = 0.0
 
         self.dot_drawing_offset = 0
         self.dot_positions: List[FloatSurfacePosition] = []
@@ -488,7 +488,7 @@ class Pipe(Building):
         colour = (0, 255, 0) # brigt green dots
 
         self.dot_positions = [
-            extra.Partial_Vector(pos_a, pos_b, (interp, positions))
+            partial_vector.Partial_Vector(pos_a, pos_b, (interp, positions))
             for interp in range(self.dot_drawing_offset, positions,
                     self.SFACTOR) ]
 

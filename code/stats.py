@@ -7,17 +7,13 @@
 import pygame
 
 
-from . import resource
+from . import font
 from .game_types import *
-
-__font_objects: Dict[int, pygame.font.Font] = dict()
 
 
 def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) -> None:
     y = 5
     w = output.get_rect().width
-
-    global __font_objects
 
     for (colour, size, item) in stats_tuple_list:
         if ( size is None ):
@@ -32,7 +28,7 @@ def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) ->
             text = typing.cast(str, item)
             assert type(text) == str
             assert colour is not None
-            txt = Get_Font(size).render(text, True, colour)
+            txt = font.Get_Font(size).render(text, True, colour)
             x = ( w - txt.get_rect().width ) // 2
             output.blit(txt, (x,y))
             y += txt.get_rect().height
@@ -59,15 +55,4 @@ def Draw_Bar_Meter(output: SurfaceType, items: List[BarMeterStatTuple],
         y += item_height
 
     return r1 # bounding box
-
-def Get_Font(size: int) -> pygame.font.Font:
-    if ( size < 10 ):
-        size = 10
-
-    if ( not __font_objects.get(size, None) ):
-        __font_objects[ size ] = resource.Load_Font(size)
-    return __font_objects[ size ]
-
-
-
 

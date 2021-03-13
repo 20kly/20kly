@@ -6,7 +6,7 @@
 import math , pygame
 
 
-from . import extra, particle, sound
+from . import partial_vector, particle, sound, quakes
 from .quiet_season import Quiet_Season
 from .primitives import *
 from .game_types import *
@@ -66,7 +66,7 @@ class Storm:
         self.difficulty = difficulty
         self.storm_frame = 0
 
-        [a, b] = extra.Make_Quake_SF_Points(self.net.demo, 5)
+        [a, b] = quakes.Make_Quake_SF_Points(self.net.demo, 5)
         if ( self.net.demo.randint(0,1) == 0 ):
             (a, b) = (b, a) # flip - ensures start point is not always on top or left
 
@@ -82,7 +82,7 @@ class Storm:
 
         # Convert the overall displacement vector (dx,dy) into a velocity.
         distance = self.net.demo.hypot(dx,dy)
-        self.velocity = extra.Partial_Vector((0, 0), (dx, dy), (speed, distance))
+        self.velocity = partial_vector.Partial_Vector((0, 0), (dx, dy), (speed, distance))
 
         # How long does this storm live?
         self.countdown = distance / speed

@@ -6,7 +6,7 @@
 import pygame
 
 
-from . import stats
+from . import font
 from .game_types import *
 
 # A font renderer that supports the familiar & marker for a hotkey.
@@ -16,9 +16,9 @@ def Render(text: str, size: int, colour: Colour, hcolour: Colour) -> SurfaceType
     i = text.find('&')
     if ( i < 0 ):
         # not found, do normal render
-        return stats.Get_Font(size).render(text, True, colour)
+        return font.Get_Font(size).render(text, True, colour)
 
-    f = stats.Get_Font(size)
+    f = font.Get_Font(size)
     # do normal render up to &.
     s1 = f.render(text[ : i ], True, colour)
 

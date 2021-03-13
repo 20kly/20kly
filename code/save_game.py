@@ -7,7 +7,7 @@ import pickle, os
 
 from .game_types import *
 from .primitives import MenuCommand
-from . import game, extra
+from . import game, config
 
 
 HEADER_SIZE = 100
@@ -19,7 +19,7 @@ SLOTS = [MenuCommand.SAVE0, MenuCommand.SAVE1,
 
 def Make_Save_Name(slot: MenuCommand) -> str:
     name = "save" + str(Get_Number(slot)) + ".dat"
-    home = extra.Get_Home()
+    home = config.Get_Home()
     if ( home is None ):
         return name  # NO-COV
     else:

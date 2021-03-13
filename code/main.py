@@ -8,8 +8,8 @@ import pygame, sys, math, time, os
 import getopt
 
 
-from . import game, stats, storms, save_menu, resource, menu, events
-from . import config, startup, sound, alien_invasion, quakes, sdl, mail
+from . import game, font, storms, save_menu, resource, menu, events
+from . import config, sound, alien_invasion, quakes, mail, version
 from .primitives import *
 from .game_types import *
 from .game_random import PlaybackEOF
@@ -17,11 +17,10 @@ from .game_random import PlaybackEOF
 
 def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
-    n = "20,000 Light-Years Into Space"
     print("")
-    print(n)
-    print("Copyright (C) Jack Whitham 2006-21")
-    print("Version " + startup.Get_Game_Version())
+    print(TITLE)
+    print(COPYRIGHT)
+    print("Version " + version.Encode(VERSION))
     print("", flush=True)
 
     resource.DATA_DIR = data_dir
@@ -35,10 +34,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     config.Initialise("--safe" in opts)
     mail.Initialise()
-
-    # This allows the window to be scaled to any size
-    # The game itself always uses a native resolution of 1024x768
-    sdl.SDL_SetHintWithPriority("SDL_HINT_RENDER_SCALE_QUALITY", "nearest", 0)
+    mail.Set_Screen_Height(config.cfg.height)
 
     # Pygame things
     bufsize = 2048
@@ -72,13 +68,14 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     pygame.init()
     pygame.font.init()
 
-    if ( no_sound ):
+    if no_sound:
         resource.No_Sound()
     else:
         pygame.mixer.init(22050,-16,2,bufsize)
 
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((config.cfg.width,
+                        config.cfg.height), pygame.RESIZABLE)
 
     # Icon
     # The icon provided in the Debian package is different than the original one
@@ -94,7 +91,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     # Game begins.. show loading image
     screen.fill((0,0,0))
     pygame.display.flip()
-    pygame.display.set_caption(n)
+    pygame.display.set_caption(TITLE)
     storms.Init_Storms()
     alien_invasion.Init_Aliens()
     quakes.Init_Quakes()
@@ -118,7 +115,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
         quit = True
 
     while ( not quit ):
-        quit = Main_Menu_Loop(n, clock, event)
+        quit = Main_Menu_Loop(TITLE, clock, event)
 
     config.Save()
 
@@ -138,13 +135,14 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 def Main_Menu_Loop(name: str, clock: ClockType,
                    event: events.Events) -> bool:
 
-    main_menu = current_menu = menu.Menu([
+    current_menu: menu.Menu
+    main_menu = menu.Toggle_Sound_Menu([
                 (None, None, []),
                 (MenuCommand.TUTORIAL, "Play Tutorial", [pygame.K_t]),
                 (MenuCommand.NEW_GAME, "Play New Game", [pygame.K_n]),
                 (MenuCommand.LOAD, "Restore Game", [pygame.K_r]),
                 (None, None, []),
-                (MenuCommand.MUTE, "Toggle Sound", [pygame.K_m]),
+                menu.TOGGLE_SOUND,
                 (MenuCommand.MANUAL, "View Manual", [pygame.K_v]),
                 (MenuCommand.UPDATES, "Check for Updates", [pygame.K_u]),
                 (None, None, []),
@@ -161,11 +159,11 @@ def Main_Menu_Loop(name: str, clock: ClockType,
                 (MenuCommand.PEACEFUL, "Peaceful", [pygame.K_p]),
                 (None, None, []),
                 (MenuCommand.CANCEL, "Cancel", [pygame.K_ESCAPE])])
+    current_menu = main_menu
 
     copyright = [ name,
-            "Copyright (C) Jack Whitham 2006-21 - website: www.jwhitham.org",
-            "",
-            "Game version " + startup.Get_Game_Version() ]
+            COPYRIGHT + " - website: www.jwhitham.org",
+            "Game version " + version.Encode(VERSION) ]
 
     # off we go.
 
@@ -181,12 +179,8 @@ def Main_Menu_Loop(name: str, clock: ClockType,
         screen.blit(menu_image, (0,0))
 
         y = 5
-        sz = 11
         for text in copyright:
-            if ( text == "" ):
-                sz = 7
-                continue
-            img = stats.Get_Font(sz).render(text, True, (200, 200, 128))
+            img = font.Get_Font(11).render(text, True, (200, 200, 128))
             img_r = img.get_rect()
             img_r.center = (( width * 3 ) // 4, 0)
             img_r.clamp_ip(screen.get_rect())
@@ -215,14 +209,9 @@ def Main_Menu_Loop(name: str, clock: ClockType,
             elif ( cmd == MenuCommand.QUIT ):
                 quit = True
 
-            elif ( cmd == MenuCommand.MUTE ):
-                config.cfg.mute = not config.cfg.mute
-                return False # update menu
-
             elif ( cmd == MenuCommand.UPDATES ):
                 if Update_Feature(menu_image, event):
-                    url = ( CGISCRIPT + "v=" +
-                            startup.Get_Game_Version() )
+                    url = ( CGISCRIPT + "v=" + version.Encode(VERSION) )
 
                     event.webbrowser_open(url)
 
@@ -277,8 +266,8 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
 
         y = screen.get_rect().centery
         for msg in msg_list:
-            img_1 = stats.Get_Font(24).render(msg, True, (255, 255, 255))
-            img_2 = stats.Get_Font(24).render(msg, True, (0, 0, 0))
+            img_1 = font.Get_Font(24).render(msg, True, (255, 255, 255))
+            img_2 = font.Get_Font(24).render(msg, True, (0, 0, 0))
             img_r = img_1.get_rect()
             img_r.centerx = screen.get_rect().centerx
             img_r.centery = y
@@ -307,7 +296,7 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
                 timer -= 40
 
     Message(["Connecting to Website..."])
-    url = ( CGISCRIPT + "a=1" )
+    url = ( CGISCRIPT + "a=2" )
     new_version = None
     try:
         new_version = event.check_update(url)
@@ -325,28 +314,17 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
         return False
 
 
-    def Decode(version: str) -> Tuple[int, int]:
-        version_code = version.strip().split(".")
+    new_version_int = version.Decode(new_version)
+    new_version = version.Encode(new_version_int)
+    old_version_int = VERSION
+    old_version = version.Encode(old_version_int)
 
-        try:
-            major = int(version_code[0], 10)
-            minor = int(version_code[1], 10)
-            return (major, minor)
-
-        except Exception as x: # NO-COV
-            return (0, 0)
-
-    old_version = startup.Get_Game_Version()
-    old_version_pair = Decode(old_version)
-    new_version_pair = Decode(new_version)
-    new_version = "{}.{}".format(*new_version_pair)
-
-    if new_version_pair == old_version_pair:
+    if new_version_int == old_version_int:
         Message(["Your software is up to date!",
             "Thankyou for using the update feature."])
         Finish(None)
         return False
-    elif new_version_pair > old_version_pair:
+    elif new_version_int > old_version_int:
         Message(["New version " + new_version + " is available!",
                 "Opening website..."])
         Finish(None)

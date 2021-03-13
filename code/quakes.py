@@ -11,7 +11,7 @@
 import math , pygame
 
 
-from . import extra, intersect, sound
+from . import partial_vector, intersect, sound, game_random
 from .quiet_season import Quiet_Season
 from .primitives import *
 from .game_types import *
@@ -64,12 +64,12 @@ class Quake_Season(Quiet_Season):
 
     def __Generate_Quake(self) -> None:
         # Make start/finish points first.
-        line = typing.cast(List[FloatGridPosition], extra.Make_Quake_SF_Points(self.net.demo, 2))
+        line = typing.cast(List[FloatGridPosition], Make_Quake_SF_Points(self.net.demo, 2))
 
         # Split line, repeatedly, at random locations.
         for i in range(6,1,-1):
             split = self.net.demo.randint(0,len(line) - 2)
-            (x3, y3) = extra.Partial_Vector(line[ split ], line[ split + 1 ],
+            (x3, y3) = partial_vector.Partial_Vector(line[ split ], line[ split + 1 ],
                     (self.net.demo.random(), 1.0) )
             # New vertex gets moved about a bit.
             x3 += ( self.net.demo.random() * 2.0 * i ) - float(i)
@@ -84,7 +84,7 @@ class Quake_Season(Quiet_Season):
             (x2, y2) = line[ i + 1 ]
             sz = self.net.demo.hypot( x1 - x2, y1 - y2 )
             if ( sz > 10.0 ):
-                (x3, y3) = extra.Partial_Vector(
+                (x3, y3) = partial_vector.Partial_Vector(
                         line[ i ], line[ i + 1 ], (0.5, 1.0))
                 line.insert(i + 1, (x3, y3))
             else:
@@ -164,6 +164,31 @@ class Quake_Season(Quiet_Season):
         elif ( self.state == self.QUAKE_AFTERMATH ):
             if ( len(self.fault_lines) > 0 ):
                 self.fault_lines.pop(0) # the reverse of unfurling!
+
+# Generate start/finish of a quake line.
+# Also used by storms.
+def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[SurfacePosition]:
+    # Quake fault lines must stay well away from the centre:
+    # that's enforced here.
+    crosses_centre = True
+    (x,y) = GRID_CENTRE
+    d = 7
+    check = [ (x - d, y - d), (x + d, y + d),
+            (x - d, y + d), (x + d, y - d) ]
+    (w,h) = GRID_SIZE
+
+    while ( crosses_centre ):
+        if ( demo.randint(0,1) == 0 ):
+            start = (demo.randint(0,w - 1), -off)
+            finish = (demo.randint(0,w - 1), h + off)
+        else:
+            start = (-off, demo.randint(0,h - 1))
+            finish = (h + off, demo.randint(0,h - 1))
+
+        crosses_centre = (intersect.Lines_Intersect((start, finish), (check[0], check[1]))
+                or intersect.Lines_Intersect((start, finish), (check[2], check[3])))
+    return [start, finish]
+
 
 
 def Init_Quakes() -> None:

@@ -4,7 +4,7 @@
 #
 
 import pickle
-from . import game_random, config, startup, unit_test
+from . import game_random, config, unit_test
 from .primitives import *
 from .game_types import *
 
@@ -19,7 +19,7 @@ def test_Config() -> None:
     test_screen = unit_test.Setup_For_Unit_Test()
     config.Initialise(True)     # full reinit
     assert config.cfg.mute
-    assert config.cfg.version == startup.Get_Game_Version()
+    assert config.cfg.version == VERSION
     assert config.cfg.test == 0
     assert config.FILENAME is not None
 
@@ -40,14 +40,14 @@ def test_Config() -> None:
     pickle.dump(my_cfg, open(config.FILENAME, "wb"))
     config.Initialise(False)        # attempt to reload
     assert config.cfg.test == 3     # nothing was loaded
-    assert config.cfg.version == startup.Get_Game_Version()
+    assert config.cfg.version == VERSION
 
     # Make non-loadable configuration
     open(config.FILENAME, "wb").write(b"INVALID")
     config.Initialise(False)        # reload
     assert config.cfg.mute          # mute setting not reloaded (not loadable)
     assert config.cfg.test == 3     # nothing was loaded
-    assert config.cfg.version == startup.Get_Game_Version()
+    assert config.cfg.version == VERSION
 
     # Make non-saveable configuration
     copy = config.FILENAME

@@ -8,8 +8,8 @@
 
 import pygame, sys, math, time, pickle, random
 
-from . import extra, stats, mail, gametime, events
-from . import menu, startup, save_menu, save_game, config, resource
+from . import draw_effects, stats, mail, gametime, events
+from . import menu, save_menu, save_game, config, resource
 from . import review, sound, tutor, draw_obj
 from . import game_random, grid, alien_invasion
 from .primitives import *
@@ -28,8 +28,8 @@ FRAME_RATE = 35
 
 class Game_Data:
     def __init__(self, demo: "game_random.Game_Random", challenge: MenuCommand) -> None:
-        self.version = startup.Get_Game_Version()
-        self.sysinfo = extra.Get_System_Info()
+        self.version = VERSION
+        self.sysinfo = config.Get_System_Info()
         teaching = ( challenge == MenuCommand.TUTORIAL )
 
         # Steam network initialisation
@@ -141,11 +141,6 @@ class Game:
         # Needed when resized
         draw_obj.Flush_Draw_Obj_Cache()
 
-        # Grid setup
-        (w,h) = GRID_SIZE
-        assert w == h
-        grid.Set_Grid_Size(height // h)
-
         # Windows..
         self.game_screen_rect = pygame.Rect(0, 0, self.menu_margin, height)
         self.game_screen_surf = self.screen.subsurface(self.game_screen_rect)
@@ -201,7 +196,7 @@ class Game:
         self.ui.Update_All()
 
     def Special_Refresh(self) -> None:
-        extra.Tile_Texture(self.screen, "rivets.jpg",
+        draw_effects.Tile_Texture(self.screen, "rivets.jpg",
                 pygame.Rect(self.menu_margin, 0,
                     self.menu_width, self.screen.get_rect().height))
 
@@ -210,11 +205,11 @@ class Game:
 
         r: RectType
         for r in [ self.stats_rect, self.global_stats_rect, edge ]:
-            extra.Line_Edging(self.screen, r, False)
+            draw_effects.Line_Edging(self.screen, r, False)
 
         r = self.header_picture.get_rect()
         r.center = self.picture_surf.get_rect().center
-        extra.Line_Edging(self.picture_surf, r, False)
+        draw_effects.Line_Edging(self.picture_surf, r, False)
         self.picture_surf.blit(self.header_picture, r.topleft)
 
     def Main_Loop(self) -> bool:
@@ -234,9 +229,9 @@ class Game:
         if ( g.challenge == MenuCommand.TUTORIAL ):
             save_available = []
 
-        in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
+        in_game_menu: menu.Menu = menu.Toggle_Sound_Menu(typing.cast(List[MenuItem], [
             (None, None, []),
-            (MenuCommand.MUTE, "Toggle Sound", [pygame.K_m]),
+            menu.TOGGLE_SOUND,
             (None, None, [])]) +
             save_available + [
             (MenuCommand.HIDE, "Return to Game", [pygame.K_ESCAPE])] +
@@ -269,7 +264,7 @@ class Game:
 
 
         if ( g.challenge == MenuCommand.TUTORIAL ):
-            tutor.On(( MINIMUM_HEIGHT * 40 ) // 100)
+            tutor.On()
 
         cur_time = g.game_time.time()
 
@@ -574,10 +569,6 @@ class Game:
 
                     elif ( cmd == MenuCommand.LOAD ):
                         current_menu = save_menu.Save_Menu(False)
-
-                    elif ( cmd == MenuCommand.MUTE ):
-                        config.cfg.mute = not config.cfg.mute
-                        self.ui.Reset()
 
                     elif ( cmd == MenuCommand.REVIEW ):
                         loop_running = False

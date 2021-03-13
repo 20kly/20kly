@@ -4,7 +4,7 @@
 #
 
 import os, pygame, pickle
-from . import game_random, game, save_game, resource, config, startup, extra
+from . import game_random, game, save_game, resource, config
 from . import events, menu, main, mail, map_items, network, grid, quiet_season
 from .ui import User_Interface
 from .primitives import *
@@ -13,9 +13,10 @@ from .game_types import *
 
 def Setup_For_Unit_Test() -> SurfaceType:
     resource.DATA_DIR = os.path.join(os.getcwd(), "data")
-    resource.No_Sound()
+    config.cfg.mute = True
     pygame.init()
     pygame.font.init()
+    mail.Set_Screen_Height(MINIMUM_HEIGHT)
     return pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 
 class Click(events.Event):

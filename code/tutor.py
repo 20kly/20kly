@@ -10,7 +10,7 @@
 import pygame, time
 
 
-from . import stats, extra, resource
+from . import font, draw_effects, resource
 from . import map_items
 from . import game
 from .primitives import *
@@ -18,12 +18,8 @@ from .game_types import *
 from .difficulty import DIFFICULTY
 
 
-__tutor = None
-
-def On(width: int) -> None:
-    global __tutor
-    __tutor = Tutor_Memory(width)
-
+def On() -> None:
+    __tutor.Reset()
     Message(None, "welcome",
         "Welcome to 20,000 Light Years Into Space!",
         "You are playing the interactive tutorial. As you play, " +
@@ -229,8 +225,7 @@ def Aliens_Gone() -> None:
 
 
 def Notify_Select(item: Optional[map_items.Item]) -> None:
-    global __tutor
-    if ( __tutor is None ):
+    if __tutor.inactive:
         return
 
     if ( isinstance(item, map_items.Node) ):
@@ -252,22 +247,19 @@ def Notify_Select(item: Optional[map_items.Item]) -> None:
         Nothing_Selected()
 
 def Notify_Add_Pipe() -> None:
-    global __tutor
-    if ( __tutor is None ):
+    if __tutor.inactive:
         return
 
     Pipe_Added()
 
 def Notify_Add_Node(n: map_items.Item) -> None:
-    global __tutor
-    if ( __tutor is None ):
+    if __tutor.inactive:
         return
 
     #Node_Added(n)
 
 def Examine_Game(g: "game.Game_Data") -> None:
-    global __tutor
-    if ( __tutor is None ):
+    if __tutor.inactive:
         return
 
     # test 1 - are all nodes finished?
@@ -296,61 +288,68 @@ def Examine_Game(g: "game.Game_Data") -> None:
     Number_Of_Pipes_Is(pipe_count)
 
 def Off() -> None:
-    global __tutor
-    __tutor = None
+    __tutor.inactive = True
 
 def Message(previous_msg_name: Optional[str], this_msg_name: str,
             title: str, text: str, sf: bool) -> None:
-    global __tutor
-    t = __tutor
-    assert ( t is not None )
-    t.Add_Message((previous_msg_name, this_msg_name,
+    __tutor.Add_Message((previous_msg_name, this_msg_name,
             title, text, sf))
 
 def Draw(screen: SurfaceType, g: "game.Game_Data") -> None:
-    global __tutor
-    t = __tutor
-    if ( t is not None ):
-        t.Draw(screen, g)
+    if __tutor.inactive:
+        return
+    __tutor.Draw(screen, g)
 
 def Permit_Season_Change() -> bool:
-    global __tutor
-    t = __tutor
-    if ( t is not None ):
-        return t.Permit_Season_Change()
-    else:
+    if __tutor.inactive:
         return True
+    else:
+        return __tutor.Permit_Season_Change()
 
 def Active() -> bool:
-    global __tutor
-    return ( __tutor is not None )
+    return not __tutor.inactive
 
 def Has_Changed() -> bool:
-    global __tutor
-    t = __tutor
-    if ( t is not None ):
-        x = t.update
-        t.update = False
-        return x
-    else:
+    if __tutor.inactive:
         return False
+
+    x = __tutor.update
+    __tutor.update = False
+    return x
 
 
 class Tutor_Memory:
-    def __init__(self, w: int) -> None:
+    def __init__(self) -> None:
+        # Called on startup only
+        self.Reset()
+        self.width = 10
+        self.inactive = True
+
+    def Reset(self) -> None:
+        # Called on startup and when a tutorial game begins
         self.current_msg_name: Optional[str] = None
         self.current_msg_surf: Optional[SurfaceType] = None
+        self.current_msg_title = ""
+        self.current_msg_text = ""
         self.current_msg_popup = False
-        self.width = w
         self.update = False
         self.permit_season_change = False
+        self.inactive = False
+
+    def Set_Width(self, width: int) -> None:
+        # Called on startup and when the screen size changes
+        self.width = width
+        self.current_msg_surf = None
 
     def Add_Message(self, arg: Tuple[Optional[str], str, str, str, bool]) -> None:
         (previous_msg_name, this_msg_name, title, text, sf) = arg
 
+        assert not self.inactive
         if ( self.current_msg_name == previous_msg_name ):
             self.current_msg_name = this_msg_name
-            self.current_msg_surf = self.__Draw(title, text)
+            self.current_msg_title = title
+            self.current_msg_text = text
+            self.current_msg_surf = None
             self.current_msg_popup = True
             self.update = True
             self.permit_season_change = sf
@@ -359,19 +358,25 @@ class Tutor_Memory:
         return self.permit_season_change
 
     def Draw(self, screen: SurfaceType, g: "game.Game_Data") -> None:
-        if ( self.current_msg_popup and ( self.current_msg_surf is not None )): # NO-COV
-            r = self.current_msg_surf.get_rect()
-            r.top = r.left = 30
-            screen.blit(self.current_msg_surf, r)
+        if not ( self.current_msg_popup and self.current_msg_text ):
+            return # NO-COV
 
-    def __Draw(self, title: str, text: str) -> SurfaceType:
+        if self.current_msg_surf is None:
+            self.current_msg_surf = self.__Draw()
+
+        r = self.current_msg_surf.get_rect()
+        r.top = r.left = 30
+        screen.blit(self.current_msg_surf, r)
+
+    def __Draw(self) -> SurfaceType:
         height = 10
-        (surf, height) = self.__Draw_H(title, text, height)
-        (surf, height) = self.__Draw_H(title, text, height)
+        (surf, height) = self.__Draw_H(height)
+        (surf, height) = self.__Draw_H(height)
         return surf
 
-    def __Draw_H(self, title: str, text: str, height: int) -> Tuple[SurfaceType, int]:
+    def __Draw_H(self, height: int) -> Tuple[SurfaceType, int]:
         width = self.width
+        text = self.current_msg_text
         margin = 10
         fs1 = 12
         fs2 = 14
@@ -379,9 +384,9 @@ class Tutor_Memory:
 
         surf = pygame.Surface((width, height))
         bbox = surf.get_rect()
-        extra.Tile_Texture(surf, "006metal.jpg", bbox)
+        draw_effects.Tile_Texture(surf, "006metal.jpg", bbox)
 
-        tsurf = stats.Get_Font(fs1).render(title, True, (250,250,200))
+        tsurf = font.Get_Font(fs1).render(self.current_msg_title, True, (250,250,200))
         tsurf_r = tsurf.get_rect()
         tsurf_r.center = bbox.center
         tsurf_r.top = margin
@@ -390,7 +395,7 @@ class Tutor_Memory:
 
         y = tsurf_r.bottom + margin
         # line edging for title
-        extra.Line_Edging(surf, pygame.Rect(0,0,width,y), True)
+        draw_effects.Line_Edging(surf, pygame.Rect(0,0,width,y), True)
 
         y += margin
         x = margin
@@ -411,7 +416,7 @@ class Tutor_Memory:
             word = text[ : i ] + " "
             text = text[ i + 1 : ].lstrip()
 
-            tsurf = stats.Get_Font(fs2).render(word, True, (250,200,250))
+            tsurf = font.Get_Font(fs2).render(word, True, (250,200,250))
             tsurf_r = tsurf.get_rect()
             tsurf_r.topleft = (x,y)
             if ( tsurf_r.right > ( width - 5 )):
@@ -429,9 +434,12 @@ class Tutor_Memory:
                 y = tsurf_r.bottom + newline_gap
 
         # line edging for rest of box
-        extra.Line_Edging(surf, bbox, True)
+        draw_effects.Line_Edging(surf, bbox, True)
 
         return (surf, height)
 
+__tutor = Tutor_Memory()
 
+def Set_Screen_Height(screen_height: int) -> None:
+    __tutor.Set_Width(( screen_height * 40 ) // 100)
 

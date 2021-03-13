@@ -140,7 +140,7 @@ class Game_Random:
 
         self.read_and_write("ACTION_" + name, "<" + str(len(object_data)) + "B", *object_data)
 
-    def Steam(self, neighbour_list: List[Tuple[steam_model.Steam_Model, float]],
+    def Steam(self, neighbour_list: "List[Tuple[steam_model.Steam_Model, float]]",
               voltage: float, charge: float, capacitance: float,
               currents: List[float]):
         assert len(neighbour_list) == len(currents)

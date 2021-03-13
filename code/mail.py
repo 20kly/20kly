@@ -7,8 +7,9 @@
 import pygame, time, sys
 
 
-from . import stats
+from . import font
 from .game_types import *
+from .primitives import *
 
 MSG_MAX = 5
 MSG_MARGIN = 5
@@ -19,16 +20,25 @@ class Message:
         self.text = text
         self.expiry_time = time.time() + MSG_EXPIRY_TIME
         self.colour = colour
-        self.draw: SurfaceType = stats.Get_Font(20).render(text, True, colour)
-        self.undraw: SurfaceType = pygame.Surface((1, 1))
         self.area: RectType = pygame.Rect(0, 0, 1, 1)
+        self.Render()
 
+    def Render(self) -> None:
+        # Text drawn in legacy size 20
+        # This will be scaled for the current screen size within the font module.
+        self.draw: SurfaceType = font.Get_Font(20).render(self.text, True, self.colour)
+        self.undraw: SurfaceType = pygame.Surface((1, 1))
 
 class Mail:
     def __init__(self) -> None:
         self.messages: List[Message] = []
         self.day = 0
         self.change = True
+
+    def Render(self) -> None:
+        # Render messages again after screen size change
+        for msg in self.messages:
+            msg.Render()
 
     def Has_New_Mail(self) -> bool:
 
@@ -97,4 +107,11 @@ def Undraw_Mail(output: SurfaceType) -> None:
 def Get_Messages() -> str:
     return "\n".join([ m.text for m in __mail.messages ])
 
+def Set_Screen_Height(height: int) -> None:
+    """Notify components of a screen size change."""
+    from . import grid, tutor
+    font.Set_Screen_Height(height)
+    grid.Set_Screen_Height(height)
+    tutor.Set_Screen_Height(height)
+    __mail.Render()
 
