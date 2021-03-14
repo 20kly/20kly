@@ -67,11 +67,13 @@ class User_Interface:
         # force redraw of control menu
         self.control_menu = None
 
-    def Draw_Game(self, output: SurfaceType, season_fx: quiet_season.Quiet_Season) -> None:
+    def Draw_Game(self, output: SurfaceType,
+                  season_fx: quiet_season.Quiet_Season,
+                  paused: bool) -> None:
         blink = self.blink
         r: Optional[RectType]
 
-        if ( season_fx.Is_Shaking() and not self.Is_Menu_Open() ):
+        if ( season_fx.Is_Shaking() and not paused ):
             # Earthquake effect
             m = 6
             r = output.get_rect()
@@ -156,7 +158,7 @@ class User_Interface:
             r = item.Draw_Popup(output)
             self.Update_Area(r)
 
-        if ( not self.Is_Menu_Open () ):
+        if ( not paused ):
             self.blink = 0x80 | ( 0xff & ( self.blink + 0x10 ))
             self.steam_effect_frame = (
                 self.steam_effect_frame + 1 ) % len(self.steam_effect)
@@ -215,6 +217,10 @@ class User_Interface:
         self.mouse_pos = None
         self.__Clear_Control_Selection()
 
+    def Cancel_Fast_Forward(self) -> None:
+        if self.mode == MenuCommand.FAST_FORWARD:
+            self.__Clear_Control_Selection()
+
     def __Clear_Control_Selection(self) -> None:
         self.mode = MenuCommand.NEUTRAL
         if ( self.control_menu is not None ):
@@ -235,6 +241,9 @@ class User_Interface:
 
     def Is_Menu_Open(self) -> bool:
         return ( self.mode == MenuCommand.OPEN_MENU )
+
+    def Is_Fast_Forward(self) -> bool:
+        return ( self.mode == MenuCommand.FAST_FORWARD )
 
     def Game_Mouse_Down(self, spos: SurfacePosition) -> None:
         gpos = Scr_To_Grid(spos)
@@ -352,12 +361,15 @@ class User_Interface:
         pictures[ MenuCommand.DESTROY ] = "destroy.png"
         pictures[ MenuCommand.UPGRADE ] = "upgrade.png"
         pictures[ MenuCommand.OPEN_MENU ] = "menuicon.png"
+        pictures[ MenuCommand.FAST_FORWARD ] = "fastforward.png"
 
         self.control_menu = menu.Enhanced_Menu([
                 (MenuCommand.BUILD_NODE, "Build &Node", [ pygame.K_n ]),
                 (MenuCommand.BUILD_PIPE, "Build &Pipe", [ pygame.K_p ]),
                 (MenuCommand.DESTROY, "&Destroy", [ pygame.K_d , pygame.K_BACKSPACE ]),
                 (MenuCommand.UPGRADE, "&Upgrade", [ pygame.K_u ]),
+                (None, None, []),
+                (MenuCommand.FAST_FORWARD, "Fast Forward", [ pygame.K_F15 ]),
                 (None, None, []),
                 (MenuCommand.OPEN_MENU, "Menu", [ pygame.K_ESCAPE ])],
                 pictures, width)

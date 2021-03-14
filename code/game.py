@@ -25,6 +25,7 @@ from .difficulty import DIFFICULTY
 from . import unit_test
 
 FRAME_RATE = 35
+RT_FRAME_LENGTH = 1.0 / FRAME_RATE
 
 class Game_Data:
     def __init__(self, demo: "game_random.Game_Random", challenge: MenuCommand) -> None:
@@ -244,9 +245,7 @@ class Game:
         quit = False
         stats_review = False
         in_game_menu.Select(None)
-        rt_then = time.time()
-        fps_count = 0
-        fps_time = rt_then
+        has_input_focus = True
 
         # These are for testing (forcing video resize event)
         test_resize_trigger = 0
@@ -271,38 +270,29 @@ class Game:
         # Main loop
         while ( loop_running ):
 
-            if ( g.game_running ):
-                flash = not flash
-            menu_inhibit = self.ui.Is_Menu_Open() or not g.game_running
+            menu_open = self.ui.Is_Menu_Open() or (not g.game_running)
+            paused = menu_open or (not has_input_focus)
+            
 
-
-            if self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
+            if self.ui.Is_Fast_Forward():
+                self.clock.tick(FRAME_RATE * 10)
+            elif (self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU)):
                 self.clock.tick(0)
             else:
                 self.clock.tick(FRAME_RATE)
 
-            rt_now = time.time()
-            rt_frame_length = rt_now - rt_then
-            rt_then = rt_now
-            fps_count += 1
-            if ( fps_count > 100 ):
-                fps_time = rt_now
-                fps_count = 0
-
-            if self.playback_mode != PlayMode.OFF:
-                rt_frame_length = 1.0 / FRAME_RATE
-
-            if ( not menu_inhibit ):
-                g.game_time.Advance(rt_frame_length)
+            if not paused:
+                flash = not flash
+                g.game_time.Advance(RT_FRAME_LENGTH)
                 draw_obj.Next_Frame() # Flashing lights on the various items
 
             cur_time = g.game_time.time()
             mail.Set_Day(g.game_time.Get_Day())
 
-            if ( not menu_inhibit ):
+            if not paused:
                 self.demo.timestamp(g)
 
-            self.ui.Draw_Game(self.game_screen_surf, g.season_fx)
+            self.ui.Draw_Game(self.game_screen_surf, g.season_fx, paused)
 
             until_next: List[StatTuple]
             if ( g.challenge == MenuCommand.TUTORIAL ):
@@ -320,7 +310,7 @@ class Game:
                     g.season_fx.Get_Extra_Info())
             self.ui.Draw_Controls(self.controls_surf)
 
-            if ( menu_inhibit ):
+            if menu_open:
                 current_menu.Draw(self.screen)
                 alarm_sound.Set(0.0)
 
@@ -344,7 +334,7 @@ class Game:
 
                 if ( flash ):
                     demand_colour = (255, 0, 0)
-                    if ( not menu_inhibit ):  # NO-COV
+                    if not paused:  # NO-COV
                         alarm_sound.Set(0.6)
                 else:
                     demand_colour = (128, 0, 0)
@@ -355,7 +345,7 @@ class Game:
                 g.game_ends_at = None
                 if ( flash ):
                     demand_colour = (255, 100, 0)
-                    if ( not menu_inhibit ):  # NO-COV
+                    if not paused:  # NO-COV
                         alarm_sound.Set(0.3)
                 else:
                     demand_colour = (128, 50, 0)
@@ -395,9 +385,9 @@ class Game:
             pygame.display.flip()
             mail.Undraw_Mail(self.game_screen_surf)
 
-            if ( not menu_inhibit ):
-                g.season_fx.Per_Frame(rt_frame_length)
-                self.ui.Frame_Advance(rt_frame_length)
+            if not paused:
+                g.season_fx.Per_Frame(RT_FRAME_LENGTH)
+                self.ui.Frame_Advance(RT_FRAME_LENGTH)
 
             # Timing effects
             if ( g.work_timer <= cur_time ):
@@ -455,7 +445,6 @@ class Game:
             and ( g.game_ends_at <= cur_time )
             and ( g.game_running )):
                 # Game over - you lose
-                g.game_running = False
                 New_Mail("The City ran out of steam.", (255,0,0))
                 New_Mail("Game Over!", (255,255,0))
                 sound.FX("krankor")
@@ -464,7 +453,6 @@ class Game:
             elif (( g.net.hub.tech_level >= DIFFICULTY.CITY_MAX_TECH_LEVEL )
             and ( g.game_running )):
                 # Game over - you win!
-                g.game_running = False
                 g.win = True
                 New_Mail("The City is now fully upgraded!", (255,255,255))
                 New_Mail("You have won the game!", (255,255,255))
@@ -472,17 +460,26 @@ class Game:
                 just_ended = True
 
             if ( just_ended ):
+                # Won or lost
                 current_menu = in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
                     (None, None, []),
                     (MenuCommand.REVIEW, "Review Statistics", [pygame.K_r])]) +
                     exit_options)
                 in_game_menu.Select(None)
 
-            if ( not menu_inhibit ):
+                # final record from the game:
+                g.game_running = False
+                g.historian.append(review.Analyse_Network(g))
+
+            if not paused:
                 self.demo.do_user_actions(self.ui)
 
             # Events
-            e = self.event.poll()
+            if paused:
+                e = self.event.wait()
+            else:
+                e = self.event.poll()
+
             while ( e.type != pygame.NOEVENT ):
                 if e.type == pygame.QUIT:
                     loop_running = False
@@ -494,14 +491,19 @@ class Game:
                 elif self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
                     pass
 
+                elif e.type == pygame.ACTIVEEVENT:
+                    # Game pauses when input focus is lost
+                    if e.state == pygame.APPINPUTFOCUS:  # NO-COV
+                        has_input_focus = (e.gain != 0)
+
                 elif (( e.type == pygame.MOUSEBUTTONDOWN )
                 or ( e.type == pygame.MOUSEMOTION )):
                     if (( e.type == pygame.MOUSEBUTTONDOWN )
                     and ( e.button != 1 )):
-                        if ( not menu_inhibit ):
+                        if not menu_open:
                             self.ui.Right_Mouse_Down()
 
-                    elif ( not menu_inhibit ):
+                    elif not menu_open:
                         for (rect, click, move) in self.input_areas:
                             if ( rect.collidepoint(e.pos)):
                                 (x,y) = e.pos
@@ -512,18 +514,19 @@ class Game:
                                 else:
                                     click((x,y))
                     else:
-                        assert menu_inhibit
                         if ( e.type == pygame.MOUSEMOTION ):
                             current_menu.Mouse_Move(e.pos)
                         else:
                             current_menu.Mouse_Down(e.pos)
 
+                elif e.type == pygame.MOUSEBUTTONUP:
+                    self.ui.Cancel_Fast_Forward()
+
                 elif e.type == pygame.KEYDOWN:
-                    if ( not menu_inhibit ):
+                    if not menu_open:
                         self.ui.Key_Press(e.key)
 
                     else:
-                        assert menu_inhibit
                         current_menu.Key_Press(e.key)
 
                     if ( self.event.is_testing ):  # NO-COV
@@ -547,7 +550,7 @@ class Game:
                 e = self.event.poll()
 
             # Any commands from the menu?
-            if ( menu_inhibit ):
+            if menu_open:
                 cmd = current_menu.Get_Command()
                 current_menu.Select(None) # consume command
 
@@ -605,8 +608,7 @@ class Game:
                         self.ui.Reset()
 
             if (( g.historian_time <= cur_time )
-            and ( g.game_running )
-            and ( not menu_inhibit )):
+            and ( not paused )):
                 g.historian.append(review.Analyse_Network(g))
                 g.historian_time = cur_time + 4
 

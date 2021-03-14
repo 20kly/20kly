@@ -22,19 +22,26 @@ class Event:
         self.pos = pos
         self.key = key
         self.button = button
+        self.gain = 0
+        self.state = 0
 
         if base is not None: # NO-COV
             self.type = base.type
-            if (self.type == pygame.MOUSEMOTION) or (self.type == pygame.MOUSEBUTTONDOWN):
+            if ((self.type == pygame.MOUSEMOTION)
+            or (self.type == pygame.MOUSEBUTTONUP)
+            or (self.type == pygame.MOUSEBUTTONDOWN)):
                 (x, y) = base.pos
                 if parent is not None:
                     x -= parent.left_margin
                     y -= parent.top_margin
                 self.pos = (x, y)
-                if self.type == pygame.MOUSEBUTTONDOWN:
+                if self.type != pygame.MOUSEMOTION:
                     self.button = base.button
             elif self.type == pygame.KEYDOWN:
                 self.key = base.key
+            elif self.type == pygame.ACTIVEEVENT:
+                self.gain = base.gain
+                self.state = base.state
 
 
 class Events:

@@ -43,6 +43,7 @@ class MenuCommand(enum.Enum):
     MANUAL = 218
     MUTE = 219
     PEACEFUL = 220
+    FAST_FORWARD = 221
     SAVE0 = 400
     SAVE1 = 401
     SAVE2 = 402

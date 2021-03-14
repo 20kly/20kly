@@ -36,7 +36,7 @@ def test_UI() -> None:
                 return shaking
 
         ui.Update_Area(None)
-        ui.Draw_Game(test_screen, Test_Season(net))
+        ui.Draw_Game(test_screen, Test_Season(net), False)
         ui.Draw_Stats(test_screen, [])
         pygame.display.flip()
 

@@ -28,13 +28,23 @@ def test_Game_Events() -> None:
                   NoEvent(),
                   Move((30, 30)),
                   NoEvent(),
+                  Release((40, 40)),
+                  NoEvent(),
                   Other(),
+                  NoEvent(),
+                  VideoResize(),
+                  NoEvent(),
+                  ActiveEvent(),
                   NoEvent(),
                   Click((100, 100)),        # click in unused space
                   NoEvent(),
-                  Push(pygame.K_F9),
+                  Push(pygame.K_F9),        # fill the screen with white (test refresh)
                   NoEvent(),
-                  Push(pygame.K_F10),
+                  Push(pygame.K_F15),       # fast forward
+                  NoEvent(),
+                  Release((50, 50)),        # stop fast forward
+                  NoEvent(),
+                  Push(pygame.K_F10),       # skip to next season
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # enter menu
                   NoEvent(),
@@ -43,6 +53,10 @@ def test_Game_Events() -> None:
                   Click((50, 50)),
                   NoEvent(),
                   RightClick((60, 60)),
+                  NoEvent(),
+                  VideoResize(),
+                  NoEvent(),
+                  ActiveEvent(),
                   NoEvent(),
                   Push(pygame.K_m),         # mute (stays in the menu)
                   NoEvent(),

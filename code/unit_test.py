@@ -29,6 +29,11 @@ class RightClick(events.Event):
         events.Event.__init__(self, pos=pos,
                               t=pygame.MOUSEBUTTONDOWN, button=2)
 
+class Release(events.Event):
+    def __init__(self, pos: SurfacePosition) -> None:
+        events.Event.__init__(self, pos=pos,
+                              t=pygame.MOUSEBUTTONUP, button=1)
+
 class Move(events.Event):
     def __init__(self, pos: SurfacePosition) -> None:
         events.Event.__init__(self, pos=pos, t=pygame.MOUSEMOTION)
@@ -48,6 +53,10 @@ class Quit(events.Event):
 class VideoResize(events.Event):
     def __init__(self) -> None:
         events.Event.__init__(self, t=pygame.VIDEORESIZE)
+
+class ActiveEvent(events.Event):
+    def __init__(self) -> None:
+        events.Event.__init__(self, t=pygame.ACTIVEEVENT)
 
 class NoEvent(events.Event):
     pass
