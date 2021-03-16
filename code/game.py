@@ -10,7 +10,7 @@ import pygame, sys, math, time, pickle, random
 
 from . import draw_effects, stats, mail, gametime, events
 from . import menu, save_menu, save_game, config, resource
-from . import review, sound, tutor, draw_obj
+from . import review, sound, tutor, draw_obj, compatibility
 from . import game_random, grid, alien_invasion
 from .primitives import *
 from .game_types import *
@@ -493,7 +493,7 @@ class Game:
 
                 elif e.type == pygame.ACTIVEEVENT:
                     # Game pauses when input focus is lost
-                    if e.state == pygame.APPINPUTFOCUS:  # NO-COV
+                    if e.state == compatibility.APPINPUTFOCUS:  # NO-COV
                         has_input_focus = (e.gain != 0)
 
                 elif (( e.type == pygame.MOUSEBUTTONDOWN )

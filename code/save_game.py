@@ -59,10 +59,10 @@ def Save(g: "game.Game_Data", slot: MenuCommand, label_text: str) -> Optional[st
         pickle.dump(g,f)
         f.close()
     except Exception as x:  # NO-COV
-        return "Error saving file: " + repr(x) + str(x)
-    finally:
         g.Post_Load()
+        return "Error saving file: " + repr(x) + str(x)
 
+    g.Post_Load()
     return None
 
 def Get_Number(slot: MenuCommand) -> int:

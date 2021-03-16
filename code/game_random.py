@@ -163,9 +163,11 @@ class Game_Random:
         result = math.hypot(dy, dx)
 
         if self.play:
-            (readback_dy, readback_dx, result) = self.read_specific("HYP", "<ddd")
-            assert readback_dy == dy
-            assert readback_dx == dx
+            (readback_dy, readback_dx, readback_result) = self.read_specific("HYP", "<ddd")
+            assert abs(readback_dy - dy) < 1e-12
+            assert abs(readback_dx - dx) < 1e-12
+            assert abs(readback_result - result) < 1e-12
+            result = readback_result
 
         if self.record:
             self.write_specific("HYP", "<ddd", dy, dx, result)

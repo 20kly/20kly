@@ -6,7 +6,7 @@
 import pygame, webbrowser, urllib.request
 from .game_types import *
 from .primitives import *
-from . import mail, config
+from . import mail, config, compatibility
 
 
 class Event:
@@ -42,6 +42,8 @@ class Event:
             elif self.type == pygame.ACTIVEEVENT:
                 self.gain = base.gain
                 self.state = base.state
+            elif self.type == pygame.VIDEORESIZE:
+                compatibility.last_resize = base.size
 
 
 class Events:
@@ -69,15 +71,32 @@ class Events:
             return new_version_bytes.decode("ascii")
 
     def resurface(self) -> SurfaceType:                 # NO-COV
-        screen = pygame.display.get_surface()
-        (width, height) = new_size = screen.get_rect().size
 
-        if (width < MINIMUM_WIDTH) or (height < MINIMUM_HEIGHT):
-            # Screen was resized and is now too small
-            res = (max(width, MINIMUM_WIDTH), max(height, MINIMUM_HEIGHT))
-            screen = pygame.display.set_mode(res, pygame.RESIZABLE)
+        screen = pygame.display.get_surface()
+
+        if compatibility.PYGAME_TWO:
+            # pygame 2: the display surface doesn't change
+            (width, height) = screen.get_rect().size
+        else:
+            # pygame 1: must recreate the display surface
+            (width, height) = compatibility.last_resize
+            self.old_size = (0, 0)
+
+        # Recreate display surface if necessary:
+        # (1) screen was resized and is now too small
+        # (2) not using pygame 2.x
+        if (width < MINIMUM_WIDTH) or (height < MINIMUM_HEIGHT) or (not compatibility.PYGAME_TWO):
+            width = max(width, MINIMUM_WIDTH)
+            height = max(height, MINIMUM_HEIGHT)
+            screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
             (width, height) = screen.get_rect().size
 
+            # just in case it didn't really resize appropriately
+            # we just assume the minimum size
+            width = max(width, MINIMUM_WIDTH)
+            height = max(height, MINIMUM_HEIGHT)
+
+        new_size = (width, height)
         if new_size != self.old_size:
             # size has changed
             screen.fill((0, 0, 0))
@@ -109,4 +128,3 @@ class Events:
         config.cfg.height = height
 
         return screen
-

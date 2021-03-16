@@ -8,34 +8,42 @@ import subprocess
 import sys
 import glob
 import os
+import getopt
 
 def main() -> None:
 
-    subprocess.call(["git", "clean", "-d", "-f", "-x",
-                ".coverage", "code", "htmlcov",
-                "data", "audio", "manual", "dist"])
+    (opts_list, _) = getopt.getopt(
+            sys.argv[1:], "", ["no-mypy", "no-clean", "no-full",
+                               "no-coverage"])
+    opts = dict(opts_list)
 
-    test = [sys.executable, "-m", "pytest", "--cov=code",
-            "--cov-report=term:skip-covered",
-            "--cov-report=html",
-            "--no-cov-on-fail"]
+    clean = ["git", "clean", "-d", "-f", "-x"]
+    test = [sys.executable, "-m", "pytest"]
 
-    rc = subprocess.call([sys.executable, "-m", "mypy", "code", "lightyears"])
+    if "--no-clean" not in opts:
+        subprocess.call(clean + ["code", "data", "audio", "manual", "dist"])
+
+    if "--no-coverage" not in opts:
+        subprocess.call(clean + [".coverage", "code", "htmlcov"])
+        test += ["--cov=code", "--cov-append",
+                "--cov-report=term:skip-covered",
+                "--cov-report=html",
+                "--no-cov-on-fail"]
+
+    if "--no-mypy" not in opts:
+        rc = subprocess.call([sys.executable,
+                "-m", "mypy", "code", "lightyears"])
+        if rc != 0:
+            sys.exit(1)
+
+    rc = subprocess.call(test + sorted(glob.glob("code/*.py")))
     if rc != 0:
         sys.exit(1)
 
-    
-    rc = subprocess.call(test + ["--cov-report="] +
-                         sorted(glob.glob("code/*.py")))
-    if rc != 0:
-        sys.exit(1)
-
-    rc = subprocess.call(test + ["--cov-append",
-                         "--cov-report=term:skip-covered",
-                         "--cov-report=html",
-                         "run_all_tests.py"])
-    if rc != 0:
-        sys.exit(1)
+    if "--no-full" not in opts:
+        rc = subprocess.call(test + ["run_all_tests.py"])
+        if rc != 0:
+            sys.exit(1)
 
 def run_a_test(name: str) -> None:
     rc = subprocess.call([sys.executable, "lightyears",

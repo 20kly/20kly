@@ -9,7 +9,7 @@ import getopt
 
 
 from . import game, font, storms, save_menu, resource, menu, events
-from . import config, sound, alien_invasion, quakes, mail, version
+from . import config, sound, alien_invasion, quakes, mail, version, compatibility
 from .primitives import *
 from .game_types import *
 from .game_random import PlaybackEOF
@@ -34,7 +34,6 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     config.Initialise("--safe" in opts)
     mail.Initialise()
-    mail.Set_Screen_Height(config.cfg.height)
 
     # Pygame things
     bufsize = 2048
@@ -76,6 +75,8 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((config.cfg.width,
                         config.cfg.height), pygame.RESIZABLE)
+    compatibility.last_resize = screen.get_rect().size
+    mail.Set_Screen_Height(screen.get_rect().height)
 
     # Icon
     # The icon provided in the Debian package is different than the original one
@@ -86,7 +87,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
         pygame.display.set_icon(resource.Load_Image("32.png"))
 
     # Screensaver is not disabled
-    pygame.display.set_allow_screensaver(True)
+    compatibility.set_allow_screensaver(True)
 
     # Game begins.. show loading image
     screen.fill((0,0,0))

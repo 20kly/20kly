@@ -18,27 +18,12 @@ class Menu:
 
         self.control_rects: List[ControlRectType] = []
         self.hover: Optional[MenuCommand] = None
-        self.bbox: RectType
+        self.bbox: RectType = pygame.Rect(0, 0, 1, 1)
 
         self.selection: Optional[MenuCommand] = None
         self.update_required = True
-
-        self.width_hint = self.height_hint = 10
-
-        if ( force_width > 0 ):
-            self.width_hint = force_width
-
-        # Two attempts at drawing required.
-        (_, _, (self.width_hint, self.height_hint)) = self.__Draw((self.width_hint, self.height_hint))
-
-        if ( self.width_hint < 150 ):
-            self.width_hint = 150
-        if ( force_width > 0 ):
-            self.width_hint = force_width
-
-        self.Update_Surface()
-
-        self.bbox = pygame.Rect(0, 0, self.width_hint, self.height_hint)
+        self.force_width = force_width
+        self.Recompute_Surface()
 
     def Get_Command(self) -> Optional[MenuCommand]:
         return self.selection
@@ -83,32 +68,58 @@ class Menu:
                 return
 
     def Update_Surface(self) -> None:
-        (self.surf_store, self.control_rects, _) = self.__Draw(
-                    (self.width_hint, self.height_hint))
+        self.update_required = True
+
+    def Recompute_Surface(self) -> None:
+        # estimate of width and height for first attempt at drawing
+        width_hint = height_hint = 10
+
+        if self.force_width > 0:
+            width_hint = self.force_width
+
+        # Two attempts at drawing required.
+        # First we compute the size of the bounding box
+        (_, _, (width_hint, height_hint)) = self.__Draw((width_hint, height_hint))
+        new_bbox = pygame.Rect(0, 0, width_hint, height_hint)
+
+        width_hint = max(width_hint, 150)
+        if self.force_width > 0:
+            width_hint = self.force_width
+
+        if (width_hint, height_hint) == self.bbox.size:
+            # No need to redraw as the size is the same as what we already have
+            return
+
+        # Second step is to draw into the bounding box
+        (self.surf_store, self.control_rects, _) = self.__Draw((width_hint, height_hint))
+        self.bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
     def Draw(self, output: SurfaceType,
              centre: Optional[SurfacePosition] = None) -> None:
-        if ( self.update_required ):
-            self.update_required = False
+        if not self.update_required:
+            return
 
-            if ( centre is None ):
-                self.bbox.center = output.get_rect().center
-            else:
-                self.bbox.center = centre
+        self.Recompute_Surface()
+        self.update_required = False
 
-            self.bbox.clamp_ip(output.get_rect())
+        if ( centre is None ):
+            self.bbox.center = output.get_rect().center
+        else:
+            self.bbox.center = centre
 
-            output.blit(self.surf_store, self.bbox.topleft)
+        self.bbox.clamp_ip(output.get_rect())
 
-            for (num, r) in self.control_rects:
-                assert num is not None
-                r = pygame.Rect(r)
-                r.top += self.bbox.top
-                r.left += self.bbox.left
-                if ( num == self.selection ):
-                    pygame.draw.rect(output, (255, 255, 255), r, 1)
-                elif ( num == self.hover ):
-                    pygame.draw.rect(output, (0, 180, 0), r, 1)
+        output.blit(self.surf_store, self.bbox.topleft)
+
+        for (num, r) in self.control_rects:
+            assert num is not None
+            r = pygame.Rect(r)
+            r.top += self.bbox.top
+            r.left += self.bbox.left
+            if ( num == self.selection ):
+                pygame.draw.rect(output, (255, 255, 255), r, 1)
+            elif ( num == self.hover ):
+                pygame.draw.rect(output, (0, 180, 0), r, 1)
 
 
     def __Draw(self, width_height_hint: SurfacePosition) -> Tuple[
