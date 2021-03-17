@@ -12,7 +12,7 @@ from .game_types import *
 from . import resource, config
 
 
-VOL_SCALE = 0.8
+VOL_SCALE = 0.7
 
 
 def FX(name: Sounds) -> None:  # NO-COV

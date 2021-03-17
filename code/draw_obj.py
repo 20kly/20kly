@@ -19,13 +19,14 @@ class Abstract_Draw_Obj:
     def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
         pass  # NO-COV
 
+DrawObjKey = Tuple[Images, int]
 cache: Dict[DrawObjKey, Abstract_Draw_Obj] = dict()
 frame = 0
 
 class Draw_Obj(Abstract_Draw_Obj):
-    def __init__(self, img_name: str, grid_size: int) -> None:
+    def __init__(self, img_name: Images, grid_size: int) -> None:
         Abstract_Draw_Obj.__init__(self)
-        self.key = (img_name, grid_size)
+        self.key: DrawObjKey = (img_name, grid_size)
 
     def Draw(self, output: SurfaceType, gpos: GridPosition, sxsy: SurfacePosition) -> None:
         item = cache.get(self.key, None)

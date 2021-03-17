@@ -58,7 +58,7 @@ class Item:
 class Well(Item):
     def __init__(self, xy: GridPosition, name="Well") -> None:
         Item.__init__(self, xy, name)
-        self.draw_obj = draw_obj.Draw_Obj("well.png", 1)
+        self.draw_obj = draw_obj.Draw_Obj(Images.well, 1)
         self.emits_steam = True
 
 
@@ -187,8 +187,8 @@ class Node(Building):
         self.max_health = NODE_HEALTH_UNITS * HEALTH_UNIT
         self.base_colour = (255,192,0)
         self.steam = steam_model.Steam_Model()
-        self.draw_obj_finished = draw_obj.Draw_Obj("node.png", 1)
-        self.draw_obj_incomplete = draw_obj.Draw_Obj("node_u.png", 1)
+        self.draw_obj_finished = draw_obj.Draw_Obj(Images.node, 1)
+        self.draw_obj_incomplete = draw_obj.Draw_Obj(Images.node_u, 1)
         self.draw_obj = self.draw_obj_incomplete
 
     def Begin_Upgrade(self):
@@ -272,7 +272,7 @@ class City_Node(Node):
         self.avail_work_units = 1
         self.city_upgrade = 0
         self.city_upgrade_start = 1
-        self.draw_obj = draw_obj.Draw_Obj("city1.png", 3)
+        self.draw_obj = draw_obj.Draw_Obj(Images.city1, 3)
         self.draw_obj_finished = self.draw_obj_incomplete = self.draw_obj
         self.total_steam = 0.0
 
@@ -376,8 +376,8 @@ class Well_Node(Node):
     def __init__(self, xy: GridPosition, name="Steam Maker") -> None:
         Node.__init__(self,xy,name)
         self.base_colour = (255,0,192)
-        self.draw_obj_finished = draw_obj.Draw_Obj("maker.png", 1)
-        self.draw_obj_incomplete = draw_obj.Draw_Obj("maker_u.png", 1)
+        self.draw_obj_finished = draw_obj.Draw_Obj(Images.maker, 1)
+        self.draw_obj_incomplete = draw_obj.Draw_Obj(Images.maker_u, 1)
         self.draw_obj = self.draw_obj_incomplete
         self.emits_steam = True
         self.production = 0

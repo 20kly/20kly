@@ -49,7 +49,7 @@ def Review(game_object: "game.Game_Data",
         screen = event.resurface()
         (width, height) = screen.get_rect().size
         g = game_object
-        draw_effects.Tile_Texture(screen, "006metal.jpg", screen.get_rect())
+        draw_effects.Tile_Texture(screen, Images.i006metal, screen.get_rect())
 
         def Text(text: str, size: int,
                  xy: SurfacePosition, justify: int) -> int:

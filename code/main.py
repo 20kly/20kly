@@ -43,7 +43,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     if not no_sound:
         try:
             pygame.mixer.get_init()
-            pygame.mixer.pre_init(22050, -16, 2, bufsize)
+            pygame.mixer.pre_init(44100, -16, 2, bufsize)
             pygame.mixer.init()
         except pygame.error as message: # NO-COV
             print('Sound initialization failed. %s' % message)
@@ -70,7 +70,9 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     if no_sound:
         resource.No_Sound()
     else:
-        pygame.mixer.init(22050,-16,2,bufsize)
+        pygame.mixer.init(44100,-16,2,bufsize)
+
+    resource.Initialise()
 
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((config.cfg.width,
@@ -79,12 +81,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     mail.Set_Screen_Height(screen.get_rect().height)
 
     # Icon
-    # The icon provided in the Debian package is different than the original one
-    # (size and location changed)
-    if os.path.isfile(DEB_ICON): # NO-COV
-        pygame.display.set_icon(resource.Load_Image(DEB_ICON))
-    else:
-        pygame.display.set_icon(resource.Load_Image("32.png"))
+    pygame.display.set_icon(resource.Load_Image(Images.i32))
 
     # Screensaver is not disabled
     compatibility.set_allow_screensaver(True)
@@ -173,7 +170,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
         # Main menu
         screen = event.resurface()
         (width, height) = screen.get_rect().size
-        menu_image = resource.Load_Image("mainmenu.jpg")
+        menu_image = resource.Load_Image(Images.mainmenu)
         if ( menu_image.get_rect().width != width ): # NO-COV
             menu_image = pygame.transform.smoothscale(menu_image, (width, height))
 

@@ -4,7 +4,7 @@
 #
 
 
-import pygame, os, sys
+import pygame, os, sys, shutil
 
 
 from .mail import New_Mail
@@ -16,89 +16,85 @@ try:
 except Exception:       # NO-COV
     pass
 
-__img_cache: Dict[str, SurfaceType] = dict()
-__snd_cache: "Dict[Sounds, Optional[SoundType]]" = dict()
-__snd_disabled = False
 
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
 
+class MissingFileError(Exception):  # NO-COV
+    def __init__(self, name: str) -> None:
+        Exception.__init__(self, "Unable to find LightYears data file: {}".format(name))
 
-def Path(name: str, audio=False) -> str:
-    if ( audio ):
-        return os.path.join(DATA_DIR,"..","audio",name)
-    else:
-        return os.path.join(DATA_DIR,name)
-
-def Load_Image(name: str) -> SurfaceType:
-    global __img_cache
-
-    key = name
-
-    if ( __img_cache.get(key, None) ):
-        return __img_cache[ key ]
-
-    fname = Path(name)
-    try:
-        img = pygame.image.load(fname)
-    except Exception as r:  # NO-COV
-        s = "WARNING: Unable to load image '" + fname + "': " + str(r)
-        print("")
-        print(s)
-        print("")
-        New_Mail(s)
-        img = pygame.Surface((10,10))
-        img.fill((255,0,0))
-
-    i = __img_cache[ key ] = img.convert_alpha()
-    return i
+def Path(name: str) -> str:
+    return os.path.join(DATA_DIR, name)
 
 
-def Load_Font(size: int) -> pygame.font.Font:
-    # ----------------------------------------------------------
-    # This function was modified by Siegfried Gevatter, the
-    # maintainer of "lighyears" in Debian, to let lightyears
-    # use the font from package "ttf-dejavu-core" instead of
-    # it's own copy of it.
-    #
-    # Note: pygame.font.Font is used instead of pygame.font.SysFont
-    # because with this last one the size of the text changed unexpectedly
-    # ----------------------------------------------------------
+class Resource:
+    def __init__(self) -> None:
+        self.img_cache: Dict[Images, SurfaceType] = dict()
+        self.img_file: Dict[Images, str] = dict()
+        self.snd_cache: "Dict[Sounds, SoundType]" = dict()
+        self.snd_disabled = False
 
-    if os.path.isfile(DEB_FONT):  # NO-COV
-        return pygame.font.Font(DEB_FONT, size)
+    def Load(self) -> None:
+        # Use Debian font file if possible
+        if os.path.isfile(DEB_FONT):  # NO-COV
+            self.font_file = DEB_FONT
+        else:
+            self.font_file = Path("Vera_ttf")
 
-    return pygame.font.Font(Path("Vera.ttf"), size)
+        if not os.path.isfile(self.font_file):  # NO-COV
+            raise MissingFileError(self.font_file)
+
+        # Default locations for images
+        for img_name in Images:
+            self.img_file[img_name] = Path(img_name.value)
+
+        # Use Debian icon file if possible
+        if os.path.isfile(DEB_ICON):        # NO-COV
+            self.img_file[Images.i32] = DEB_ICON
+
+        # Load all images
+        for img_name in Images:
+            fname = self.img_file[img_name]
+            if not os.path.isfile(fname):  # NO-COV
+                raise MissingFileError(fname)
+
+            self.img_cache[img_name] = pygame.image.load(fname) 
+
+        # Load all sounds
+        for snd_name in Sounds:
+            if self.snd_disabled:
+                break
+
+            fname = Path(snd_name.value + "_ogg")
+            if not os.path.isfile(fname):  # NO-COV
+                raise MissingFileError(fname)
+
+            try:
+                self.snd_cache[snd_name] = pygame.mixer.Sound(fname)
+            except Exception as x:  # NO-COV
+                sys.stderr.write("Error loading sound effect {}: sound is disabled.\n"
+                                 "More information: {} {}\n".format(snd_name, repr(x), str(x)))
+                self.snd_disabled = True
+                break
+
+
+__resource = Resource()
+
+def Load_Image(name: Images) -> SurfaceType:
+    return __resource.img_cache[name]
 
 def Load_Sound(name: Sounds) -> "Optional[SoundType]":
-    global __snd_cache, __snd_disabled
+    return __resource.snd_cache.get(name, None)
 
-    if __snd_disabled:
-        return None
-
-    f: "Optional[SoundType]" = __snd_cache.get(name, None)
-    if f is not None:  # NO-COV
-        return f
-
-    #print "Caching new sound:",name
-    fname = Path(name.value + ".ogg", True)
-    try:
-        f = pygame.mixer.Sound(fname)
-    except Exception as x:  # NO-COV
-        print("")
-        print("WARNING: Error loading sound effect " + fname)
-        print(repr(x) + " " + str(x))
-        print("")
-        No_Sound()
-
-    __snd_cache[ name ] = f
-
-    return f
-
+def Load_Font(size: int) -> pygame.font.Font:
+    return pygame.font.Font(__resource.font_file, size)
 
 def Has_No_Sound() -> bool:
-    return __snd_disabled
+    return __resource.snd_disabled
 
 def No_Sound() -> None:
-    global __snd_disabled
-    __snd_disabled = True
+    __resource.snd_disabled = True
+
+def Initialise() -> None:
+    __resource.Load()

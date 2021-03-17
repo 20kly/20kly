@@ -95,6 +95,31 @@ class Sounds(enum.Enum):
     stormdmg = "stormdmg"
     stormwarn = "stormwarn"
 
+# Graphics
+class Images(enum.Enum):
+    i006metal = "006metal_jpg"
+    i32 = "32_png"
+    back = "back_jpg"
+    bolt = "bolt_png"
+    bricks = "bricks_png"
+    bricks2 = "bricks2_png"
+    city1 = "city1_png"
+    destroy = "destroy_png"
+    fastforward = "fastforward_png"
+    greenrust = "greenrust_jpg"
+    header = "header_jpg"
+    headersm = "headersm_jpg"
+    mainmenu = "mainmenu_jpg"
+    maker = "maker_png"
+    maker_u = "maker_u_png"
+    menuicon = "menuicon_png"
+    node = "node_png"
+    node_u = "node_u_png"
+    rivets = "rivets_jpg"
+    stormsample = "stormsample_png"
+    upgrade = "upgrade_png"
+    well = "well_png"
+
 # Mathematical constants
 HALF_PI = math.pi * 0.5
 TWO_PI = math.pi * 2.0

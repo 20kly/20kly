@@ -135,7 +135,7 @@ def test_Simple_Menu_Loop() -> None:
     # Add a picture to some item
     test_menu = menu.Enhanced_Menu(menu_options, force_width=200,
                         pictures={
-                            MenuCommand.SAVE1: "bricks.png"
+                            MenuCommand.SAVE1: Images.bricks
                         })
     test_menu.Draw(test_screen)
 

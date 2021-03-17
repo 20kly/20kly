@@ -355,13 +355,13 @@ class User_Interface:
         self.Update_Area(r)
 
     def __Make_Control_Menu(self, width: int) -> None:
-        pictures: Dict[MenuCommand, str] = dict()
-        pictures[ MenuCommand.BUILD_NODE ] = "bricks.png"
-        pictures[ MenuCommand.BUILD_PIPE ] = "bricks2.png"
-        pictures[ MenuCommand.DESTROY ] = "destroy.png"
-        pictures[ MenuCommand.UPGRADE ] = "upgrade.png"
-        pictures[ MenuCommand.OPEN_MENU ] = "menuicon.png"
-        pictures[ MenuCommand.FAST_FORWARD ] = "fastforward.png"
+        pictures: Dict[MenuCommand, Images] = dict()
+        pictures[ MenuCommand.BUILD_NODE ] = Images.bricks
+        pictures[ MenuCommand.BUILD_PIPE ] = Images.bricks2
+        pictures[ MenuCommand.DESTROY ] = Images.destroy
+        pictures[ MenuCommand.UPGRADE ] = Images.upgrade
+        pictures[ MenuCommand.OPEN_MENU ] = Images.menuicon
+        pictures[ MenuCommand.FAST_FORWARD ] = Images.fastforward
 
         self.control_menu = menu.Enhanced_Menu([
                 (MenuCommand.BUILD_NODE, "Build &Node", [ pygame.K_n ]),

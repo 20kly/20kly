@@ -10,7 +10,7 @@ from . import resource
 from .primitives import *
 from .game_types import *
 
-def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
+def Tile_Texture(output: SurfaceType, name: Images, rect: RectType) -> None:
     cr = output.get_clip()
     output.set_clip(rect)
 
@@ -23,7 +23,7 @@ def Tile_Texture(output: SurfaceType, name: str, rect: RectType) -> None:
     output.set_clip(cr)
 
 def Edge_Effect(output: SurfaceType, rect: RectType) -> None:
-    bolt = resource.Load_Image("bolt.png")
+    bolt = resource.Load_Image(Images.bolt)
     margin = 2
     for x in [ rect.left + margin , rect.right - ( margin + 3 ) ]:
         for y in [ rect.top + margin , rect.bottom - ( margin + 3 ) ]:

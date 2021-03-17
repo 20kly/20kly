@@ -129,7 +129,7 @@ class Menu:
         surf = pygame.Surface((width_hint, height_hint))
         bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
-        draw_effects.Tile_Texture(surf, "006metal.jpg", surf.get_rect())
+        draw_effects.Tile_Texture(surf, Images.i006metal, surf.get_rect())
 
         margin = 8
         w = bbox.width - ( margin * 2 )
@@ -142,7 +142,7 @@ class Menu:
         for (num, name, hotkeys) in self.options:
             if ( name is None ): # a gap
                 if ( first_item ):
-                    img = resource.Load_Image("header.jpg")
+                    img = resource.Load_Image(Images.header)
                     img_r = img.get_rect()
                     img_r.center = bbox.center
                     img_r.top = y
@@ -165,7 +165,7 @@ class Menu:
             r = pygame.Rect(x,y,w,th)
             x += self.Justify(w,txt.get_rect().width)
 
-            draw_effects.Tile_Texture(surf, "greenrust.jpg", r)
+            draw_effects.Tile_Texture(surf, Images.greenrust, r)
             draw_effects.Edge_Effect(surf, r)
             if num is not None:
                 self.Enhancement_Interface(surf, num, r, margin)
@@ -195,7 +195,7 @@ class Menu:
 # Menu plus pictures!
 class Enhanced_Menu(Menu):
     def __init__(self, menu_options: List[MenuItem],
-                 pictures: Dict[MenuCommand, str], force_width=0):
+                 pictures: Dict[MenuCommand, Images], force_width=0):
         self.pictures = pictures
         Menu.__init__(self, menu_options, force_width)
 

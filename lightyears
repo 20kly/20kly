@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
 # Set the location of the LightYears files here:
-LIGHTYEARS_DIR = "."
-# LIGHTYEARS_DIR = "/usr/share/games/lightyears" # (for Debian)
+LIGHTYEARS_DIR = "/usr/share/games/lightyears" # (for Debian)
 
 # Save games and configuration files are stored in the user's
 # home directory.
@@ -34,16 +33,21 @@ def Check_Version():
     try:
         # The size of this field changed between
         # ver. 1.6 and ver. 1.7. Arrgh.
-        [major, minor] = list(pygame.version.vernum)[ 0:2 ]
+        [major, minor, micro] = list(pygame.version.vernum)[ :3 ]
     except:
-        major = minor = 0
+        major = minor = micro = 0
 
-    if ( major < 1 ) or (( major == 1 ) and ( minor < 9 )):
+    if (( major < 1 )
+    or (( major == 1 ) and ( minor < 9 ))
+    or (( major == 1 ) and ( minor == 9 ) and ( micro < 4 ))):
         sys.stderr.write("\n")
-        sys.stderr.write("Pygame version 1.9 or higher is required.\n")
+        sys.stderr.write("Pygame version 1.9.4 or higher is required.\n")
         sys.stderr.write(pygame)
         sys.exit(1)
 
+
+class MissingFileError(Exception):
+    pass
 
 
 if __name__ == "__main__":
@@ -68,24 +72,15 @@ if __name__ == "__main__":
     code_dir = os.path.join(LIGHTYEARS_DIR, 'code')
 
     # Go
-    if (os.path.isdir(data_dir)
-    and os.path.isdir(code_dir)
+    if (os.path.isdir(code_dir)
     and os.path.isfile(os.path.join(code_dir, "__init__.py"))
-    and os.path.isfile(os.path.join(code_dir, "main.py"))
-    and os.path.isfile(os.path.join(data_dir, "bolt.png"))
-    and os.path.isfile(os.path.join(data_dir, "well.png"))):
+    and os.path.isfile(os.path.join(code_dir, "main.py"))):
         Check_Version()
         from code import Main, Events
         Main(data_dir=data_dir, args=sys.argv[1:],
              event=Events())
     else:
-        sys.stderr.write("Unable to find LightYears code & data in:")
-        for p in sys.path:
-            sys.stderr.write('  ')
-            sys.stderr.write(p)
-
-        sys.stderr.write("\n")
-        sys.exit(1)
+        raise MissingFileError("Unable to find LightYears code in " + LIGHTYEARS_DIR)
 
     
 

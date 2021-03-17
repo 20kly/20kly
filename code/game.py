@@ -123,8 +123,8 @@ class Game:
         tutor.Off()
 
         # load pictures
-        self.header_picture = resource.Load_Image("headersm.jpg").convert()
-        self.back_picture = resource.Load_Image("back.jpg").convert()
+        self.header_picture = resource.Load_Image(Images.headersm).convert()
+        self.back_picture = resource.Load_Image(Images.back).convert()
 
         # create user interface
         self.ui = User_Interface(self.g.net, self.demo)
@@ -197,7 +197,7 @@ class Game:
         self.ui.Update_All()
 
     def Special_Refresh(self) -> None:
-        draw_effects.Tile_Texture(self.screen, "rivets.jpg",
+        draw_effects.Tile_Texture(self.screen, Images.rivets,
                 pygame.Rect(self.menu_margin, 0,
                     self.menu_width, self.screen.get_rect().height))
 

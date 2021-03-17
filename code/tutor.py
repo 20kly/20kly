@@ -384,7 +384,7 @@ class Tutor_Memory:
 
         surf = pygame.Surface((width, height))
         bbox = surf.get_rect()
-        draw_effects.Tile_Texture(surf, "006metal.jpg", bbox)
+        draw_effects.Tile_Texture(surf, Images.i006metal, bbox)
 
         tsurf = font.Get_Font(fs1).render(self.current_msg_title, True, (250,250,200))
         tsurf_r = tsurf.get_rect()

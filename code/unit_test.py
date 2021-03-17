@@ -13,9 +13,10 @@ from .game_types import *
 
 def Setup_For_Unit_Test() -> SurfaceType:
     resource.DATA_DIR = os.path.join(os.getcwd(), "data")
-    config.cfg.mute = True
     pygame.init()
     pygame.font.init()
+    config.cfg.mute = True
+    resource.Initialise()
     mail.Set_Screen_Height(MINIMUM_HEIGHT)
     return pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 

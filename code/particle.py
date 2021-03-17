@@ -74,7 +74,7 @@ class Storm_Particle(Abstract_Particle):
         self.dr = abs(random.normalvariate(0.0,0.15)) + 0.01
 
         # Colour comes from an authentic set of alien storm colours.
-        stormsample = resource.Load_Image("stormsample.png")
+        stormsample = resource.Load_Image(Images.stormsample)
         x = random.randint(0, stormsample.get_rect().width - 1)
         y = random.randint(0, stormsample.get_rect().height - 1)
         self.c = stormsample.get_at((x,y))
