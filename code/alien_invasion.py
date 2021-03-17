@@ -92,7 +92,7 @@ class Alien_Season(Quiet_Season):
             self.__Compute_Targets(3)
 
             if ( not self.t2_announced ):
-                sound.FX("alient2")
+                sound.FX(Sounds.alient2)
                 self.t2_announced = True
 
         # Make a wave of bug-eyed monsters. Here's where they start:
@@ -149,7 +149,7 @@ class Alien_Season(Quiet_Season):
             alien.Per_Frame(frame_time)
 
         if ( self.new_aliens ):
-            sound.FX("ring")
+            sound.FX(Sounds.ring)
             self.new_aliens = False
 
     def Draw(self, output: SurfaceType, update_area: UpdateAreaMethod) -> None:
@@ -291,5 +291,5 @@ class Alien:
 
 def Init_Aliens() -> None:
     global alien_firing_sound
-    alien_firing_sound = sound.Persisting_Sound("clicker")
+    alien_firing_sound = sound.Persisting_Sound(Sounds.clicker)
 

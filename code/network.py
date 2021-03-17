@@ -87,13 +87,13 @@ class Network:
             if intersect.Intersects_Node(gpos, (pipe.n1.pos, pipe.n2.pos)):
                 if ( not inhibit_effects ):
                     New_Mail("Can't build there - pipe in the way!")
-                    sound.FX("error")
+                    sound.FX(Sounds.error)
                 return False
 
         if ( isinstance(self.ground_grid.get(gpos, None), map_items.Building) ):
             if ( not inhibit_effects ):
                 New_Mail("Can't build there - building in the way!")
-                sound.FX("error")
+                sound.FX(Sounds.error)
             return False
 
         if ( isinstance(item, map_items.Node) ):
@@ -158,7 +158,7 @@ class Network:
     def Add_Pipe(self, n1: "map_items.Node", n2: "map_items.Node") -> "Optional[map_items.Pipe]":
 
         if ( n1.Is_Destroyed() or n2.Is_Destroyed() ):
-            sound.FX("error")
+            sound.FX(Sounds.error)
             New_Mail("Nodes are destroyed.")
             return None
 
@@ -179,7 +179,7 @@ class Network:
             if ((not n.Is_Destroyed())
             and (not isinstance(n, map_items.Well))
             and intersect.Intersects_Node(n.pos, (n1.pos, n2.pos))):
-                sound.FX("error")
+                sound.FX(Sounds.error)
                 New_Mail("Pipe collides with other items.")
                 return None
 
@@ -187,15 +187,15 @@ class Network:
             if not p.Is_Destroyed ():
                 if ((( p.n1 == n1 ) and ( p.n2 == n2 ))
                 or (( p.n1 == n2 ) and ( p.n2 == n1 ))):
-                    sound.FX("error")
+                    sound.FX(Sounds.error)
                     New_Mail("There is already a pipe there.")
                     return None
                 if intersect.Lines_Intersect((p.n1.pos, p.n2.pos), (n1.pos, n2.pos)):
-                    sound.FX("error")
+                    sound.FX(Sounds.error)
                     New_Mail("That crosses an existing pipe.")
                     return None
 
-        sound.FX("bamboo1")
+        sound.FX(Sounds.bamboo1)
         pipe = map_items.Pipe(n1, n2, self)
         self.pipe_list.append(pipe)
 
@@ -216,7 +216,7 @@ class Network:
         or ( not isinstance(node, map_items.Node) )):
             return # indestructible
 
-        sound.FX("destroy")
+        sound.FX(Sounds.destroy)
 
         # work on a copy, as __Destroy_Pipe will change the list.
         pipe_list = [ pipe for pipe in node.pipes ]

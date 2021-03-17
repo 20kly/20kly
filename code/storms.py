@@ -23,7 +23,7 @@ def Init_Storms() -> None:
     storm_graphics = particle.Make_Particle_Effect(particle.Storm_Particle)
 
     global storm_sound
-    storm_sound = sound.Persisting_Sound("stormdmg", "stormbeeps")
+    storm_sound = sound.Persisting_Sound(Sounds.stormdmg, Sounds.stormbeeps)
 
 class Storm_Season(Quiet_Season):
     def __init__(self, net: network.Network,

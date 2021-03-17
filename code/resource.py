@@ -17,29 +17,11 @@ except Exception:       # NO-COV
     pass
 
 __img_cache: Dict[str, SurfaceType] = dict()
-__snd_cache: "Dict[str, Optional[SoundType]]" = dict()
+__snd_cache: "Dict[Sounds, Optional[SoundType]]" = dict()
 __snd_disabled = False
 
 DATA_DIR = os.path.abspath(os.path.join(
                 os.path.dirname(sys.argv[ 0 ]), "data"))
-
-AUDIO_TRANS_TBL = {
-    "bamboo" : "ack1",          # ack 1
-    "bamboo1" : "ack2",         # ack 2
-    "bamboo2" : "ack3",         # ack 3
-    "crisp" : "ack4",           # ack 4
-    "destroy" : "ack5",         # ack 5
-    "double" : "ack6",          # ack 6
-    "mechanical_1" : "ack7",    # ack 7
-    "ring" : "ack8",            # ack 8
-    "whoosh1" : "ack9",         # ack 9
-    "applause" : "dack1",       # double ack 1
-    "computer" : "dack2",       # double ack 2
-    "emergency" : "alert1",     # emergency tone 1
-    "firealrm" : "alert3",      # emergency tone 2
-    "stormbeeps" : "alert2",    # emergency tone 3
-    "clicker" : "aliens",       # alien noise
-}
 
 
 def Path(name: str, audio=False) -> str:
@@ -88,7 +70,7 @@ def Load_Font(size: int) -> pygame.font.Font:
 
     return pygame.font.Font(Path("Vera.ttf"), size)
 
-def Load_Sound(name: str) -> "Optional[SoundType]":
+def Load_Sound(name: Sounds) -> "Optional[SoundType]":
     global __snd_cache, __snd_disabled
 
     if __snd_disabled:
@@ -99,14 +81,12 @@ def Load_Sound(name: str) -> "Optional[SoundType]":
         return f
 
     #print "Caching new sound:",name
-    fname = AUDIO_TRANS_TBL.get(name, name)
-    fname = Path(fname + ".ogg", True)
+    fname = Path(name.value + ".ogg", True)
     try:
         f = pygame.mixer.Sound(fname)
     except Exception as x:  # NO-COV
         print("")
         print("WARNING: Error loading sound effect " + fname)
-        print("Real name: " + name)
         print(repr(x) + " " + str(x))
         print("")
         No_Sound()

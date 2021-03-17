@@ -7,19 +7,23 @@
 import pygame
 
 
+from .primitives import *
 from .game_types import *
 from . import resource, config
 
 
+VOL_SCALE = 0.8
 
-def FX(name: str) -> None:  # NO-COV
+
+def FX(name: Sounds) -> None:  # NO-COV
     s = resource.Load_Sound(name) # (comes from a cache)
     if ( s is not None ) and not config.cfg.mute:
+        s.set_volume(VOL_SCALE)
         s.play()
 
 
 class Persisting_Sound:
-    def __init__(self, name: str, secondary: Optional[str] = None) -> None:
+    def __init__(self, name: Sounds, secondary: Optional[Sounds] = None) -> None:
         self.sobj = resource.Load_Sound(name)
         if ( secondary is not None ):
             # A different, less annoying mode.
@@ -41,8 +45,8 @@ class Persisting_Sound:
             self.sobj.stop()
             self.sobj2.stop()
         else:
-            self.sobj.set_volume(volume)
-            self.sobj2.set_volume(volume)
+            self.sobj.set_volume(volume * VOL_SCALE)
+            self.sobj2.set_volume(volume * VOL_SCALE)
             if (( self.schan is None )
             or ( not ( self.schan.get_sound()
                             in [ self.sobj , self.sobj2 ] ))):

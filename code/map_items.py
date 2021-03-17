@@ -112,10 +112,10 @@ class Building(Item):
                 self.health = self.max_health
                 if ( self.was_once_complete ):
                     # An upgrade or repair
-                    sound.FX("double")
+                    sound.FX(Sounds.double)
                 else:
                     # Construction complete!
-                    sound.FX("whoosh1")
+                    sound.FX(Sounds.whoosh1)
                 self.complete = True
                 self.was_once_complete = True
 
@@ -194,12 +194,12 @@ class Node(Building):
     def Begin_Upgrade(self):
         if ( self.tech_level >= NODE_MAX_TECH_LEVEL ):
             New_Mail("Node cannot be upgraded further.")
-            sound.FX("error")
+            sound.FX(Sounds.error)
         elif ( self.Needs_Work() ):
             New_Mail("Node must be operational before an upgrade can begin.")
-            sound.FX("error")
+            sound.FX(Sounds.error)
         else:
-            sound.FX("crisp")
+            sound.FX(Sounds.crisp)
 
             # Upgrade a node to get a higher capacity and more health.
             # More health means harder to destroy.
@@ -260,7 +260,7 @@ class Node(Building):
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
 
     def Sound_Effect(self) -> None:
-        sound.FX("bamboo")
+        sound.FX(Sounds.bamboo)
 
     def Lose(self) -> None:
         self.steam.Lose()
@@ -286,7 +286,7 @@ class City_Node(Node):
         # This isn't suitable for cities: you lose if your
         # city is out of action. We use a special system.
         if ( self.city_upgrade == 0 ):
-            sound.FX("mechanical_1")
+            sound.FX(Sounds.mechanical_1)
 
             self.city_upgrade = self.city_upgrade_start = (
                 ( CITY_UPGRADE_WORK + ( self.tech_level *
@@ -294,7 +294,7 @@ class City_Node(Node):
             self.avail_work_units += 1 # Extra steam demand
         else:
             New_Mail("City is already being upgraded.")
-            sound.FX("error")
+            sound.FX(Sounds.error)
 
     def Needs_Work(self) -> bool:
         return ( self.city_upgrade != 0 )
@@ -309,7 +309,7 @@ class City_Node(Node):
                 self.tech_level += 1
                 self.steam.Capacity_Upgrade()
 
-                sound.FX("cityups")
+                sound.FX(Sounds.cityups)
                 New_Mail("City upgraded to level %d of %d!" %
                     ( self.tech_level, DIFFICULTY.CITY_MAX_TECH_LEVEL ) )
 
@@ -369,7 +369,7 @@ class City_Node(Node):
         return Building.Get_Tech_Level(self) + (" of %d" % DIFFICULTY.CITY_MAX_TECH_LEVEL )
 
     def Sound_Effect(self) -> None:
-        sound.FX("computer")
+        sound.FX(Sounds.computer)
 
 
 class Well_Node(Node):
@@ -398,7 +398,7 @@ class Well_Node(Node):
                 "Steam production: %1.1f U" % self.production) ]
 
     def Sound_Effect(self) -> None:
-        sound.FX("bamboo1")
+        sound.FX(Sounds.bamboo1)
 
 
 class Pipe(Building):
@@ -426,12 +426,12 @@ class Pipe(Building):
     def Begin_Upgrade(self) -> None:
         if ( self.tech_level >= PIPE_MAX_TECH_LEVEL ):
             New_Mail("Pipe cannot be upgraded further.")
-            sound.FX("error")
+            sound.FX(Sounds.error)
         elif ( self.Needs_Work() ):
             New_Mail("Pipe must be operational before an upgrade can begin.")
-            sound.FX("error")
+            sound.FX(Sounds.error)
         else:
-            sound.FX("crisp")
+            sound.FX(Sounds.crisp)
             # Upgrade a pipe for lower resistance and more health.
             self.tech_level += 1
             self.max_health += int( PIPE_UPGRADE_WORK_FACTOR *
@@ -527,6 +527,6 @@ class Pipe(Building):
             ((128,128,128), 15, "Flow rate: %1.1f U" % abs(self.current_n1_to_n2) ) ]
 
     def Sound_Effect(self) -> None:
-        sound.FX("bamboo2")
+        sound.FX(Sounds.bamboo2)
 
 

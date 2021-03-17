@@ -10,6 +10,7 @@ import pygame
 
 from . import stats, draw_effects, resource, render, sound, events, config
 from .game_types import *
+from .primitives import *
 
 
 class Menu:
@@ -50,21 +51,21 @@ class Menu:
             if ( r.collidepoint(x,y) ):
                 self.hover = num
                 if ( old_sel != self.hover ):
-                    sound.FX("click_s")
+                    sound.FX(Sounds.click_s)
                 return
 
     def Mouse_Down(self, spos: SurfacePosition) -> None:
         self.Mouse_Move(spos)
         if ( self.hover is not None ):
             self.selection = self.hover
-            sound.FX("click")
+            sound.FX(Sounds.click)
 
     def Key_Press(self, k: int) -> None:
         for (num, name, hotkeys) in self.options:
             if (( hotkeys is not None ) and ( k in hotkeys )):
                 self.selection = num
                 self.update_required = True
-                sound.FX("click")
+                sound.FX(Sounds.click)
                 return
 
     def Update_Surface(self) -> None:
@@ -238,7 +239,7 @@ class Toggle_Sound_Menu(Menu):
         if self.selection == TOGGLE_SOUND[0]:
             self.selection = None
             config.cfg.mute = not config.cfg.mute
-            sound.FX("click")
+            sound.FX(Sounds.click)
             self.Set_Sound_Item()
             self.Update_Surface()
 

@@ -50,7 +50,7 @@ class Quake_Season(Quiet_Season):
             self.unfurling = 0
 
         if ( self.state == self.QUAKE_WARNING ):
-            sound.FX("firealrm")
+            sound.FX(Sounds.firealrm)
         elif ( self.state == self.QUAKE ):
             self.__Generate_Quake()
         elif ( self.state == self.QUAKE_DAMAGE ):
@@ -193,6 +193,6 @@ def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[Surf
 
 def Init_Quakes() -> None:
     global quake_sound
-    quake_sound = sound.Persisting_Sound("earthquake")
+    quake_sound = sound.Persisting_Sound(Sounds.earthquake)
 
 

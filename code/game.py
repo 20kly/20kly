@@ -214,7 +214,7 @@ class Game:
         self.picture_surf.blit(self.header_picture, r.topleft)
 
     def Main_Loop(self) -> bool:
-        alarm_sound = sound.Persisting_Sound("emergency")
+        alarm_sound = sound.Persisting_Sound(Sounds.emergency)
         g = self.g
 
         # menu setup
@@ -323,7 +323,7 @@ class Game:
                 # alarm will sound.
 
                 if ( g.game_ends_at is None ):
-                    sound.FX("steamcrit")
+                    sound.FX(Sounds.steamcrit)
                     g.warning_given = True
 
                     New_Mail("Danger! The City needs more steam!", (255,0,0))
@@ -353,7 +353,7 @@ class Game:
             else:
 
                 if ( g.warning_given ):
-                    sound.FX("steamres")
+                    sound.FX(Sounds.steamres)
                     g.warning_given = False
 
                 if ( g.net.hub.Get_Pressure() < PRESSURE_OK ):
@@ -416,17 +416,17 @@ class Game:
                 or ( g.season == Season.STORM )):
                     g.season = Season.ALIEN
                     g.season_fx = alien_invasion.Alien_Season(g.net, g.difficulty_level)
-                    sound.FX("aliensappr")
+                    sound.FX(Sounds.aliensappr)
                 elif ( g.season == Season.ALIEN ):
                     g.season = Season.QUAKE
                     g.season_fx = Quake_Season(g.net, g.difficulty_level)
                     if ( not tutor.Active() ): # hack...
-                        sound.FX("quakewarn")
+                        sound.FX(Sounds.quakewarn)
                 elif ( g.season == Season.QUAKE ):
                     g.season = Season.STORM
                     g.season_fx = Storm_Season(g.net, g.difficulty_level)
                     g.difficulty_level *= 1.2 # 20% harder..
-                    sound.FX("stormwarn")
+                    sound.FX(Sounds.stormwarn)
                 else:
                     assert g.season == Season.START
                     g.season = Season.QUIET
@@ -447,7 +447,7 @@ class Game:
                 # Game over - you lose
                 New_Mail("The City ran out of steam.", (255,0,0))
                 New_Mail("Game Over!", (255,255,0))
-                sound.FX("krankor")
+                sound.FX(Sounds.krankor)
                 just_ended = True
 
             elif (( g.net.hub.tech_level >= DIFFICULTY.CITY_MAX_TECH_LEVEL )
@@ -456,7 +456,7 @@ class Game:
                 g.win = True
                 New_Mail("The City is now fully upgraded!", (255,255,255))
                 New_Mail("You have won the game!", (255,255,255))
-                sound.FX("applause")
+                sound.FX(Sounds.applause)
                 just_ended = True
 
             if ( just_ended ):

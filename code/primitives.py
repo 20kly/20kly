@@ -64,6 +64,37 @@ class PlayMode(enum.Enum):
     RECORD = 303
     PLAYTHRU = 304
 
+# Sound effects
+class Sounds(enum.Enum):
+    bamboo = "ack1"
+    bamboo1 = "ack2"
+    bamboo2 = "ack3"
+    crisp = "ack4"
+    destroy = "ack5"
+    double = "ack6"
+    mechanical_1 = "ack7"
+    ring = "ack8"
+    whoosh1 = "ack9"
+    emergency = "alert1"
+    stormbeeps = "alert2"
+    firealrm = "alert3"
+    clicker = "aliens"
+    aliensappr = "aliensappr"
+    alient2 = "alient2"
+    applause = "dack1"
+    computer = "dack2"
+    cityups = "cityups"
+    click = "click"
+    click_s = "click_s"
+    earthquake = "earthquake"
+    error = "error"
+    krankor = "krankor"
+    quakewarn = "quakewarn"
+    steamcrit = "steamcrit"
+    steamres = "steamres"
+    stormdmg = "stormdmg"
+    stormwarn = "stormwarn"
+
 # Mathematical constants
 HALF_PI = math.pi * 0.5
 TWO_PI = math.pi * 2.0
