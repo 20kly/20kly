@@ -60,7 +60,11 @@ def test_Game_Events() -> None:
                   NoEvent(),
                   Push(pygame.K_m),         # mute (stays in the menu)
                   NoEvent(),
+                  Screenshot("mute1.png"),
+                  NoEvent(),
                   Push(pygame.K_m),         # mute again
+                  NoEvent(),
+                  Screenshot("mute2.png"),
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # leave menu (return to game)
                   NoEvent(),
@@ -79,20 +83,43 @@ def test_Game_Events() -> None:
     main.Main(data_dir="data", args=[],
               event=Fake_Events(event_list))
 
-def test_Game_Menu_Quit() -> None:
+def test_Game_4K() -> None:
+    """See the main menu, game screen and game menu at a high resolution."""
     event_list = [NoEvent(),
+                  Screenshot("main4k.png"),
+                  NoEvent(),
                   Push(pygame.K_n), # new game
                   NoEvent(),
                   Push(pygame.K_i), # intermediate
+                  NoEvent(),
+                  Screenshot("game4k.png"),
+                  NoEvent(),
+                  Push(pygame.K_ESCAPE),    # enter menu
+                  NoEvent(),
+                  Screenshot("menu4k.png"),
+                  NoEvent(),
+                  Push(pygame.K_s),         # save
+                  NoEvent(),
+                  Screenshot("save4k.png"),
+                  NoEvent(),
+                  Push(pygame.K_1),         # slot 1
+                  NoEvent(),
+                  Push(pygame.K_ESCAPE),    # enter menu
+                  NoEvent(),
+                  Push(pygame.K_r),         # restore
+                  NoEvent(),
+                  Screenshot("restore4k.png"),
+                  NoEvent(),
+                  Push(pygame.K_ESCAPE),    # cancel
                   NoEvent(),
                   Push(pygame.K_ESCAPE),    # enter menu
                   NoEvent(),
                   Push(pygame.K_F10),       # exit game
                   NoEvent(),
-                  Push(pygame.K_q),         # leave menu (quit to main menu)
-                  NoEvent(),
                   Quit(),
                   NoEvent()]
+    Setup_Super_Resolution()
     main.Main(data_dir="data", args=[],
               event=Fake_Events(event_list))
-
+    config.cfg.Reset()
+    config.Save()

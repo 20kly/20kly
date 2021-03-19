@@ -21,7 +21,11 @@ def main() -> None:
     test = [sys.executable, "-m", "pytest"]
 
     if "--no-clean" not in opts:
-        subprocess.call(clean + ["code", "data", "audio", "manual", "dist"])
+        subprocess.call(clean + ["code", "data", "audio", "manual", "dist", "tmp"])
+
+    if not os.path.isdir("tmp"):
+        os.mkdir("tmp")
+    os.environ["HOME"] = os.path.abspath("tmp")
 
     if "--no-coverage" not in opts:
         subprocess.call(clean + [".coverage", "code", "htmlcov"])

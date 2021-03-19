@@ -20,6 +20,12 @@ def Setup_For_Unit_Test() -> SurfaceType:
     mail.Set_Screen_Height(MINIMUM_HEIGHT)
     return pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 
+def Setup_Super_Resolution() -> None:
+    height = 4000
+    config.cfg.width = int(height * EXPECTED_ASPECT_RATIO)
+    config.cfg.height = int(height)
+    config.Save()
+
 class Click(events.Event):
     def __init__(self, pos: SurfacePosition) -> None:
         events.Event.__init__(self, pos=pos,
@@ -62,6 +68,14 @@ class ActiveEvent(events.Event):
 class NoEvent(events.Event):
     pass
 
+class Screenshot(NoEvent):
+    def __init__(self, output: str) -> None:
+        events.Event.__init__(self, t=pygame.NOEVENT)
+        self.output = output
+
+    def trigger(self) -> None:
+        pygame.image.save(pygame.display.get_surface(), os.path.join("tmp", self.output))
+
 class Fake_Events(events.Events):
     def __init__(self, event_list: List[events.Event]) -> None:
         events.Events.__init__(self)
@@ -82,7 +96,10 @@ class Fake_Events(events.Events):
         self.real_poll()
         assert self.index < len(self.event_list)
         self.index += 1
-        return self.event_list[self.index - 1]
+        event = self.event_list[self.index - 1]
+        if isinstance(event, Screenshot):
+            event.trigger()
+        return event
 
     def webbrowser_open(self, url: str) -> None:
         mail.New_Mail("OPEN URL " + url)

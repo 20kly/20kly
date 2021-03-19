@@ -7,12 +7,16 @@
 import pygame
 
 
-from . import font
+from . import font, draw_effects
 from .game_types import *
 
 
 def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) -> None:
-    y = 5
+    size3 = draw_effects.Get_Margin(3)
+    size5 = draw_effects.Get_Margin(5)
+    size6 = draw_effects.Get_Margin(6)
+    size8 = draw_effects.Get_Margin(8)
+    y = size5
     w = output.get_rect().width
 
     for (colour, size, item) in stats_tuple_list:
@@ -21,8 +25,8 @@ def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) ->
             bar = typing.cast(BarMeterStatTuple, item)
             assert type(bar) == tuple
             items = [ bar ]
-            Draw_Bar_Meter(output, [bar], (w // 2, y + 3), ( w * 4 ) // 5, 6)
-            y += 8
+            Draw_Bar_Meter(output, [bar], (w // 2, y + size3), ( w * 4 ) // 5, size6)
+            y += size8
         else:
             # Draw text, as usual
             text = typing.cast(str, item)

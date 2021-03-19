@@ -109,6 +109,7 @@ class Images(enum.Enum):
     greenrust = "greenrust_jpg"
     header = "header_jpg"
     headersm = "headersm_jpg"
+    letters = "letters_png"
     mainmenu = "mainmenu_jpg"
     maker = "maker_png"
     maker_u = "maker_u_png"

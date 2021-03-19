@@ -5,7 +5,7 @@
 
 # A very lightweight menu system.
 
-import pygame
+import pygame, enum
 
 
 from . import stats, draw_effects, resource, render, sound, events, config
@@ -21,10 +21,11 @@ class Menu:
         self.hover: Optional[MenuCommand] = None
         self.bbox: RectType = pygame.Rect(0, 0, 1, 1)
 
+        self.output_size = (0, 0)
         self.selection: Optional[MenuCommand] = None
         self.update_required = True
         self.force_width = force_width
-        self.Recompute_Surface()
+        self.Resize_Surface()
 
     def Get_Command(self) -> Optional[MenuCommand]:
         return self.selection
@@ -68,10 +69,13 @@ class Menu:
                 sound.FX(Sounds.click)
                 return
 
-    def Update_Surface(self) -> None:
+    def Force_Full_Update(self) -> None:
+        self.update_required = True
+        self.output_size = (0, 0)
+
+    def Resize_Surface(self) -> None:
         self.update_required = True
 
-    def Recompute_Surface(self) -> None:
         # estimate of width and height for first attempt at drawing
         width_hint = height_hint = 10
 
@@ -81,26 +85,26 @@ class Menu:
         # Two attempts at drawing required.
         # First we compute the size of the bounding box
         (_, _, (width_hint, height_hint)) = self.__Draw((width_hint, height_hint))
-        new_bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
         width_hint = max(width_hint, 150)
         if self.force_width > 0:
             width_hint = self.force_width
 
-        if (width_hint, height_hint) == self.bbox.size:
-            # No need to redraw as the size is the same as what we already have
-            return
-
         # Second step is to draw into the bounding box
         (self.surf_store, self.control_rects, _) = self.__Draw((width_hint, height_hint))
         self.bbox = pygame.Rect(0, 0, width_hint, height_hint)
 
-    def Draw(self, output: SurfaceType,
-             centre: Optional[SurfacePosition] = None) -> None:
+    def Draw(self, output: SurfaceType, centre: Optional[SurfacePosition] = None) -> None:
+
+        # If the output window size has changed, recompute the size of the menu
+        if output.get_rect().size != self.output_size:
+            self.output_size = output.get_rect().size
+            self.Resize_Surface()
+
+        # Only redraw the menu if an update is required
         if not self.update_required:
             return
 
-        self.Recompute_Surface()
         self.update_required = False
 
         if ( centre is None ):
@@ -131,7 +135,7 @@ class Menu:
 
         draw_effects.Tile_Texture(surf, Images.i006metal, surf.get_rect())
 
-        margin = 8
+        margin = draw_effects.Get_Margin(8)
         w = bbox.width - ( margin * 2 )
         th = None
         y = margin + bbox.top
@@ -142,7 +146,7 @@ class Menu:
         for (num, name, hotkeys) in self.options:
             if ( name is None ): # a gap
                 if ( first_item ):
-                    img = resource.Load_Image(Images.header)
+                    img = draw_effects.Scale_Image(resource.Load_Image(Images.header))
                     img_r = img.get_rect()
                     img_r.center = bbox.center
                     img_r.top = y
@@ -202,7 +206,7 @@ class Enhanced_Menu(Menu):
     def Enhancement_Interface(self, surf: SurfaceType,
             num: MenuCommand, rect: RectType, margin: int) -> None:
         if ( self.pictures.get( num, None ) ):
-            img = resource.Load_Image( self.pictures[ num ] )
+            img = draw_effects.Scale_Image(resource.Load_Image(self.pictures[num]))
             img_r = img.get_rect()
             img_r.center = rect.center
             img_r.left = rect.left + margin
@@ -237,11 +241,11 @@ class Toggle_Sound_Menu(Menu):
 
     def Check_Selection(self) -> None:
         if self.selection == TOGGLE_SOUND[0]:
-            self.selection = None
             config.cfg.mute = not config.cfg.mute
             sound.FX(Sounds.click)
             self.Set_Sound_Item()
-            self.Update_Surface()
+            self.Force_Full_Update()
+            self.selection = None
 
     def Set_Sound_Item(self) -> None:
         if config.cfg.mute:
@@ -283,6 +287,3 @@ def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
         current_menu.Select(None) # consume
 
     return (quit, cmd)
-
-
-

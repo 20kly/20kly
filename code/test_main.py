@@ -4,7 +4,7 @@
 #
 
 import pygame
-from . import main, mail, version
+from . import main, mail, version, config
 from .primitives import *
 from .game_types import *
 from .unit_test import *
@@ -17,6 +17,8 @@ def test_Main_Tutorial() -> None:
     These tests are for options in the main menu.
     Start the tutorial and then quit. Correctness checked
     by looking at in-game mail."""
+    config.cfg.Reset()
+    config.Save()
     event_list = [Push(pygame.K_t), # tutorial
                   NoEvent(),
                   NoEvent(),
@@ -108,7 +110,7 @@ def test_Main_Record() -> None:
     event_list = [NoEvent(),
                   Quit(),
                   NoEvent()]
-    main.Main(data_dir="data", args=["--record", "test.tmp"],
+    main.Main(data_dir="data", args=["--record", "tmp/test.tmp"],
               event=Fake_Events(event_list))
     assert "You are playing a Beginner game" in mail.Get_Messages()
 
@@ -187,4 +189,3 @@ def test_Update_Feature() -> None:
 
     main.Main(data_dir="data", args=[], event=Fake_Update_Events(Bad_Update_2))
     assert not ("OPEN URL" in mail.Get_Messages())
-

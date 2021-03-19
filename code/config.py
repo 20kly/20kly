@@ -10,6 +10,9 @@ from .primitives import *
 
 class Config:
     def __init__(self) -> None:
+        self.Reset()
+
+    def Reset(self) -> None:
         self.version = VERSION
         self.mute = True
         self.test = 0

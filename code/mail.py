@@ -109,9 +109,10 @@ def Get_Messages() -> str:
 
 def Set_Screen_Height(height: int) -> None:
     """Notify components of a screen size change."""
-    from . import grid, tutor
+    from . import grid, tutor, draw_effects
     font.Set_Screen_Height(height)
     grid.Set_Screen_Height(height)
     tutor.Set_Screen_Height(height)
+    draw_effects.Set_Screen_Height(height)
     __mail.Render()
 

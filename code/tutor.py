@@ -336,9 +336,9 @@ class Tutor_Memory:
         self.permit_season_change = False
         self.inactive = False
 
-    def Set_Width(self, width: int) -> None:
+    def Set_Screen_Height(self, screen_height: int) -> None:
         # Called on startup and when the screen size changes
-        self.width = width
+        self.width = (screen_height * 40) // 100
         self.current_msg_surf = None
 
     def Add_Message(self, arg: Tuple[Optional[str], str, str, str, bool]) -> None:
@@ -441,5 +441,5 @@ class Tutor_Memory:
 __tutor = Tutor_Memory()
 
 def Set_Screen_Height(screen_height: int) -> None:
-    __tutor.Set_Width(( screen_height * 40 ) // 100)
+    __tutor.Set_Screen_Height(screen_height)
 

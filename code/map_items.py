@@ -12,9 +12,8 @@ import pygame, math
 from . import partial_vector, stats, resource, draw_obj, sound
 from .primitives import *
 from .game_types import *
-from . import steam_model
+from . import steam_model, draw_effects, network
 from .mail import New_Mail
-from . import network
 from .difficulty import DIFFICULTY
 from .grid import Grid_To_Scr, Get_Grid_Size, Grid_To_Scr_Rect
 
@@ -254,9 +253,9 @@ class Node(Building):
         self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), (0,0))
 
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
-        ra = ( Get_Grid_Size() // 2 ) + 2
-        pygame.draw.circle(output, highlight,
-            Grid_To_Scr(self.pos), ra , 2 )
+        size2 = draw_effects.Get_Margin(2)
+        ra = ( Get_Grid_Size() // 2 ) + size2
+        pygame.draw.circle(output, highlight, Grid_To_Scr(self.pos), ra, size2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
 
     def Sound_Effect(self) -> None:
@@ -362,8 +361,9 @@ class City_Node(Node):
 
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         r = Grid_To_Scr_Rect(self.pos).inflate(CITY_BOX_SIZE,CITY_BOX_SIZE)
-        pygame.draw.rect(output, highlight,r,2)
-        return r.inflate(2,2)
+        size2 = draw_effects.Get_Margin(2)
+        pygame.draw.rect(output, highlight,r,size2)
+        return r.inflate(size2,size2)
 
     def Get_Tech_Level(self) -> str:
         return Building.Get_Tech_Level(self) + (" of %d" % DIFFICULTY.CITY_MAX_TECH_LEVEL )
@@ -459,21 +459,24 @@ class Pipe(Building):
     def Draw(self, output: SurfaceType) -> None:
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
+        size3 = draw_effects.Get_Margin(3)
+
         if ( self.Needs_Work() ):
             # Plain red line
-            pygame.draw.line(output, (255,0,0), (x1,y1), (x2,y2), 3)
+            pygame.draw.line(output, (255,0,0), (x1,y1), (x2,y2), size3)
             self.dot_drawing_offset = 0
             return
 
 
         # Dark green backing line:
         colour = (32,128,20)
-        pygame.draw.line(output, colour, (x1,y1), (x2,y2), 3)
+        pygame.draw.line(output, colour, (x1,y1), (x2,y2), size3)
 
         if ( self.current_n1_to_n2 == 0.0 ):
             return
 
-        r = pygame.Rect(0,0,1,1)
+        size1 = max(1, size3 // 3)
+        r = pygame.Rect(0,0,size1,size1)
         for pos in self.dot_positions:
             r.center = (int(pos[0]), int(pos[1]))
             output.fill(colour, r)
@@ -516,10 +519,12 @@ class Pipe(Building):
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         p1 = Grid_To_Scr(self.n1.pos)
         p2 = Grid_To_Scr(self.n2.pos)
-        pygame.draw.line(output, highlight, p1, p2, 5)
+        size5 = draw_effects.Get_Margin(5)
+        size7 = draw_effects.Get_Margin(7)
+        pygame.draw.line(output, highlight, p1, p2, size5)
         #self.Draw(output) # Already done elsewhere.
 
-        return pygame.Rect(p1,(1,1)).union(pygame.Rect(p2,(1,1))).inflate(7,7)
+        return pygame.Rect(p1,(1,1)).union(pygame.Rect(p2,(1,1))).inflate(size7,size7)
 
     def Get_Information(self) -> List[StatTuple]:
         return Building.Get_Information(self) + [

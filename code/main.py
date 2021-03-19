@@ -165,16 +165,24 @@ def Main_Menu_Loop(name: str, clock: ClockType,
 
     # off we go.
 
+    menu_image = resource.Load_Image(Images.mainmenu)
+    letters_image = resource.Load_Image(Images.letters).convert_alpha()
+
     quit = False
     while ( not quit ):
         # Main menu
         screen = event.resurface()
         (width, height) = screen.get_rect().size
-        menu_image = resource.Load_Image(Images.mainmenu)
+
         if ( menu_image.get_rect().width != width ): # NO-COV
             menu_image = pygame.transform.smoothscale(menu_image, (width, height))
+        if ( letters_image.get_rect().height != height ): # NO-COV
+            (w, h) = letters_image.get_rect().size
+            w = int(w * (height / h))
+            letters_image = pygame.transform.smoothscale(letters_image, (w, height))
 
         screen.blit(menu_image, (0,0))
+        screen.blit(letters_image, (0,0))
 
         y = 5
         for text in copyright:

@@ -155,11 +155,12 @@ class Game:
         # for whatever the user's screen res happens to be.
         sc = height / 600.0
 
-        margin = int(sc * 10)
+        self.margin = margin = int(sc * 10)
         x1 = self.menu_margin + margin
         menu_width1 = self.menu_width - ( margin * 2 )
 
-        self.picture_rect = self.header_picture.get_rect().inflate(10,10)
+        self.scaled_header_picture = draw_effects.Scale_Image(self.header_picture)
+        self.picture_rect = self.scaled_header_picture.get_rect().inflate(margin, margin)
         self.picture_rect.center = (x1 + ( menu_width1 // 2 ),0)
         self.picture_rect.top = margin
         self.picture_surf = self.screen.subsurface(self.picture_rect)
@@ -197,21 +198,23 @@ class Game:
         self.ui.Update_All()
 
     def Special_Refresh(self) -> None:
+        height = self.screen.get_rect().height
+
         draw_effects.Tile_Texture(self.screen, Images.rivets,
                 pygame.Rect(self.menu_margin, 0,
-                    self.menu_width, self.screen.get_rect().height))
+                    self.menu_width, height))
 
-        edge = pygame.Rect(self.menu_margin, -10,
-            self.menu_width + 10, self.screen.get_rect().height + 10)
+        edge = pygame.Rect(self.menu_margin, - self.margin,
+            self.menu_width + self.margin, height + self.margin)
 
         r: RectType
         for r in [ self.stats_rect, self.global_stats_rect, edge ]:
             draw_effects.Line_Edging(self.screen, r, False)
 
-        r = self.header_picture.get_rect()
+        r = self.scaled_header_picture.get_rect()
         r.center = self.picture_surf.get_rect().center
         draw_effects.Line_Edging(self.picture_surf, r, False)
-        self.picture_surf.blit(self.header_picture, r.topleft)
+        self.picture_surf.blit(self.scaled_header_picture, r.topleft)
 
     def Main_Loop(self) -> bool:
         alarm_sound = sound.Persisting_Sound(Sounds.emergency)
@@ -310,10 +313,6 @@ class Game:
                     g.season_fx.Get_Extra_Info())
             self.ui.Draw_Controls(self.controls_surf)
 
-            if menu_open:
-                current_menu.Draw(self.screen)
-                alarm_sound.Set(0.0)
-
             stats_back = (0,0,0)
             supply = g.net.hub.Get_Steam_Supply()
             demand = g.net.hub.Get_Steam_Demand()
@@ -380,6 +379,10 @@ class Game:
                   (None, None, g.net.hub.Get_Pressure_Meter())])
 
             tutor.Draw(self.screen, g)
+
+            if menu_open:
+                current_menu.Draw(self.screen)
+                alarm_sound.Set(0.0)
 
             mail.Draw_Mail(self.game_screen_surf)
             pygame.display.flip()
