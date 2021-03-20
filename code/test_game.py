@@ -118,8 +118,7 @@ def test_Game_4K() -> None:
                   NoEvent(),
                   Quit(),
                   NoEvent()]
-    Setup_Super_Resolution()
-    main.Main(data_dir="data", args=[],
+    main.Main(data_dir="data", args=["--test-4K"],
               event=Fake_Events(event_list))
     config.cfg.Reset()
     config.Save()

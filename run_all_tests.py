@@ -9,6 +9,9 @@ import sys
 import glob
 import os
 import getopt
+import typing
+
+clean = ["git", "clean", "-d", "-f", "-x"]
 
 def main() -> None:
 
@@ -17,7 +20,6 @@ def main() -> None:
                                "no-coverage"])
     opts = dict(opts_list)
 
-    clean = ["git", "clean", "-d", "-f", "-x"]
     test = [sys.executable, "-m", "pytest"]
 
     if "--no-clean" not in opts:
@@ -49,10 +51,17 @@ def main() -> None:
         if rc != 0:
             sys.exit(1)
 
-def run_a_test(name: str) -> None:
+def run_a_test(name: str, args: typing.List[str] = []) -> None:
     rc = subprocess.call([sys.executable, "lightyears",
-                          "--playback", "tests/" + name])
+                          "--playback", "tests/" + name] + args)
     assert rc == 0, "Running " + name
+
+def test_shots() -> None:
+    run_a_test("shots")
+
+def test_shots4K() -> None:
+    run_a_test("shots", ["--test-4K"])
+    subprocess.call(clean + ["tmp/.lightyears.cfg"])
 
 def test_beginner() -> None:
     run_a_test("beginner")
@@ -74,7 +83,6 @@ def test_tutorial_die_2() -> None:
 
 def test_placement() -> None:
     run_a_test("placement")
-
 
 if __name__ == "__main__":
     main()

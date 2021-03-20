@@ -9,12 +9,10 @@
 import math , pygame
 
 
-from . import sound
+from . import sound, draw_effects, game_random, network, map_items
 from .quiet_season import Quiet_Season
-from . import game_random
 from .primitives import *
 from .game_types import *
-from . import network, map_items
 from .grid import Float_Grid_To_Scr
 
 SortKey = Tuple[float, FloatGridPosition]
@@ -259,20 +257,21 @@ class Alien:
                 else:
                     self.in_zone = True
 
+            point_size = draw_effects.Get_Scaled_Size(2)
             self.bbox = pygame.Rect(x,y,1,1)
             for (i,a) in enumerate([ 0, TWO_THIRDS_PI, - TWO_THIRDS_PI ]):
                 px = x + ( math.cos(a + ha) * self.SIZE )
                 py = y + ( math.sin(a + ha) * self.SIZE )
                 (px, py) = Float_Grid_To_Scr((px,py))
                 self.points[ i ] = (int(px), int(py))
-                self.bbox.union_ip(pygame.Rect(self.points[ i ], (1,1)))
+                self.bbox.union_ip(pygame.Rect(self.points[ i ], (point_size, point_size)))
 
             if ( fire ):
                 assert self.current_target is not None
                 (px, py) = Float_Grid_To_Scr(self.current_target.pos)
                 tgt = (int(px), int(py))
                 self.laser = (self.points[ 0 ], tgt)
-                self.bbox.union_ip(pygame.Rect(tgt, (1,1)))
+                self.bbox.union_ip(pygame.Rect(tgt, (point_size, point_size)))
 
             if ( fire and ( len(self.targets) != 0 )):
                 global alien_firing_sound
@@ -280,11 +279,12 @@ class Alien:
                 alien_firing_sound.Set(1.0)
 
     def Draw(self, output: SurfaceType, update_area: UpdateAreaMethod) -> None:
+        width = draw_effects.Get_Scaled_Size(1)
         pygame.draw.polygon(output, self.colour1, self.points)
-        pygame.draw.polygon(output, self.colour2, self.points, 1)
+        pygame.draw.polygon(output, self.colour2, self.points, width)
         if ( self.laser is not None ):
             (a,b) = self.laser
-            pygame.draw.line(output, (255, 255, 255), a, b)
+            pygame.draw.line(output, (255, 255, 255), a, b, width)
         if ( self.bbox is not None ):
             update_area(self.bbox)
 

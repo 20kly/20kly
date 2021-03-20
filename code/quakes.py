@@ -11,7 +11,7 @@
 import math , pygame
 
 
-from . import partial_vector, intersect, sound, game_random
+from . import partial_vector, intersect, sound, game_random, draw_effects
 from .quiet_season import Quiet_Season
 from .primitives import *
 from .game_types import *
@@ -145,8 +145,9 @@ class Quake_Season(Quiet_Season):
             # Draw fault line
             fl = [ Float_Grid_To_Scr(x) for x in self.fault_lines[ 0: self.unfurling ] ]
             if ( len(fl) > 1 ):
-                pygame.draw.lines(output, (200,200,200), False, fl, 4)
-                pygame.draw.lines(output, (0,0,0), False, fl, 2)
+                size4 = draw_effects.Get_Scaled_Size(4)
+                pygame.draw.lines(output, (200,200,200), False, fl, size4)
+                pygame.draw.lines(output, (0,0,0), False, fl, size4 // 2)
             update_area(output.get_rect())
 
 

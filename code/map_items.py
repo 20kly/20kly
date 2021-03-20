@@ -70,7 +70,7 @@ class Building(Item):
         self.max_health = 5 * HEALTH_UNIT
         self.base_colour = (255,255,255)
         self.connection_value = 0
-        self.popup_disappears_at = 0.0
+        self.popup_countdown = 0
         self.destroyed = False
         self.tech_level = 1
 
@@ -126,9 +126,11 @@ class Building(Item):
 
     def Draw_Popup(self, output) -> Optional[RectType]:
         (x,y) = Grid_To_Scr(self.pos)
-        x -= 16
-        y -= 12
-        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y), 32, 5)
+        x -= draw_effects.Get_Scaled_Size(16)
+        y -= draw_effects.Get_Scaled_Size(12)
+        return stats.Draw_Bar_Meter(output, self.Get_Popup_Items(), (x,y),
+                                    draw_effects.Get_Scaled_Size(32),
+                                    draw_effects.Get_Scaled_Size(5))
 
     def Get_Tech_Level(self) -> str:
         return ("Tech Level %d" % self.tech_level)
@@ -253,7 +255,7 @@ class Node(Building):
         self.draw_obj.Draw(output, typing.cast(GridPosition, self.pos), (0,0))
 
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
-        size2 = draw_effects.Get_Margin(2)
+        size2 = draw_effects.Get_Scaled_Size(2)
         ra = ( Get_Grid_Size() // 2 ) + size2
         pygame.draw.circle(output, highlight, Grid_To_Scr(self.pos), ra, size2 )
         return Grid_To_Scr_Rect(self.pos).inflate(ra,ra)
@@ -361,7 +363,7 @@ class City_Node(Node):
 
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         r = Grid_To_Scr_Rect(self.pos).inflate(CITY_BOX_SIZE,CITY_BOX_SIZE)
-        size2 = draw_effects.Get_Margin(2)
+        size2 = draw_effects.Get_Scaled_Size(2)
         pygame.draw.rect(output, highlight,r,size2)
         return r.inflate(size2,size2)
 
@@ -459,7 +461,7 @@ class Pipe(Building):
     def Draw(self, output: SurfaceType) -> None:
         (x1,y1) = Grid_To_Scr(self.n1.pos)
         (x2,y2) = Grid_To_Scr(self.n2.pos)
-        size3 = draw_effects.Get_Margin(3)
+        size3 = draw_effects.Get_Scaled_Size(3)
 
         if ( self.Needs_Work() ):
             # Plain red line
@@ -519,8 +521,8 @@ class Pipe(Building):
     def Draw_Selected(self, output: SurfaceType, highlight: Colour) -> Optional[RectType]:
         p1 = Grid_To_Scr(self.n1.pos)
         p2 = Grid_To_Scr(self.n2.pos)
-        size5 = draw_effects.Get_Margin(5)
-        size7 = draw_effects.Get_Margin(7)
+        size5 = draw_effects.Get_Scaled_Size(5)
+        size7 = draw_effects.Get_Scaled_Size(7)
         pygame.draw.line(output, highlight, p1, p2, size5)
         #self.Draw(output) # Already done elsewhere.
 

@@ -20,12 +20,6 @@ def Setup_For_Unit_Test() -> SurfaceType:
     mail.Set_Screen_Height(MINIMUM_HEIGHT)
     return pygame.display.set_mode((MINIMUM_WIDTH, MINIMUM_HEIGHT), pygame.RESIZABLE)
 
-def Setup_Super_Resolution() -> None:
-    height = 4000
-    config.cfg.width = int(height * EXPECTED_ASPECT_RATIO)
-    config.cfg.height = int(height)
-    config.Save()
-
 class Click(events.Event):
     def __init__(self, pos: SurfacePosition) -> None:
         events.Event.__init__(self, pos=pos,

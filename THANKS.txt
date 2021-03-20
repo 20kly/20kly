@@ -1,5 +1,5 @@
 20,000 Light-Years Into Space
-version 1.4  
+Fifteenth Anniversary Edition - version 1.5.0
 
 
 This official version of Light Years continues to be managed by Jack 
@@ -18,16 +18,13 @@ number of other people:
 * Ivo Anjo, Enrico Zini, Denilson Sa, Matthew Scheffel and Jan Niemeyer 
   who sent in feature suggestions,
 * Josh Holland, who suggested peaceful mode and provided a patch,
-* Richard Jones, who organised the competition that inspired this game.
-
-The following people have written patches which are not yet included,
-but they deserve thanks nonetheless for their efforts:
-
-* David M. Marti, 
-* Anne Archibald, 
-* Christoph Lucking.
+* Richard Jones, who organised the PyWeek competition that inspired this game,
+* Andreas Lochmann for encouraging me to start
+  the process of updating the game for newer technology,
+* Many other people who sent supportive and encouraging messages over
+  the years.
 
 
 Jack Whitham
-20/07/11
+26/03/21
 

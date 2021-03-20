@@ -10,7 +10,7 @@
 
 import pygame, math, random
 
-from . import resource
+from . import resource, draw_effects
 from .primitives import *
 from .game_types import *
 
@@ -35,14 +35,16 @@ class Abstract_Particle:
 # A puff of steam coming out of a vent or steam maker.
 class Steam_Particle(Abstract_Particle):
     def __init__(self) -> None:
-        m = MAX_STEAM_SIZE // 2
+        m = self.Max_Size() // 2
         m1 = m - 1
         m2 = m + 1
+        scale2 = draw_effects.Get_Scaled_Size(2)
 
-        (self.x, self.y) = (float(random.randint(m1,m2)), float(MAX_STEAM_SIZE))
+        (self.x, self.y) = (float(random.randint(m1,m2)), float(self.Max_Size()))
         self.bright = float(random.randint(80,160))
-        self.dx = ( random.random() * 2.0 ) - 1.0
-        self.dy = - ( random.random() + 1.0 )
+        self.dx = ( random.random() * scale2 ) - 1.0
+        self.dy = - (( random.random() * scale2 * 0.5 ) + 1.0 )
+        self.ddx = 0.001 * scale2
         self.db = ( random.random() * 2.0 ) + 3.0
 
     def Next(self) -> NextParticleType:
@@ -50,7 +52,7 @@ class Steam_Particle(Abstract_Particle):
         self.y += self.dy
         self.dx *= 0.95
         self.dy *= 0.95
-        self.dx += 0.02
+        self.dx += self.ddx
         self.bright -= self.db
         if ( self.bright < 40 ):
             self.bright = 40
@@ -58,20 +60,22 @@ class Steam_Particle(Abstract_Particle):
         return ((self.x, self.y), (b, b, b, 255))
 
     def Max_Size(self) -> int:
-        return MAX_STEAM_SIZE
+        return draw_effects.Get_Scaled_Size(MAX_STEAM_SIZE)
 
     def Num_Particles(self) -> int:
         return 100
 
     def Particle_Size(self) -> int:
-        return 2
+        return draw_effects.Get_Scaled_Size(2)
 
 # Swirling particles in a scary sand storm!
 class Storm_Particle(Abstract_Particle):
     def __init__(self) -> None:
-        self.radius = 4.0 + ( random.random() * 1.8 ) # eye of storm radius = 4.
+        scale4 = draw_effects.Get_Scaled_Size(4) # eye of storm radius = 4.
+        scale1 = scale4 * 0.25
+        self.radius = scale4 + ( random.random() * scale1 * 1.8 )
         self.angle = random.random() * TWO_PI
-        self.dr = abs(random.normalvariate(0.0,0.15)) + 0.01
+        self.dr = (abs(random.normalvariate(0.0,0.15)) + 0.01) * scale1
 
         # Colour comes from an authentic set of alien storm colours.
         stormsample = resource.Load_Image(Images.stormsample)
@@ -80,20 +84,20 @@ class Storm_Particle(Abstract_Particle):
         self.c = stormsample.get_at((x,y))
 
     def Next(self) -> NextParticleType:
-        x = ( MAX_STORM_SIZE // 2 ) + ( self.radius * math.cos(self.angle) )
-        y = ( MAX_STORM_SIZE // 2 ) + ( self.radius * math.sin(self.angle) )
+        x = ( self.Max_Size() // 2 ) + ( self.radius * math.cos(self.angle) )
+        y = ( self.Max_Size() // 2 ) + ( self.radius * math.sin(self.angle) )
         self.angle += 0.2 # angular velocity
         self.radius += self.dr
         return ((x,y), self.c)
 
     def Max_Size(self) -> int:
-        return MAX_STORM_SIZE
+        return draw_effects.Get_Scaled_Size(MAX_STORM_SIZE)
 
     def Num_Particles(self) -> int:
         return 250
 
     def Particle_Size(self) -> int:
-        return 3
+        return draw_effects.Get_Scaled_Size(3)
 
 
 
@@ -103,9 +107,8 @@ def Make_Particle_Effect(particle_class: typing.Callable[[],
     NUM_FRAMES = 80
 
     p = particle_class()
-    particle_effect: List[SurfaceType] = [
-                pygame.Surface((p.Max_Size(), p.Max_Size()))
-                        for i in range(NUM_FRAMES) ]
+    sz = p.Max_Size()
+    particle_effect: List[SurfaceType] = [ pygame.Surface((sz, sz)) for i in range(NUM_FRAMES) ]
 
     for frame in particle_effect:
         frame.set_colorkey((0,0,0))
@@ -122,7 +125,8 @@ def Make_Particle_Effect(particle_class: typing.Callable[[],
 
         for k in range(NUM_FRAMES):
             ((x,y),c) = particle.Next()
-            r = pygame.Rect((int(x), int(y)), (sz, sz))
+            r = pygame.Rect(0, 0, sz, sz)
+            r.center = (int(x), int(y))
             pygame.draw.rect(particle_effect[ j ], c, r)
 
             if (( x < 0 ) or ( x >= p.Max_Size() )

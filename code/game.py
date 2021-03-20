@@ -6,7 +6,7 @@
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame, sys, math, time, pickle, random
+import pygame, sys, math, time, pickle, random, os
 
 from . import draw_effects, stats, mail, gametime, events
 from . import menu, save_menu, save_game, config, resource
@@ -86,17 +86,30 @@ class Game:
         if (self.restore_pos is not None) or (challenge is None):
             challenge = MenuCommand.INTERMEDIATE
 
-        if self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU):
+        if self.playback_mode == PlayMode.PLAYBACK:
             assert playback_file is not None
+            self.demo = game_random.Play_and_Record()
             challenge = self.demo.begin_read(playback_file)
 
-        if self.playback_mode in (PlayMode.PLAYTHRU, PlayMode.RECORD):
+        elif self.playback_mode == PlayMode.RECORD:
             assert record_file is not None
             assert challenge is not None
+            self.demo = game_random.Play_and_Record()
+            self.demo.begin_write(record_file, challenge)
+
+        elif self.playback_mode == PlayMode.PLAYTHRU:  # NO-COV
+            assert playback_file is not None
+            assert record_file is not None
+            self.demo = game_random.Play_and_Record()
+            challenge = self.demo.begin_read(playback_file)
             self.demo.begin_write(record_file, challenge)
 
         assert challenge is not None
         self.g = g = Game_Data(self.demo, challenge)
+
+        # Fixed background in test modes (making screenshot comparisons easier)
+        if (self.playback_mode != PlayMode.OFF) or self.event.is_testing: # NO-COV
+            g.backdrop_rotation = 0
 
         # Establish equilibrium with initial network.
         DIFFICULTY.Set(MenuCommand.INTERMEDIATE)
@@ -186,7 +199,7 @@ class Game:
         # Although there is only one base image, it is flipped and
         # rotated on startup to create one of eight possible backdrops.
         img = pygame.transform.rotate(img, 90 * (g.backdrop_rotation // 2))
-        if ( g.backdrop_rotation % 2 ) == 0:
+        if ( g.backdrop_rotation % 2 ) == 0: # NO-COV
             img = pygame.transform.flip(img, True, False)
 
         self.ui.background = pygame.transform.smoothscale(img, self.game_screen_rect.size)
@@ -215,6 +228,18 @@ class Game:
         r.center = self.picture_surf.get_rect().center
         draw_effects.Line_Edging(self.picture_surf, r, False)
         self.picture_surf.blit(self.scaled_header_picture, r.topleft)
+
+    def Special_Action(self, name: str) -> None:
+        if name == "ADVANCE":
+            New_Mail("SEASON ADVANCE CHEAT")
+            self.g.season_ends = 0
+
+        else:
+            assert name == "SCREENSHOT"
+            pygame.image.save(pygame.display.get_surface(),
+                              os.path.join("tmp", "sshot-%04d-%04d.png" % (
+                                        self.g.game_time.Get_Day(), self.screen.get_rect().height)))
+            New_Mail("SCREENSHOT CHEAT")
 
     def Main_Loop(self) -> bool:
         alarm_sound = sound.Persisting_Sound(Sounds.emergency)
@@ -401,6 +426,7 @@ class Game:
 
                 g.net.Steam_Think()
                 g.net.Expire_Popups()
+                mail.Expire_Messages()
                 tutor.Examine_Game(g)
 
             if ( g.season_effect <= cur_time ):
@@ -475,7 +501,7 @@ class Game:
                 g.historian.append(review.Analyse_Network(g))
 
             if not paused:
-                self.demo.do_user_actions(self.ui)
+                self.demo.do_user_actions(self.ui, self)
 
             # Events
             if paused:
@@ -535,8 +561,7 @@ class Game:
                     if ( self.event.is_testing ):  # NO-COV
                         # Cheats.
                         if ( e.key == pygame.K_F10 ):
-                            New_Mail("SEASON ADVANCE CHEAT")
-                            g.season_ends = 0
+                            self.demo.Special_Action("ADVANCE", self)
                         elif ( e.key == pygame.K_F9 ):
                             self.screen.fill((255,255,255))
                         elif ( e.key == pygame.K_F8 ):
@@ -545,6 +570,9 @@ class Game:
                             New_Mail("GAME END CHEAT (LOSE)")
                             g.game_ends_at = 0.0
                             g.net.Lose()
+                        elif ( e.key == pygame.K_F7 ):
+                            # Place screenshot marker in recording
+                            self.demo.Special_Action("SCREENSHOT", self)
                         elif ( e.key == pygame.K_F6 ):
                             # Immediate win
                             New_Mail("GAME END CHEAT (WIN)")

@@ -17,14 +17,6 @@ from .grid import Float_Grid_To_Scr
 storm_sound: Optional[sound.Persisting_Sound] = None
 storm_graphics: Optional[List[SurfaceType]] = None
 
-def Init_Storms() -> None:
-    # This is rather slow.
-    global storm_graphics
-    storm_graphics = particle.Make_Particle_Effect(particle.Storm_Particle)
-
-    global storm_sound
-    storm_sound = sound.Persisting_Sound(Sounds.stormdmg, Sounds.stormbeeps)
-
 class Storm_Season(Quiet_Season):
     def __init__(self, net: network.Network,
                  storm_difficulty: float) -> None:
@@ -151,4 +143,12 @@ class Storm:
     def Is_Offscreen(self) -> bool:
         return ( self.countdown < 0 )
 
+
+def Set_Screen_Height(height: int) -> None:
+    global storm_graphics
+    storm_graphics = particle.Make_Particle_Effect(particle.Storm_Particle)
+
+    global storm_sound
+    if storm_sound is None:
+        storm_sound = sound.Persisting_Sound(Sounds.stormdmg, Sounds.stormbeeps)
 

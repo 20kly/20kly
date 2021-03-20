@@ -27,13 +27,14 @@ def Tile_Texture(output: SurfaceType, name: Images, rect: RectType) -> None:
 
 def Edge_Effect(output: SurfaceType, rect: RectType) -> None:
     bolt = Scale_Image(resource.Load_Image(Images.bolt))
-    margin = (2 * __screen_height) // MINIMUM_HEIGHT
-    for x in [ rect.left + margin , rect.right - ( margin + 3 ) ]:
-        for y in [ rect.top + margin , rect.bottom - ( margin + 3 ) ]:
+    top_margin = Get_Scaled_Size(2)
+    bottom_margin = Get_Scaled_Size(5)
+    for x in [ rect.left + top_margin , rect.right - bottom_margin ]:
+        for y in [ rect.top + top_margin , rect.bottom - bottom_margin ]:
             output.blit(bolt, (x,y))
 
 def Line_Edging(screen: SurfaceType, r: RectType, deflate: bool) -> None:
-    margin = (2 * __screen_height) // MINIMUM_HEIGHT
+    margin = Get_Scaled_Size(2)
     for c in [ (75, 63, 31), (125, 99, 30), (160, 120, 40), (75, 63, 31), (0, 0, 0) ]:
         pygame.draw.rect(screen, c, r, margin // 2)
         if ( deflate ):
@@ -47,7 +48,7 @@ def Scale_Image(img: SurfaceType) -> SurfaceType:
     img_height = (img_height * __screen_height) // MINIMUM_HEIGHT
     return pygame.transform.smoothscale(img, (img_width, img_height))
 
-def Get_Margin(size_at_768: int) -> int:
+def Get_Scaled_Size(size_at_768: int) -> int:
     return (size_at_768 * __screen_height) // MINIMUM_HEIGHT
 
 def Set_Screen_Height(height: int) -> None:

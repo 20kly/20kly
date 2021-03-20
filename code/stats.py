@@ -12,10 +12,10 @@ from .game_types import *
 
 
 def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) -> None:
-    size3 = draw_effects.Get_Margin(3)
-    size5 = draw_effects.Get_Margin(5)
-    size6 = draw_effects.Get_Margin(6)
-    size8 = draw_effects.Get_Margin(8)
+    size3 = draw_effects.Get_Scaled_Size(3)
+    size5 = draw_effects.Get_Scaled_Size(5)
+    size6 = draw_effects.Get_Scaled_Size(6)
+    size8 = draw_effects.Get_Scaled_Size(8)
     y = size5
     w = output.get_rect().width
 
@@ -40,20 +40,21 @@ def Draw_Stats_Window(output: SurfaceType, stats_tuple_list: List[StatTuple]) ->
 
 def Draw_Bar_Meter(output: SurfaceType, items: List[BarMeterStatTuple],
                    centre_pos: SurfacePosition, width: int, item_height: int) -> RectType:
-    r1 = pygame.Rect(0, 0, width, ( item_height * len(items) ) + 1)
+    size1 = draw_effects.Get_Scaled_Size(1)
+    r1 = pygame.Rect(0, 0, width, ( item_height * len(items) ) + size1)
     r1.center = centre_pos
     pygame.draw.rect(output, (128,128,128), r1)
-    y = r1.top + 1
-    w = width - 2
-    h = item_height - 1
+    y = r1.top + size1
+    w = width - size1 - size1
+    h = item_height - size1 
 
     for (var, var_colour, total, total_colour) in items:
-        r2 = pygame.Rect(r1.left + 1, y, w, h) # (total)
+        r2 = pygame.Rect(r1.left + size1, y, w, h) # (total)
         pygame.draw.rect(output, total_colour, r2)
 
         if ( var > 0 ):
             if ( var > total ): var = total
-            r3 = pygame.Rect(r1.left + 1, y, (( w * var ) // total ), h)
+            r3 = pygame.Rect(r1.left + size1, y, (( w * var ) // total ), h)
             pygame.draw.rect(output, var_colour, r3)
 
         y += item_height

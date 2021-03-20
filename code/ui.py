@@ -33,7 +33,7 @@ class User_Interface:
         self.background: SurfaceType = pygame.Surface((1, 1))
         self.background.fill((0, 0, 0))
 
-        self.steam_effect = particle.Make_Particle_Effect(particle.Steam_Particle)
+        self.steam_effect: List[SurfaceType] = [pygame.Surface((1, 1))]
         self.steam_effect_frame = 0
 
 
@@ -67,6 +67,9 @@ class User_Interface:
         # force redraw of control menu
         self.control_menu = None
 
+        # regenerate particles for current size
+        self.steam_effect = particle.Make_Particle_Effect(particle.Steam_Particle)
+
     def Draw_Game(self, output: SurfaceType,
                   season_fx: quiet_season.Quiet_Season,
                   paused: bool) -> None:
@@ -87,7 +90,7 @@ class User_Interface:
             self.Update_Game()
             self.net.dirty = False
 
-        if ( mail.Has_New_Mail() or tutor.Has_Changed() ):
+        if tutor.Has_Changed():
             self.Update_Game() # force update
 
         # These things may not need to be redrawn

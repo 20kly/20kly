@@ -22,12 +22,55 @@ WRITE_HEADER_NUMBER = 20210307
 class Game_Random:
     def __init__(self, seed: Optional[int] = None) -> None:
         self.rng: Optional[random.Random] = random.Random(seed)
+
+    def random(self) -> float:
+        assert self.rng is not None
+        return self.rng.random()
+
+    def randint(self, a: int, b: int) -> int:
+        assert self.rng is not None
+        return self.rng.randint(a, b)
+
+    def shuffle(self, l: List[typing.Any]) -> None:
+        for i in range(1, len(l)):
+            j = self.randint(0, i)
+            (l[i], l[j]) = (l[j], l[i])
+
+    def hypot(self, dy: float, dx: float) -> float:
+        return math.hypot(dy, dx)
+
+    def timestamp(self, g: "game.Game_Data") -> None:
+        pass
+
+    def do_user_actions(self, ui: "ui.User_Interface", game: "game.Game") -> None:
+        pass
+
+    def Special_Action(self, name: str, game: "game.Game") -> None:       # NO-COV
+        pass
+
+    def Action(self, name, *objects) -> None:       # NO-COV
+        pass
+
+    def Steam(self, neighbour_list: "List[Tuple[steam_model.Steam_Model, float]]",
+              voltage: float, charge: float, capacitance: float,
+              currents: List[float]) -> None:
+        pass
+
+    def Pre_Save(self) -> None:
+        self.rng = None
+
+    def Post_Load(self) -> None:
+        self.rng = random.Random()
+
+
+class Play_and_Record(Game_Random):
+    def __init__(self, seed: Optional[int] = None) -> None:
+        Game_Random.__init__(self, seed)
         self.record: Optional[bz2.BZ2File] = None
         self.play: Optional[typing.IO[bytes]] = None
 
     def random(self) -> float:
-        assert self.rng is not None
-        x = self.rng.random()
+        x = Game_Random.random(self)
         if self.play:
             (x, ) = self.read_specific("RANDOM", "<d")
 
@@ -37,8 +80,7 @@ class Game_Random:
         return x
 
     def randint(self, a: int, b: int) -> int:
-        assert self.rng is not None
-        x = self.rng.randint(a, b)
+        x = Game_Random.randint(self, a, b)
         assert a <= x <= b
         assert abs(a) <= (1 << 31)
         assert abs(b) <= (1 << 31)
@@ -56,9 +98,7 @@ class Game_Random:
 
     def shuffle(self, l: List[typing.Any]) -> None:
         self.read_and_write("SHUFFLE", "<I", len(l))
-        for i in range(1, len(l)):
-            j = self.randint(0, i)
-            (l[i], l[j]) = (l[j], l[i])
+        Game_Random.shuffle(self, l)
 
     def begin_write(self, recording_file: str, challenge: MenuCommand) -> None:
         self.record = bz2.BZ2File(recording_file, "wb")
@@ -77,7 +117,7 @@ class Game_Random:
         self.rng = random.Random(seed)
         return MenuCommand(challenge)
 
-    def do_user_actions(self, ui: "ui.User_Interface") -> None:
+    def do_user_actions(self, ui: "ui.User_Interface", game: "game.Game") -> None:
         if not self.play:
             return
 
@@ -91,7 +131,11 @@ class Game_Random:
 
             name = name[7:]
             object_data = struct.unpack("<" + str(len(payload)) + "B", payload)
-            ui.Playback_Action(name, *object_data)
+            if name.startswith("SPECIAL_"):
+                name = name[8:]
+                game.Special_Action(name)
+            else:
+                ui.Playback_Action(name, *object_data)
             (name, payload) = self.peek_any()
 
     def timestamp(self, g: "game.Game_Data") -> None:
@@ -120,6 +164,9 @@ class Game_Random:
             (x3, y3) = pipe.n2.pos
             self.read_and_write("P", "<BBBBd", x1, y1, x3, y3, pipe.current_n1_to_n2)
 
+    def Special_Action(self, name: str, game: "game.Game") -> None:       # NO-COV
+        self.Action("SPECIAL_" + name)
+        game.Special_Action(name)
 
     def Action(self, name, *objects) -> None:       # NO-COV
         object_data = []
@@ -142,7 +189,7 @@ class Game_Random:
 
     def Steam(self, neighbour_list: "List[Tuple[steam_model.Steam_Model, float]]",
               voltage: float, charge: float, capacitance: float,
-              currents: List[float]):
+              currents: List[float]) -> None:
         assert len(neighbour_list) == len(currents)
         self.read_and_write("ST", "<Iddd",
                     len(neighbour_list),
@@ -151,16 +198,13 @@ class Game_Random:
             (neighbour, resist) = neighbour_list[i]
             self.read_and_write("n", "<dd", resist, currents[i])
 
-    def Pre_Save(self) -> None:
+    def Pre_Save(self) -> None: # NO-COV
+        Game_Random.Pre_Save(self)
         self.record = None
         self.play = None
-        self.rng = None
 
-    def Post_Load(self) -> None:
-        self.rng = random.Random()
-
-    def hypot(self, dy, dx):
-        result = math.hypot(dy, dx)
+    def hypot(self, dy: float, dx: float) -> float:
+        result = Game_Random.hypot(self, dy, dx)
 
         if self.play:
             (readback_dy, readback_dx, readback_result) = self.read_specific("HYP", "<ddd")

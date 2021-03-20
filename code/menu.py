@@ -135,7 +135,7 @@ class Menu:
 
         draw_effects.Tile_Texture(surf, Images.i006metal, surf.get_rect())
 
-        margin = draw_effects.Get_Margin(8)
+        margin = draw_effects.Get_Scaled_Size(8)
         w = bbox.width - ( margin * 2 )
         th = None
         y = margin + bbox.top

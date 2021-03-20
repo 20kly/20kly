@@ -8,7 +8,7 @@ import pygame, sys, math, time, os
 import getopt
 
 
-from . import game, font, storms, save_menu, resource, menu, events
+from . import game, font, save_menu, resource, menu, events
 from . import config, sound, alien_invasion, quakes, mail, version, compatibility
 from .primitives import *
 from .game_types import *
@@ -29,7 +29,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
             args, "",
             ["safe",
                 "no-sound", "playback=", "record=",
-                "challenge=", "is-testing"])
+                "challenge=", "is-testing", "test-4K"])
     opts = dict(opts_list)
 
     config.Initialise("--safe" in opts)
@@ -72,11 +72,18 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     else:
         pygame.mixer.init(44100,-16,2,bufsize)
 
+    flags = pygame.RESIZABLE
+
+    if "--test-4K" in opts:
+        config.cfg.width = int(4000 * EXPECTED_ASPECT_RATIO)
+        config.cfg.height = 4000
+        config.Save()
+        flags = 0
+
     resource.Initialise()
 
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode((config.cfg.width,
-                        config.cfg.height), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((config.cfg.width, config.cfg.height), flags)
     compatibility.last_resize = screen.get_rect().size
     mail.Set_Screen_Height(screen.get_rect().height)
 
@@ -90,7 +97,6 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     screen.fill((0,0,0))
     pygame.display.flip()
     pygame.display.set_caption(TITLE)
-    storms.Init_Storms()
     alien_invasion.Init_Aliens()
     quakes.Init_Quakes()
 

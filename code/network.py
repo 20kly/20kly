@@ -6,7 +6,7 @@
 # Sorry, this isn't anything to do with IP: the Network is
 # the steam transport network.
 
-import math, time
+import math
 
 from . import map_items, sound, game_random, intersect, pipe_grid
 from .primitives import *
@@ -139,16 +139,14 @@ class Network:
 
     def Popup(self, node: "Optional[map_items.Building]") -> None:
         if ( node is not None ):
-            self.popups |= set([node])
-            node.popup_disappears_at = time.time() + 4.0
+            self.popups.add(node)
+            node.popup_countdown = 40
 
     def Expire_Popups(self) -> None:
-        t = time.time()
-        remove = set([])
-        for node in self.popups:
-            if ( node.popup_disappears_at <= t ):
-                remove |= set([node])
-        self.popups -= remove
+        for node in list(self.popups):
+            node.popup_countdown -= 1
+            if node.popup_countdown <= 0:
+                self.popups.discard(node)
 
     def Steam_Think(self) -> None:
         for n in self.node_list:
