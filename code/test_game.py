@@ -118,7 +118,7 @@ def test_Game_4K() -> None:
                   NoEvent(),
                   Quit(),
                   NoEvent()]
-    main.Main(data_dir="data", args=["--test-4K"],
+    main.Main(data_dir="data", args=["--test-height=4000"],
               event=Fake_Events(event_list))
     config.cfg.Reset()
     config.Save()

@@ -29,7 +29,7 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
             args, "",
             ["safe",
                 "no-sound", "playback=", "record=",
-                "challenge=", "is-testing", "test-4K"])
+                "challenge=", "is-testing", "test-height="])
     opts = dict(opts_list)
 
     config.Initialise("--safe" in opts)
@@ -74,9 +74,11 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     flags = pygame.RESIZABLE
 
-    if "--test-4K" in opts:
-        config.cfg.width = int(4000 * EXPECTED_ASPECT_RATIO)
-        config.cfg.height = 4000
+    # Force a specific window height for testing purposes
+    if "--test-height" in opts:
+        height = int(opts["--test-height"])
+        config.cfg.width = int(height * EXPECTED_ASPECT_RATIO)
+        config.cfg.height = height
         config.Save()
         flags = 0
 

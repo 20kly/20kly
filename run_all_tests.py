@@ -56,11 +56,12 @@ def run_a_test(name: str, args: typing.List[str] = []) -> None:
                           "--playback", "tests/" + name] + args)
     assert rc == 0, "Running " + name
 
-def test_shots() -> None:
-    run_a_test("shots")
+def test_shots1K() -> None:
+    run_a_test("shots", ["--test-height=1000"])
+    subprocess.call(clean + ["tmp/.lightyears.cfg"])
 
 def test_shots4K() -> None:
-    run_a_test("shots", ["--test-4K"])
+    run_a_test("shots", ["--test-height=4000"])
     subprocess.call(clean + ["tmp/.lightyears.cfg"])
 
 def test_beginner() -> None:

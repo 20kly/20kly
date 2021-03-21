@@ -19,6 +19,8 @@ from .game_types import *
 READ_HEADER_NUMBER = 20210307
 WRITE_HEADER_NUMBER = 20210307
 
+NamePayloadType = Tuple[str, bytes]
+
 class Game_Random:
     def __init__(self, seed: Optional[int] = None) -> None:
         self.rng: Optional[random.Random] = random.Random(seed)
@@ -67,7 +69,8 @@ class Play_and_Record(Game_Random):
     def __init__(self, seed: Optional[int] = None) -> None:
         Game_Random.__init__(self, seed)
         self.record: Optional[bz2.BZ2File] = None
-        self.play: Optional[typing.IO[bytes]] = None
+        self.play: Optional[bz2.BZ2File] = None
+        self.peek_buffer: Optional[NamePayloadType] = None
 
     def random(self) -> float:
         x = Game_Random.random(self)
@@ -108,9 +111,7 @@ class Play_and_Record(Game_Random):
         self.rng = random.Random(seed)
 
     def begin_read(self, recording_file: str) -> MenuCommand:
-        self.play = tempfile.NamedTemporaryFile()
-        self.play.write(bz2.BZ2File(recording_file, "rb").read())
-        self.play.seek(0, 0)
+        self.play = bz2.BZ2File(recording_file, "rb")
         (header, ) = self.read_specific("GAME", "<I")
         assert header == READ_HEADER_NUMBER
         (seed, challenge) = self.read_specific("SEED", "<II")
@@ -218,12 +219,12 @@ class Play_and_Record(Game_Random):
 
         return result
 
-    def read_and_write(self, name, fmt, *data):
+    def read_and_write(self, name: str, fmt: str, *data) -> None:
         if self.play:
-            loc = self.play.tell()
             readback = self.read_specific(name, fmt)
             if readback != data:        # NO-COV
-                raise PlaybackError("When reading packet at 0x%x, name '%s' matched, "
+                loc = self.play.tell()
+                raise PlaybackError("When reading packet before 0x%x, name '%s' matched, "
                                     "but data did not:\n"
                                     "expected data %s\n"
                                     "actually read %s\n" % (loc, name, repr(data), repr(readback)))
@@ -231,7 +232,7 @@ class Play_and_Record(Game_Random):
         if self.record:
             self.write_specific(name, fmt, *data)
 
-    def write_specific(self, name, fmt, *data):
+    def write_specific(self, name: str, fmt: str, *data) -> None:
         assert self.record
         name_bytes = name.encode("utf-8")
         payload = struct.pack(fmt, *data)
@@ -240,36 +241,44 @@ class Play_and_Record(Game_Random):
         self.record.write(name_bytes)
         self.record.write(payload)
 
-    def peek_any(self):
+    def peek_any(self) -> NamePayloadType:
         assert self.play
-        loc = self.play.tell()
-        (name, payload) = self.read_any()
-        self.play.seek(loc, 0)
-        return (name, payload)
+        if self.peek_buffer is None: # NO-COV
+            self.peek_buffer = self.read_any()
 
-    def read_any(self):
+        return self.peek_buffer
+
+    def read_any(self) -> NamePayloadType:
         assert self.play
-        loc = self.play.tell()
+
+        if self.peek_buffer is not None:
+            (name, payload) = self.peek_buffer
+            self.peek_buffer = None
+            return (name, payload)
+
         header = self.play.read(2)
         if len(header) == 0:
             raise PlaybackEOF()
         if len(header) != 2: # NO-COV
-            raise PlaybackError("When reading packet header at 0x%x - unexpected EOF" % loc)
+            loc = self.play.tell()
+            raise PlaybackError("When reading packet header before 0x%x - unexpected EOF" % loc)
 
         (len_name, len_payload) = struct.unpack("<BB", header)
         name = self.play.read(len_name).decode("utf-8")
         payload = self.play.read(len_payload)
         if len(payload) != len_payload: # NO-COV
-            raise PlaybackError("When reading packet payload at 0x%x - unexpected EOF" % loc)
+            loc = self.play.tell()
+            raise PlaybackError("When reading packet payload before 0x%x - unexpected EOF" % loc)
 
         return (name, payload)
 
-    def read_specific(self, name, fmt):
-        loc = self.play.tell()
+    def read_specific(self, name: str, fmt: str) -> typing.Sequence[int]:
         (read_name, read_payload) = self.read_any()
 
         if read_name != name: # NO-COV
-            raise PlaybackError("When reading packet at 0x%x, name did not match:\n"
+            assert self.play
+            loc = self.play.tell()
+            raise PlaybackError("When reading packet before 0x%x, name did not match:\n"
                                 "expected name '%s'\n"
                                 "actually read '%s'\n" % (loc, name, read_name))
 

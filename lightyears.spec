@@ -7,7 +7,7 @@ import os
 a = Analysis(['lightyears'],
              pathex=[os.getcwd()],
              binaries=[],
-             datas=[("data", "data"), ("audio", "audio"), ("manual", "manual"), 
+             datas=[("data", "data"), ("manual", "manual"), 
                     ("LICENSE.txt", "."), ("THANKS.txt", "."), 
                     ("README.txt", "."), ("code", "code")],
              hiddenimports=["pygame"],

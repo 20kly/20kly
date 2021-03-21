@@ -6,7 +6,7 @@
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame, sys, math, time, pickle, random, os
+import pygame, sys, time, pickle, random, os, math
 
 from . import draw_effects, stats, mail, gametime, events
 from . import menu, save_menu, save_game, config, resource
@@ -202,7 +202,16 @@ class Game:
         if ( g.backdrop_rotation % 2 ) == 0: # NO-COV
             img = pygame.transform.flip(img, True, False)
 
-        self.ui.background = pygame.transform.smoothscale(img, self.game_screen_rect.size)
+        # How big should the background be?
+        # * game_screen_rect().size -> it scales with the screen, not with the grid :(
+        # * Grid_To_Scr(GRID_SIZE) -> there can be a black border between game area and menu
+        # The size of this border is (game_screen_rect().size % GRID_SIZE) / Grid_To_Scr(1)
+        # which is at its maximum at MINIMUM_HEIGHT. This maximum is:
+        border_size = (GRID_SIZE[0] - 1) / (MINIMUM_HEIGHT // GRID_SIZE[0])
+        # Adding this to the grid size tells us how big to make the background
+        plus_size = int(grid.Float_Grid_To_Scr((GRID_SIZE[0] + border_size, 1))[0])
+
+        self.ui.background = pygame.transform.smoothscale(img, (plus_size, plus_size))
 
         self.input_areas = [
             (self.controls_rect, self.ui.Control_Mouse_Down, self.ui.Control_Mouse_Move),
