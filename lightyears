@@ -69,16 +69,15 @@ if __name__ == "__main__":
         LIGHTYEARS_DIR = os.path.abspath(LIGHTYEARS_DIR)
 
     data_dir = os.path.join(LIGHTYEARS_DIR, 'data')
-    code_dir = os.path.join(LIGHTYEARS_DIR, 'code')
+    code_dir = os.path.join(LIGHTYEARS_DIR, 'lib20k')
 
     # Go
     if (os.path.isdir(code_dir)
     and os.path.isfile(os.path.join(code_dir, "__init__.py"))
     and os.path.isfile(os.path.join(code_dir, "main.py"))):
         Check_Version()
-        from code import Main, Events
-        Main(data_dir=data_dir, args=sys.argv[1:],
-             event=Events())
+        from lib20k import Main, Events
+        Main(data_dir=data_dir, args=sys.argv[1:], event=Events())
     else:
         raise MissingFileError("Unable to find LightYears code in " + LIGHTYEARS_DIR)
 

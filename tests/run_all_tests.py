@@ -23,37 +23,37 @@ def main() -> None:
     test = [sys.executable, "-m", "pytest"]
 
     if "--no-clean" not in opts:
-        subprocess.call(clean + ["code", "data", "audio", "manual", "dist", "tmp"])
+        subprocess.call(clean + ["lib20k", "data", "manual", "build", "dist", "tmp"])
 
     if not os.path.isdir("tmp"):
         os.mkdir("tmp")
     os.environ["HOME"] = os.path.abspath("tmp")
 
     if "--no-coverage" not in opts:
-        subprocess.call(clean + [".coverage", "code", "htmlcov"])
-        test += ["--cov=code", "--cov-append",
+        subprocess.call(clean + [".coverage", "lib20k", "htmlcov"])
+        test += ["--cov=lib20k", "--cov-append",
                 "--cov-report=term:skip-covered",
                 "--cov-report=html",
                 "--no-cov-on-fail"]
 
     if "--no-mypy" not in opts:
         rc = subprocess.call([sys.executable,
-                "-m", "mypy", "code", "lightyears"])
+                "-m", "mypy", "lib20k", "lightyears"])
         if rc != 0:
             sys.exit(1)
 
-    rc = subprocess.call(test + sorted(glob.glob("code/*.py")))
+    rc = subprocess.call(test + sorted(glob.glob("lib20k/*.py")))
     if rc != 0:
         sys.exit(1)
 
     if "--no-full" not in opts:
-        rc = subprocess.call(test + ["run_all_tests.py"])
+        rc = subprocess.call(test + ["tests/run_all_tests.py"])
         if rc != 0:
             sys.exit(1)
 
 def run_a_test(name: str, args: typing.List[str] = []) -> None:
     rc = subprocess.call([sys.executable, "lightyears",
-                          "--playback", "tests/" + name] + args)
+                          "--playback", "tests/recordings/" + name] + args)
     assert rc == 0, "Running " + name
 
 def test_shots1K() -> None:
