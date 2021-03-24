@@ -168,7 +168,7 @@ CITY_COLOUR = (192,128,0)
 MINIMUM_WIDTH = 1024
 MINIMUM_HEIGHT = 768
 EXPECTED_ASPECT_RATIO = 1024 / 768
-CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
+CGISCRIPT = "https://www.jwhitham.org/cgi-bin/LYU.cgi?"
 VERSION = (1, 5, 0)
 TITLE = "20,000 Light-Years Into Space"
 COPYRIGHT = "Copyright (C) Jack Whitham 2006-21"
@@ -176,5 +176,5 @@ COPYRIGHT = "Copyright (C) Jack Whitham 2006-21"
 # Debian paths
 DEB_FONT = "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
 DEB_ICON = '/usr/share/pixmaps/lightyears.xpm'
-DEB_MANUAL = '/usr/share/doc/lightyears/html/index.html'
+DEB_MANUAL = '/usr/share/doc/lightyears/manual.pdf'
 

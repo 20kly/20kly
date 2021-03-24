@@ -141,11 +141,11 @@ def test_Main_Options() -> None:
                   Quit(),
                   NoEvent()]
     main.Main(data_dir="data", args=[], event=Fake_Events(event_list))
-    assert "CHECK UPDATE URL http://" in mail.Get_Messages()
+    assert "CHECK UPDATE URL https://" in mail.Get_Messages()
     assert "LYU.cgi?a=" in mail.Get_Messages()
-    assert "OPEN URL http://" in mail.Get_Messages()
+    assert "OPEN URL https://" in mail.Get_Messages()
     assert "LYU.cgi?v=" in mail.Get_Messages()
-    assert "index.html" in mail.Get_Messages()
+    assert "manual.pdf" in mail.Get_Messages()
 
 
 class Fake_Update_Events(Fake_Events):

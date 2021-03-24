@@ -54,13 +54,15 @@ class Mail:
 
     def Draw_Mail(self, output: SurfaceType) -> None:
         # Show current messages
-        y = output.get_rect().height - MSG_MARGIN
+        sr = output.get_rect()
+        y = sr.height - MSG_MARGIN
 
         for msg in reversed(self.messages):
             y -= msg.draw.get_rect().height
 
             r = msg.draw.get_rect()
             r.topleft = (MSG_MARGIN, y)
+            r = r.clip(sr)
             msg.area = r
             msg.undraw = output.subsurface(r).copy()
             output.blit(msg.draw, r.topleft)

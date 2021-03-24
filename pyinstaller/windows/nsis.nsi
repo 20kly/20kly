@@ -33,8 +33,6 @@ LicenseData "LICENSE.txt"
  	!define MUI_FINISHPAGE_RUN_NOTCHECKED
  	!define MUI_FINISHPAGE_RUN_TEXT "Start the game now"
  	!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
- 	!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
- 	!define MUI_FINISHPAGE_SHOWREADME $INSTDIR\manual\index.html
 !insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -51,17 +49,14 @@ Section ""
     SetOverwrite on 
     SetOutPath $INSTDIR
     File "dist\20kly.exe"
-    File "README.txt"
     File "LICENSE.txt"
-    File "THANKS.txt"
-    SetOutPath $INSTDIR\manual
-    File "manual\*.*"
+    File "manual.pdf"
      
     SetOutPath "$SMPROGRAMS\20K Light Years"
 
     SetOutPath $INSTDIR
     createShortcut "$SMPROGRAMS\20K Light Years\20K Light Years.lnk" "$INSTDIR\20kly.exe" 
-    createShortcut "$SMPROGRAMS\20K Light Years\Manual.lnk" "$INSTDIR\manual\index.html"
+    createShortcut "$SMPROGRAMS\20K Light Years\Manual.lnk" "$INSTDIR\manual.pdf"
     createShortcut "$SMPROGRAMS\20K Light Years\Uninstall.lnk" "$INSTDIR\uninstall.exe" 
 
     ; Write the installation path into the registry
@@ -82,11 +77,14 @@ Section ""
     Delete "SDL_ttf.dll"
     Delete "libogg-0.dll"
     Delete "libfreetype-6.dll"
+    Delete "README.txt"
+    Delete "THANKS.txt"
 
     ; clean up more old files
     RMDir /R $INSTDIR\audio
     RMDir /R $INSTDIR\code
     RMDir /R $INSTDIR\data
+    RMDir /R $INSTDIR\manual
  
 # default section end
 sectionEnd
@@ -101,12 +99,10 @@ section "Uninstall"
     DeleteRegKey HKCU "Software\20K Light Years"
 
     ; Remove files and uninstaller
-    Delete $INSTDIR\README.txt
-    Delete $INSTDIR\THANKS.txt
-    Delete $INSTDIR\LICENSE.txt
+    Delete $INSTDIR\manual.pdf
     Delete $INSTDIR\20kly.exe
     Delete $INSTDIR\uninstall.exe
-    RMDir /R $INSTDIR\manual
+    Delete $INSTDIR\LICENSE.txt
 
     ; Remove shortcuts, if any
     Delete "$SMPROGRAMS\20K Light Years\*.lnk"

@@ -234,14 +234,13 @@ def Main_Menu_Loop(name: str, clock: ClockType,
                     # Debian manual present
                     url = 'file://' + DEB_MANUAL  # NO-COV
                 else:
-                    base = os.path.abspath(resource.Path(os.path.join("..",
-                            "manual", "index.html")))
+                    base = os.path.abspath("manual.pdf")
                     if os.path.isfile(base):
                         # Upstream package manual present
                         url = 'file://' + base
                     else:
-                        # No manual? Redirect to website.
-                        url = 'http://www.jwhitham.org/20kly/'  # NO-COV
+                        # No manual on the disk? Redirect to website.
+                        url = 'https://www.jwhitham.org/20kly/manual.pdf'  # NO-COV
 
                 event.webbrowser_open(url)
 
