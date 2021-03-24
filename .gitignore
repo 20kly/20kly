@@ -4,3 +4,4 @@ htmlcov/*
 tmp/*
 build/*
 dist/*
+test-env/*
