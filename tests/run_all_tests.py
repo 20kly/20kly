@@ -23,7 +23,8 @@ def main() -> None:
     test = [sys.executable, "-m", "pytest"]
 
     if "--no-clean" not in opts:
-        subprocess.call(clean + ["lib20k", "data", "manual", "build", "dist", "tmp"])
+        subprocess.call(clean + ["lib20k", "lib20ktest",
+                                 "data", "build", "dist", "tmp"])
 
     if not os.path.isdir("tmp"):
         os.mkdir("tmp")
@@ -38,15 +39,21 @@ def main() -> None:
 
     if "--no-mypy" not in opts:
         rc = subprocess.call([sys.executable,
-                "-m", "mypy", "lib20k", "lightyears"])
+                "-m", "mypy", "lib20k", "lib20ktest", "lightyears"])
         if rc != 0:
             sys.exit(1)
 
-    rc = subprocess.call(test + sorted(glob.glob("lib20k/*.py")))
+    rc = subprocess.call(test + sorted(glob.glob("lib20ktest/test_*.py")))
     if rc != 0:
         sys.exit(1)
 
     if "--no-full" not in opts:
+        # 4K tests run separately (stability problems on Ubuntu 18.04)
+        rc = subprocess.call(test + sorted(glob.glob("lib20ktest/4k_test_*.py")))
+        if rc != 0:
+            sys.exit(1)
+
+        # Regression tests run separately
         rc = subprocess.call(test + ["tests/run_all_tests.py"])
         if rc != 0:
             sys.exit(1)

@@ -4,9 +4,9 @@
 #
 
 import pygame
-from . import events, menu
-from .primitives import *
-from .game_types import *
+from lib20k import events, menu
+from lib20k.primitives import *
+from lib20k.game_types import *
 from .unit_test import *
 
 

@@ -5,10 +5,11 @@
 
 import random, math
 
-from .intersect import Lines_Intersect, Intersects_Grid_Square, Line_To_Grid_Positions
-from .primitives import *
-from .game_types import *
-from . import unit_test, grid
+from lib20k.intersect import Lines_Intersect, Intersects_Grid_Square, Line_To_Grid_Positions
+from lib20k.primitives import *
+from lib20k.game_types import *
+from lib20k import grid
+from . import unit_test
 
 
 def test_Intersect() -> None:

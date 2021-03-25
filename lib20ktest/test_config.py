@@ -4,9 +4,10 @@
 #
 
 import pickle
-from . import game_random, config, unit_test
-from .primitives import *
-from .game_types import *
+from lib20k import game_random, config
+from lib20k.primitives import *
+from lib20k.game_types import *
+from . import unit_test
 
 
 def test_Config() -> None:

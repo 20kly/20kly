@@ -5,9 +5,10 @@
 
 
 import pygame
-from . import font, unit_test
-from .game_types import *
-from .primitives import *
+from lib20k import font
+from lib20k.game_types import *
+from lib20k.primitives import *
+from . import unit_test
 
 
 

@@ -15,9 +15,9 @@ def Check_Version():
         major = 1
         minor = 0
 
-    if (( major < 3 ) or (( major == 3 ) and ( minor < 7 ))):
+    if (( major < 3 ) or (( major == 3 ) and ( minor < 6 ))):
         sys.stderr.write("\n")
-        sys.stderr.write("Python 3.7 or higher is required.\n")
+        sys.stderr.write("Python 3.6 or higher is required.\n")
         sys.stderr.write("You appear to be using version %d.%d\n" % (major, minor))
         sys.exit(1)
 

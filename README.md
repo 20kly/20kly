@@ -16,6 +16,6 @@ This is the game's source code.
 
 Technical stuff:
 
-* The game requires Python >= 3.7 and Pygame >= 1.9.4 to run.
+* The game requires Python >= 3.6 and Pygame >= 1.9.4 to run.
 * The test system uses pytest, coverage and mypy.
 

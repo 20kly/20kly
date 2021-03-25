@@ -4,10 +4,11 @@
 #
 
 import pygame
-from . import game_random, map_items, network, unit_test
-from .ui import User_Interface
-from .primitives import *
-from .game_types import *
+from lib20k import game_random, map_items, network
+from lib20k.ui import User_Interface
+from lib20k.primitives import *
+from lib20k.game_types import *
+from . import unit_test
 
 
 def Do_Building_Test(building: map_items.Building,

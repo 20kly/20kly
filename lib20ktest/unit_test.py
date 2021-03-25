@@ -4,11 +4,11 @@
 #
 
 import os, pygame, pickle
-from . import game_random, game, save_game, resource, config
-from . import events, menu, main, mail, map_items, network, grid, quiet_season
-from .ui import User_Interface
-from .primitives import *
-from .game_types import *
+from lib20k import game_random, game, save_game, resource, config
+from lib20k import events, menu, main, mail, map_items, network, grid, quiet_season
+from lib20k.ui import User_Interface
+from lib20k.primitives import *
+from lib20k.game_types import *
 
 
 def Setup_For_Unit_Test() -> SurfaceType:

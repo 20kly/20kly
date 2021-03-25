@@ -4,9 +4,9 @@
 #
 
 import pygame
-from . import main, mail, version, config
-from .primitives import *
-from .game_types import *
+from lib20k import main, mail, version, config
+from lib20k.primitives import *
+from lib20k.game_types import *
 from .unit_test import *
 
 

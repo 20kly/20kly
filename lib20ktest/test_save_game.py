@@ -3,10 +3,10 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
-from . import game_random, game, save_game, unit_test
-from . import mail
-from .ui import User_Interface
-from .primitives import *
+from lib20k import game_random, game, save_game
+from lib20k import mail
+from lib20k.ui import User_Interface
+from lib20k.primitives import *
 from .unit_test import *
 
 
@@ -17,7 +17,7 @@ def test_Save_Restore() -> None:
     a fake game, save it, restore it, and also try restoring
     nonsense. Checked using assertions."""
 
-    test_screen = unit_test.Setup_For_Unit_Test()
+    test_screen = Setup_For_Unit_Test()
     demo = game_random.Game_Random(1)
     clock = pygame.time.Clock()
     game_loop = game.Game(clock=clock,

@@ -3,9 +3,10 @@
 # This game is licensed under GPL v2, and copyright (C) Jack Whitham 2006-21.
 #
 
-from . import game_random, map_items, network, unit_test
-from .primitives import *
-from .game_types import *
+from lib20k import game_random, map_items, network
+from lib20k.primitives import *
+from lib20k.game_types import *
+from . import unit_test
 
 
 

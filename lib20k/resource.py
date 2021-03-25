@@ -39,7 +39,7 @@ class Resource:
         # Use Debian font file if possible
         if os.path.isfile(DEB_FONT):  # NO-COV
             self.font_file = DEB_FONT
-        else:
+        else: # NO-COV
             self.font_file = Path("Vera_ttf")
 
         if not os.path.isfile(self.font_file):  # NO-COV

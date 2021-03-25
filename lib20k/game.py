@@ -22,7 +22,6 @@ from .network import Network
 from .ui import User_Interface
 from .mail import New_Mail
 from .difficulty import DIFFICULTY
-from . import unit_test
 
 FRAME_RATE = 35
 RT_FRAME_LENGTH = 1.0 / FRAME_RATE
