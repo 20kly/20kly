@@ -7,4 +7,4 @@ lightyears text eol=lf
 pytest.ini text eol=lf
 .coveragerc text eol=lf
 lightyears.spec text eol=lf
-README.md eol=lf
+README.md text eol=lf
