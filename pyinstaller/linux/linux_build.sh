@@ -9,6 +9,7 @@ export PYTHON=python3.8
 $PYTHON -m venv test-env
 source test-env/bin/activate
 
+$PYTHON -m pip install wheel==0.36.2
 $PYTHON -m pip install pygame==2.0.1
 $PYTHON -m pip install PyInstaller==4.2
 $PYTHON -m pip install mypy==0.812
@@ -29,6 +30,7 @@ mkdir $LY
 cp 20kly $LY
 cp ../LICENSE.txt ../manual.pdf $LY
 zip -9r $LY.zip $LY
+cd ..
 
 # Test the version just built
 dist/20kly --playback tests/recordings/beginner
