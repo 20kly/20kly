@@ -5,3 +5,5 @@ tmp/*
 build/*
 dist/*
 test-env/*
+version.nsh
+version.txt

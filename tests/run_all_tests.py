@@ -23,15 +23,14 @@ def main() -> None:
     test = [sys.executable, "-m", "pytest"]
 
     if "--no-clean" not in opts:
-        subprocess.call(clean + ["lib20k", "lib20ktest",
-                                 "data", "build", "dist", "tmp"])
+        subprocess.call(clean + ["lib20k", "lib20ktest", "data", "tmp"])
 
     if not os.path.isdir("tmp"):
         os.mkdir("tmp")
     os.environ["HOME"] = os.path.abspath("tmp")
 
     if "--no-coverage" not in opts:
-        subprocess.call(clean + [".coverage", "lib20k", "htmlcov"])
+        subprocess.call(clean + [".coverage", "htmlcov"])
         test += ["--cov=lib20k", "--cov-append",
                 "--cov-report=term:skip-covered",
                 "--cov-report=html",

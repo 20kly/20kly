@@ -111,7 +111,8 @@ class Events:
             true_width = int(math.floor(height * EXPECTED_ASPECT_RATIO))
             self.left_margin = (width - true_width) // 2
             assert self.left_margin >= 0
-            screen = screen.subsurface(pygame.Rect(self.left_margin, 0, true_width, height))
+            screen = screen.subsurface(pygame.Rect(self.left_margin, 0,
+                    true_width, height).clip(screen.get_rect()))
             width = true_width
 
         elif error < -0.01:
@@ -119,7 +120,8 @@ class Events:
             true_height = int(math.floor(width / EXPECTED_ASPECT_RATIO))
             self.top_margin = (height - true_height) // 2
             assert self.top_margin >= 0
-            screen = screen.subsurface(pygame.Rect(0, self.top_margin, width, true_height))
+            screen = screen.subsurface(pygame.Rect(0, self.top_margin,
+                    width, true_height).clip(screen.get_rect()))
             height = true_height
 
         # Notify other components of size change

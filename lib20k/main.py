@@ -5,7 +5,7 @@
 
 
 import pygame, sys, math, time, os
-import getopt
+import getopt, traceback, tempfile
 
 
 from . import game, font, save_menu, resource, menu, events
@@ -132,8 +132,6 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
     if not no_sound: # NO-COV
         pygame.mixer.quit()
     pygame.quit()
-    if return_code != 0: # NO-COV
-        sys.exit(return_code)
 
     return return_code
 
@@ -173,14 +171,14 @@ def Main_Menu_Loop(name: str, clock: ClockType,
 
     # off we go.
 
-    menu_image = resource.Load_Image(Images.mainmenu)
-    letters_image = resource.Load_Image(Images.letters).convert_alpha()
-
     quit = False
     while ( not quit ):
         # Main menu
         screen = event.resurface()
         (width, height) = screen.get_rect().size
+
+        menu_image = resource.Load_Image(Images.mainmenu)
+        letters_image = resource.Load_Image(Images.letters).convert_alpha()
 
         if ( menu_image.get_rect().width != width ): # NO-COV
             menu_image = pygame.transform.smoothscale(menu_image, (width, height))
@@ -347,3 +345,39 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
             "'New' version is " + new_version + ": your version is " + old_version])
         Finish(None)
         return False
+
+def PyInstaller_Main() -> None: # NO-COV
+    data_dir = os.path.join(sys.prefix, "data")
+    args = sys.argv[1:]
+    with tempfile.TemporaryFile("wt+", encoding="utf-8") as fd:
+        sys.stdout = typing.cast(typing.TextIO, fd)
+        sys.stderr = typing.cast(typing.TextIO, fd)
+        print("")
+        print("startup:", time.asctime(), flush=True)
+        try:
+            return_code = Main(data_dir=data_dir, args=args,
+                               event=events.Events())
+        except Exception:
+            print("")
+            print("exception:", flush=True)
+            traceback.print_exc(file=fd)
+            return_code = 1
+
+        if return_code == 0:
+            return
+
+        print("return code:", return_code, flush=True)
+        fd.seek(0, 0)
+        all_log = fd.read()
+
+    crash_dir = config.Get_Home()
+    if crash_dir is None:
+        crash_dir = tempfile.gettempdir()
+
+    crash_file = os.path.join(crash_dir, "20kly-crash-info.txt")
+    open(crash_file, "at").write(all_log)
+    sys.exit(return_code)
+
+
+
+

@@ -77,7 +77,7 @@ if __name__ == "__main__":
     and os.path.isfile(os.path.join(code_dir, "main.py"))):
         Check_Version()
         from lib20k import Main, Events
-        Main(data_dir=data_dir, args=sys.argv[1:], event=Events())
+        sys.exit(Main(data_dir=data_dir, args=sys.argv[1:], event=Events()))
     else:
         raise MissingFileError("Unable to find LightYears code in " + LIGHTYEARS_DIR)
 

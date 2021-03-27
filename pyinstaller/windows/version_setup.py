@@ -1,4 +1,30 @@
-# UTF-8
+
+import time
+from lib20k.primitives import VERSION
+
+VERSION3 = '{}.{}.{}'.format(*VERSION)
+VERSION4 = VERSION3 + ".0"
+VERSION4T = tuple(list(VERSION) + [0])
+YEAR = str(time.localtime().tm_year)
+
+open("version.nsh", "wt").write(f"""
+!define VERSION4 {VERSION4}
+!define VERSION3 {VERSION3}
+!define YEAR {YEAR}
+
+VIAddVersionKey /LANG=0 "ProductName" "20K Light Years Into Space"
+VIAddVersionKey /LANG=0 "CompanyName" "Jack Whitham"
+VIAddVersionKey /LANG=0 "FileDescription" "20K Light Years Into Space Installer"
+VIAddVersionKey /LANG=0 "LegalCopyright" "(C) Jack Whitham 2006-{YEAR}"
+VIAddVersionKey /LANG=0 "FileVersion" "{VERSION4}"
+VIAddVersionKey /LANG=0 "ProductVersion" "{VERSION4}"
+VIProductVersion {VERSION4}
+VIFileVersion {VERSION4}
+OutFile "dist\install-20kly-v{VERSION3}.exe"
+
+""")
+
+open("version.txt", "wt", encoding="utf-8").write(f"""# UTF-8
 #
 # For more details about fixed file info 'ffi' see:
 # http://msdn.microsoft.com/en-us/library/ms646997.aspx
@@ -6,8 +32,8 @@ VSVersionInfo(
   ffi=FixedFileInfo(
     # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
     # Set not needed items to zero 0.
-    filevers=(1, 5, 0, 0),
-    prodvers=(1, 5, 0, 0),
+    filevers={VERSION4T},
+    prodvers={VERSION4T},
     # Contains a bitmask that specifies the valid bits 'flags'r
     mask=0x0,
     # Contains a bitmask that specifies the Boolean attributes of the file.
@@ -31,11 +57,12 @@ VSVersionInfo(
         u'000004b0',
         [StringStruct(u'CompanyName', u'Jack Whitham'),
         StringStruct(u'FileDescription', u'20K Light Years Into Space'),
-        StringStruct(u'FileVersion', u'1.5.0.0'),
-        StringStruct(u'LegalCopyright', u'(C) Jack Whitham 2006-2021'),
+        StringStruct(u'FileVersion', u'{VERSION4}'),
+        StringStruct(u'LegalCopyright', u'(C) Jack Whitham 2006-{YEAR}'),
         StringStruct(u'ProductName', u'20K Light Years Into Space'),
-        StringStruct(u'ProductVersion', u'1.5.0.0')])
+        StringStruct(u'ProductVersion', u'{VERSION4}')])
       ]), 
     VarFileInfo([VarStruct(u'Translation', [0, 1200])])
   ]
 )
+""")

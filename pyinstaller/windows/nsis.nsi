@@ -5,18 +5,10 @@ Unicode True
 Name "20K Light Years Into Space"
 caption "20K Light Years Into Space Installer"
 
-VIAddVersionKey /LANG=0 "ProductName" "20K Light Years Into Space"
-VIAddVersionKey /LANG=0 "CompanyName" "Jack Whitham"
-VIAddVersionKey /LANG=0 "LegalCopyright" "(C) Jack Whitham 2006-2021"
-VIAddVersionKey /LANG=0 "FileDescription" "20K Light Years Into Space Installer"
-VIAddVersionKey /LANG=0 "FileVersion" "1.5.0.0"
-VIAddVersionKey /LANG=0 "ProductVersion" "1.5.0.0"
-VIProductVersion 1.5.0.0
-VIFileVersion 1.5.0.0
+!include "version.nsh"
 
 RequestExecutionLevel user
 ShowInstDetails show
-OutFile "dist\install-20kly-v1.5.0.exe"
 InstallDir "$APPDATA\20kly"
 SetCompressor /SOLID lzma
 
