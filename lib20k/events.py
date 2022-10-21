@@ -39,7 +39,7 @@ class Event:
                     self.button = base.button
             elif self.type == pygame.KEYDOWN:
                 self.key = base.key
-            elif self.type == pygame.ACTIVEEVENT:
+            elif self.type == pygame.ACTIVEEVENT and hasattr(base, "gain") and hasattr(base, "state"):
                 self.gain = base.gain
                 self.state = base.state
             elif self.type == pygame.VIDEORESIZE:
