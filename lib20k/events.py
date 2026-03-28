@@ -102,7 +102,7 @@ class Events:
             screen.fill((0, 0, 0))
             self.old_size = new_size
             self.left_margin = 0
-            self.right_margin = 0
+            self.top_margin = 0
 
         aspect = width / height
         error = aspect - EXPECTED_ASPECT_RATIO
