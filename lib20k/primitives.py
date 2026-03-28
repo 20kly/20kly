@@ -165,13 +165,13 @@ GRID_SIZE = (50,50)
 # misc:
 CITY_BOX_SIZE = 10
 CITY_COLOUR = (192,128,0)
-MINIMUM_WIDTH = 1024
-MINIMUM_HEIGHT = 768
+MINIMUM_WIDTH = 920
+MINIMUM_HEIGHT = 690
 EXPECTED_ASPECT_RATIO = 1024 / 768
 CGISCRIPT = "http://www.jwhitham.org/cgi-bin/LYU.cgi?"
-VERSION = (1, 5, 1)
+VERSION = (1, 5, 2)
 TITLE = "20,000 Light-Years Into Space"
-COPYRIGHT = "Copyright (C) Jack Whitham 2006-22"
+COPYRIGHT = "Copyright (C) Jack Whitham 2006-26"
 
 # Debian paths
 DEB_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"

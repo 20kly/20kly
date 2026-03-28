@@ -53,6 +53,9 @@ class Quake_Season(Quiet_Season):
             sound.FX(Sounds.firealrm)
         elif ( self.state == self.QUAKE ):
             self.__Generate_Quake()
+            # bug fix for issue 7
+            while Crosses_Centre(self.fault_lines, 5): # NO-COV
+                self.__Generate_Quake()
         elif ( self.state == self.QUAKE_DAMAGE ):
             self.__Apply_Damage()
 
@@ -166,17 +169,29 @@ class Quake_Season(Quiet_Season):
             if ( len(self.fault_lines) > 0 ):
                 self.fault_lines.pop(0) # the reverse of unfurling!
 
+def Crosses_Centre(line: List[Union[FloatGridPosition, GridPosition]], centre_size: int) -> bool:
+    # Determine if a line intersects a zone in the centre of the game area
+    # centre_size specifies the number of grid squares to check
+    (x,y) = GRID_CENTRE
+    check = [ (x - centre_size, y - centre_size),
+            (x + centre_size, y + centre_size),
+            (x - centre_size, y + centre_size),
+            (x + centre_size, y - centre_size) ]
+
+    for i in range(len(line) - 1):
+        if (intersect.Lines_Intersect((line[i], line[i + 1]), (check[0], check[1]))
+                    or intersect.Lines_Intersect((line[i], line[i + 1]), (check[2], check[3]))):
+            return True
+
+    return False
+
 # Generate start/finish of a quake line.
 # Also used by storms.
-def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[SurfacePosition]:
+def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[GridPosition]:
     # Quake fault lines must stay well away from the centre:
     # that's enforced here.
     crosses_centre = True
-    (x,y) = GRID_CENTRE
-    d = 7
-    check = [ (x - d, y - d), (x + d, y + d),
-            (x - d, y + d), (x + d, y - d) ]
-    (w,h) = GRID_SIZE
+    (w, h) = GRID_SIZE
 
     while ( crosses_centre ):
         if ( demo.randint(0,1) == 0 ):
@@ -186,8 +201,8 @@ def Make_Quake_SF_Points(demo: "game_random.Game_Random", off: int) -> List[Surf
             start = (-off, demo.randint(0,h - 1))
             finish = (h + off, demo.randint(0,h - 1))
 
-        crosses_centre = (intersect.Lines_Intersect((start, finish), (check[0], check[1]))
-                or intersect.Lines_Intersect((start, finish), (check[2], check[3])))
+        crosses_centre = Crosses_Centre([start, finish], 7)
+
     return [start, finish]
 
 

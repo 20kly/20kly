@@ -114,6 +114,10 @@ def test_Main_Record() -> None:
               event=Fake_Events(event_list))
     assert "You are playing a Beginner game" in mail.Get_Messages()
 
+def test_Main_Cmdline() -> None:
+    """Start a game with the help option."""
+    main.Main(data_dir="data", args=["--help"], event=Fake_Events([]))
+
 def test_Main_Options() -> None:
     """Test other options on the menu: mute, updates."""
     # do some menu options on the main menu

@@ -1,9 +1,11 @@
 *.pyc
 .coverage
+.mypy_cache
 htmlcov/*
 tmp/*
 build/*
 dist/*
 test-env/*
+build-env/*
 version.nsh
 version.txt

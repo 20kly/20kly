@@ -25,11 +25,22 @@ def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     resource.DATA_DIR = data_dir
 
-    (opts_list, args) = getopt.getopt(
-            args, "",
-            ["safe",
-                "no-sound", "playback=", "record=",
-                "challenge=", "is-testing", "test-height="])
+    try:
+        (opts_list, args) = getopt.getopt(
+                args, "",
+                ["safe",
+                    "no-sound", "playback=", "record=",
+                    "challenge=", "is-testing", "test-height="])
+    except getopt.GetoptError as e:
+        print(e)
+        print("""
+Options:
+    --safe          Don't load previous configuration
+    --no-sound      Disable sound
+""")
+        # Other options are really for development or testing
+        return 0
+
     opts = dict(opts_list)
 
     config.Initialise("--safe" in opts)

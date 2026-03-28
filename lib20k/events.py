@@ -91,10 +91,9 @@ class Events:
             screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
             (width, height) = screen.get_rect().size
 
-            # just in case it didn't really resize appropriately
-            # we just assume the minimum size
-            width = max(width, MINIMUM_WIDTH)
-            height = max(height, MINIMUM_HEIGHT)
+            if (width < MINIMUM_WIDTH) or (height < MINIMUM_HEIGHT):
+                # Screen is still too small even after resizing
+                raise ScreenTooSmallError(width, height)
 
         new_size = (width, height)
         if new_size != self.old_size:
@@ -130,3 +129,10 @@ class Events:
         config.cfg.height = height
 
         return screen
+
+
+class ScreenTooSmallError(Exception):
+    def __init__(self, width: int, height: int) -> None: # NO-COV
+        Exception.__init__(self, "Unable to resize LightYears to at least {}x{}, size is {}x{} after resizing".format(
+            MINIMUM_WIDTH, MINIMUM_HEIGHT,
+            width, height))

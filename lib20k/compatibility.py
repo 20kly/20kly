@@ -20,6 +20,6 @@ except AttributeError:  # NO-COV
 
 # this function is not in pygame 1.9
 try:
-    set_allow_screensaver = pygame.display.set_allow_screensaver
+    set_allow_screensaver = pygame.display.set_allow_screensaver # type: ignore
 except AttributeError:  # NO-COV
-    set_allow_screensaver = lambda x: None
+    set_allow_screensaver = lambda x: None # type: ignore
