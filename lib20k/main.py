@@ -6,6 +6,7 @@
 
 import pygame, sys, math, time, os
 import getopt, traceback, tempfile
+import asyncio
 
 
 from . import game, font, save_menu, resource, menu, events
@@ -15,7 +16,7 @@ from .game_types import *
 from .game_random import PlaybackEOF
 
 
-def Main(data_dir: str, args: List[str], event: events.Events) -> int:
+async def Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     print("")
     print(TITLE)
@@ -119,7 +120,7 @@ Options:
         # record/playback
         try:
             return_code = 1 # Assume playback did not complete
-            game.Game(clock=clock,
+            await game.Game(clock=clock,
                     restore_pos=None,
                     challenge=record_challenge, event=event,
                     playback_mode=playback_mode,
@@ -132,7 +133,7 @@ Options:
         quit = True
 
     while ( not quit ):
-        quit = Main_Menu_Loop(TITLE, clock, event)
+        quit = await Main_Menu_Loop(TITLE, clock, event)
 
     config.Save()
 
@@ -147,7 +148,7 @@ Options:
     return return_code
 
 
-def Main_Menu_Loop(name: str, clock: ClockType,
+async def Main_Menu_Loop(name: str, clock: ClockType,
                    event: events.Events) -> bool:
 
     current_menu: menu.Menu
@@ -211,7 +212,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
             screen.blit(img, img_r.topleft)
             y += img_r.height
 
-        (quit, cmd) = menu.Simple_Menu_Loop(screen, current_menu,
+        (quit, cmd) = await menu.Simple_Menu_Loop(screen, current_menu,
                 (( width * 3 ) // 4, 10 + ( height // 2 )), event)
 
         if ( current_menu == main_menu ):
@@ -219,7 +220,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
                 current_menu = difficulty_menu
 
             elif ( cmd == MenuCommand.TUTORIAL ):
-                quit = game.Game(clock=clock,
+                quit = await game.Game(clock=clock,
                         restore_pos=None,
                         challenge=MenuCommand.TUTORIAL, event=event,
                         playback_mode=PlayMode.OFF,
@@ -233,7 +234,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
                 quit = True
 
             elif ( cmd == MenuCommand.UPDATES ):
-                if Update_Feature(menu_image, event):
+                if await Update_Feature(menu_image, event):
                     url = ( CGISCRIPT + "v=" + version.Encode(VERSION) )
 
                     event.webbrowser_open(url)
@@ -259,7 +260,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
 
             if (( cmd != None ) and ( cmd != MenuCommand.CANCEL )):
                 # start new game with specified difficulty
-                quit = game.Game(clock=clock,
+                quit = await game.Game(clock=clock,
                         restore_pos=None,
                         challenge=cmd, event=event,
                         playback_mode=PlayMode.OFF,
@@ -272,7 +273,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
 
             if (( cmd != None ) and ( cmd != MenuCommand.CANCEL )):
                 # Start game from saved position
-                quit = game.Game(clock=clock,
+                quit = await game.Game(clock=clock,
                         restore_pos=cmd, challenge=None, event=event,
                         playback_mode=PlayMode.OFF,
                         playback_file=None,
@@ -280,7 +281,7 @@ def Main_Menu_Loop(name: str, clock: ClockType,
 
     return True
 
-def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
+async def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
     screen = event.resurface()
 
     def Message(msg_list: List[str]) -> None:
@@ -298,7 +299,7 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
             y += img_r.height
         pygame.display.flip()
 
-    def Finish(cerror: Optional[str] = None) -> None:
+    async def Finish(cerror: Optional[str] = None) -> None:
         if ( cerror is not None ):
             Message(["Connection error:", cerror])
 
@@ -311,10 +312,11 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
                 or ( e.type == pygame.KEYDOWN )
                 or ( e.type == pygame.QUIT )):
                     ok = False
+                await asyncio.sleep(0)
                 e = event.poll()
 
             if ok: # NO-COV
-                pygame.time.wait( 40 )
+                await asyncio.sleep(0.04)
                 timer -= 40
 
     Message(["Connecting to Website..."])
@@ -323,7 +325,7 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
     try:
         new_version = event.check_update(url)
     except Exception as x:
-        Finish(str(x))
+        await Finish(str(x))
         return False
 
     if (( new_version is None )
@@ -332,7 +334,7 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
     or ( len(new_version) > 10 )
     or ( not new_version[ 0 ].isdigit() )
     or ( new_version.find('.') <= 0 )):
-        Finish("Version data not found.")
+        await Finish("Version data not found.")
         return False
 
 
@@ -344,17 +346,17 @@ def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
     if new_version_int == old_version_int:
         Message(["Your software is up to date!",
             "Thankyou for using the update feature."])
-        Finish(None)
+        await Finish(None)
         return False
     elif new_version_int > old_version_int:
         Message(["New version " + new_version + " is available!",
                 "Opening website..."])
-        Finish(None)
+        await Finish(None)
         return True
     else:
         Message(["Your software is very up to date (beta?)",
             "'New' version is " + new_version + ": your version is " + old_version])
-        Finish(None)
+        await Finish(None)
         return False
 
 def PyInstaller_Main() -> None: # NO-COV
@@ -366,8 +368,8 @@ def PyInstaller_Main() -> None: # NO-COV
         print("")
         print("startup:", time.asctime(), flush=True)
         try:
-            return_code = Main(data_dir=data_dir, args=args,
-                               event=events.Events())
+            return_code = asyncio.run(Main(data_dir=data_dir, args=args,
+                               event=events.Events()))
         except Exception:
             print("")
             print("exception:", flush=True)
@@ -389,6 +391,6 @@ def PyInstaller_Main() -> None: # NO-COV
     open(crash_file, "at").write(all_log)
     sys.exit(return_code)
 
-
-
-
+async def main() -> None:
+    # main for pygbag
+    await Main(data_dir=".", args=[], event=events.Events())

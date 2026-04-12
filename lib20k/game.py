@@ -6,7 +6,7 @@
 # The main loop of the game. This procedure is running
 # whenever the game is on the screen.
 
-import pygame, sys, time, pickle, random, os, math
+import pygame, sys, time, pickle, random, os, math, asyncio
 
 from . import draw_effects, stats, mail, gametime, events
 from . import menu, save_menu, save_game, config, resource
@@ -249,7 +249,7 @@ class Game:
                                         self.g.game_time.Get_Day(), self.screen.get_rect().height)))
             New_Mail("SCREENSHOT CHEAT")
 
-    def Main_Loop(self) -> bool:
+    async def Main_Loop(self) -> bool:
         alarm_sound = sound.Persisting_Sound(Sounds.emergency)
         g = self.g
 
@@ -512,9 +512,10 @@ class Game:
                 self.demo.do_user_actions(self.ui, self)
 
             # Events
-            if paused:
+            if paused and config.Is_Desktop():
                 e = self.event.wait()
             else:
+                await asyncio.sleep(0)
                 e = self.event.poll()
 
             while ( e.type != pygame.NOEVENT ):
@@ -586,6 +587,7 @@ class Game:
                             New_Mail("GAME END CHEAT (WIN)")
                             g.net.hub.tech_level = DIFFICULTY.CITY_MAX_TECH_LEVEL
 
+                await asyncio.sleep(0)
                 e = self.event.poll()
 
             # Any commands from the menu?
@@ -665,7 +667,7 @@ class Game:
         pygame.display.flip()
 
         if ( stats_review ):
-            review.Review(g, g.historian, self.event)
+            await review.Review(g, g.historian, self.event)
 
         return quit
 

@@ -75,3 +75,5 @@ def Get_Home() -> Optional[str]:
             return home                 # NO-COV
     return None                         # NO-COV
 
+def Is_Desktop() -> bool:
+    return sys.platform != "emscripten" # NO-COV

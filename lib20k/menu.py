@@ -6,6 +6,7 @@
 # A very lightweight menu system.
 
 import pygame, enum
+import asyncio
 
 
 from . import stats, draw_effects, resource, render, sound, events, config
@@ -258,7 +259,7 @@ class Toggle_Sound_Menu(Menu):
                 TOGGLE_SOUND[0], text, TOGGLE_SOUND[2])
 
 
-def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
+async def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
                      xy: SurfacePosition, event: events.Events) -> Tuple[bool, Optional[MenuCommand]]:
     (x,y) = xy
     cmd = None
@@ -268,7 +269,12 @@ def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
         current_menu.Draw(screen, (x,y))
         pygame.display.flip()
 
-        e = event.wait()
+        if config.Is_Desktop():
+            e = event.wait()
+        else:
+            while ( e.type == pygame.NOEVENT ):
+                await asyncio.sleep(0)
+                e = event.poll()
         while ( e.type != pygame.NOEVENT ):
             if e.type == pygame.QUIT:
                 quit = True
@@ -281,6 +287,7 @@ def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
             elif e.type == pygame.VIDEORESIZE:
                 return (False, None)
 
+            await asyncio.sleep(0)
             e = event.poll()
 
         cmd = current_menu.Get_Command()

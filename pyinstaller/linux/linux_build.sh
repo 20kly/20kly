@@ -3,7 +3,7 @@
 git clean -d -f -x .
 
 export ROOT=$PWD
-export PYTHON=python3.8
+export PYTHON=python3.11
 
 # Build environment: pygame 2.0.1
 $PYTHON -m venv test-env
