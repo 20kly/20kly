@@ -391,6 +391,9 @@ def PyInstaller_Main() -> None: # NO-COV
     open(crash_file, "at").write(all_log)
     sys.exit(return_code)
 
-async def main() -> None:
+async def Pygbag_Main() -> None:
     # main for pygbag
+    if sys.platform == "emscripten":
+        import platform
+        platform.console.log("logged message")
     await Main(data_dir=".", args=[], event=events.Events())
