@@ -8,8 +8,8 @@ export PYTHON=python3.11
 $PYTHON -m venv build-env
 source build-env/bin/activate
 
-#$PYTHON -m pip install pygbag==0.9.3
-#$PYTHON -m pip install pygame==2.6.1
+$PYTHON -m pip install pygbag==0.9.3
+$PYTHON -m pip install pygame==2.6.1
 
 # derive the version number
 PYTHONPATH=$ROOT $PYTHON pyinstaller/linux/version_setup.py
@@ -25,4 +25,5 @@ cd ..
 $PYTHON -m pygbag --app_name "20K Light Years" \
     --title "20K Light Years" \
     --version $VERSION \
-    --no_opt 20kly
+    --no_opt --build --icon favicon.png \
+    20kly
