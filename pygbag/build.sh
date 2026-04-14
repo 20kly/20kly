@@ -25,5 +25,5 @@ cd ..
 $PYTHON -m pygbag --app_name "20K Light Years" \
     --title "20K Light Years" \
     --version $VERSION \
-    --no_opt --build --icon favicon.png \
+    --no_opt --icon favicon.png \
     20kly

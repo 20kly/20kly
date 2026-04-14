@@ -159,11 +159,13 @@ async def Main_Menu_Loop(name: str, clock: ClockType,
                 (MenuCommand.LOAD, "Restore Game", [pygame.K_r]),
                 (None, None, []),
                 menu.TOGGLE_SOUND,
+                ] + ([
                 (MenuCommand.MANUAL, "View Manual", [pygame.K_v]),
                 (MenuCommand.UPDATES, "Check for Updates", [pygame.K_u]),
                 (None, None, []),
                 (MenuCommand.QUIT, "Exit",
-                    [ pygame.K_ESCAPE , pygame.K_F10 ])])
+                    [ pygame.K_ESCAPE , pygame.K_F10 ])]
+                if config.Is_Desktop() else []))
     difficulty_menu = menu.Menu(
                 [(None, None, []),
                 (MenuCommand.TUTORIAL, "Tutorial", [pygame.K_t]),
@@ -396,4 +398,4 @@ async def Pygbag_Main() -> None:
     if sys.platform == "emscripten":
         import platform
         platform.console.log("logged message")
-    await Main(data_dir=".", args=[], event=events.Events())
+    await Main(data_dir="data", args=[], event=events.Events())
