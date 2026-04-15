@@ -312,9 +312,7 @@ class Game:
             paused = menu_open or (not has_input_focus)
             
 
-            if not is_desktop:
-                pass
-            elif self.ui.Is_Fast_Forward():
+            if self.ui.Is_Fast_Forward():
                 self.clock.tick(FRAME_RATE * 10)
             elif (self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU)):
                 self.clock.tick(0)
@@ -519,7 +517,7 @@ class Game:
             if paused and is_desktop:
                 e = self.event.wait()
             else:
-                await asyncio.sleep(INV_FRAME_RATE)
+                await asyncio.sleep(0)
                 e = self.event.poll()
 
             while ( e.type != pygame.NOEVENT ):
