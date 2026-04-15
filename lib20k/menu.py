@@ -274,7 +274,7 @@ async def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
         else:
             e = event.poll()
             while ( e.type == pygame.NOEVENT ):
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.04)
                 e = event.poll()
         while ( e.type != pygame.NOEVENT ):
             if e.type == pygame.QUIT:

@@ -25,6 +25,7 @@ from .difficulty import DIFFICULTY
 
 FRAME_RATE = 35
 RT_FRAME_LENGTH = 1.0 / FRAME_RATE
+INV_FRAME_RATE = 1000.0 / FRAME_RATE
 
 class Game_Data:
     def __init__(self, demo: "game_random.Game_Random", challenge: MenuCommand) -> None:
@@ -301,6 +302,7 @@ class Game:
         if ( g.challenge == MenuCommand.TUTORIAL ):
             tutor.On()
 
+        is_desktop = config.Is_Desktop()
         cur_time = g.game_time.time()
 
         # Main loop
@@ -310,7 +312,9 @@ class Game:
             paused = menu_open or (not has_input_focus)
             
 
-            if self.ui.Is_Fast_Forward():
+            if not is_desktop:
+                pass
+            elif self.ui.Is_Fast_Forward():
                 self.clock.tick(FRAME_RATE * 10)
             elif (self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU)):
                 self.clock.tick(0)
@@ -512,10 +516,10 @@ class Game:
                 self.demo.do_user_actions(self.ui, self)
 
             # Events
-            if paused and config.Is_Desktop():
+            if paused and is_desktop:
                 e = self.event.wait()
             else:
-                await asyncio.sleep(0)
+                await asyncio.sleep(INV_FRAME_RATE)
                 e = self.event.poll()
 
             while ( e.type != pygame.NOEVENT ):

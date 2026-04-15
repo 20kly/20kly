@@ -5,8 +5,4 @@
 
 import pygame
 from lib20k.main import Pygbag_Main
-
-async def main() -> None:
-    print(dir(pygame))
-    print(dir(pygame.surface))
-    await Pygbag_Main()
+await Pygbag_Main()
