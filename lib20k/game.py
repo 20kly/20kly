@@ -25,7 +25,6 @@ from .difficulty import DIFFICULTY
 
 FRAME_RATE = 35
 RT_FRAME_LENGTH = 1.0 / FRAME_RATE
-INV_FRAME_RATE = 1000.0 / FRAME_RATE
 
 class Game_Data:
     def __init__(self, demo: "game_random.Game_Random", challenge: MenuCommand) -> None:
@@ -311,13 +310,19 @@ class Game:
             menu_open = self.ui.Is_Menu_Open() or (not g.game_running)
             paused = menu_open or (not has_input_focus)
             
-
             if self.ui.Is_Fast_Forward():
-                self.clock.tick(FRAME_RATE * 10)
+                speed_factor = 10
             elif (self.playback_mode in (PlayMode.PLAYBACK, PlayMode.PLAYTHRU)):
-                self.clock.tick(0)
+                speed_factor = 0 
             else:
-                self.clock.tick(FRAME_RATE)
+                speed_factor = 1
+            if is_desktop:
+                self.clock.tick(FRAME_RATE * speed_factor)
+            else:
+                self.clock.tick(0)
+                await asyncio.sleep(
+                    max(0.0, (RT_FRAME_LENGTH / speed_factor) -
+                        (self.clock.get_rawtime() / 1000.0)))
 
             if not paused:
                 flash = not flash

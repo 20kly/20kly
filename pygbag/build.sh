@@ -26,4 +26,6 @@ $PYTHON -m pygbag --app_name "20K Light Years" \
     --title "20K Light Years" \
     --version $VERSION \
     --no_opt --icon favicon.png \
+    --ume_block 0 \
+    --can_close 0 \
     20kly
