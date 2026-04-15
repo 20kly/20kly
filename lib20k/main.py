@@ -159,13 +159,11 @@ async def Main_Menu_Loop(name: str, clock: ClockType,
                 (MenuCommand.LOAD, "Restore Game", [pygame.K_r]),
                 (None, None, []),
                 menu.TOGGLE_SOUND,
-                ] + ([
                 (MenuCommand.MANUAL, "View Manual", [pygame.K_v]),
                 (MenuCommand.UPDATES, "Check for Updates", [pygame.K_u]),
                 (None, None, []),
                 (MenuCommand.QUIT, "Exit",
-                    [ pygame.K_ESCAPE , pygame.K_F10 ])]
-                if config.Is_Desktop() else []))
+                    [ pygame.K_ESCAPE , pygame.K_F10 ])])
     difficulty_menu = menu.Menu(
                 [(None, None, []),
                 (MenuCommand.TUTORIAL, "Tutorial", [pygame.K_t]),
@@ -395,7 +393,62 @@ def PyInstaller_Main() -> None: # NO-COV
 
 async def Pygbag_Main() -> None:
     # main for pygbag
-    if sys.platform == "emscripten":
-        import platform
-        platform.console.log("logged message")
-    await Main(data_dir="data", args=[], event=events.Events())
+    assert sys.platform == "emscripten"
+    import platform
+    platform.console.log("logged message")
+
+    print("pygame init")
+    pygame.init()
+    pygame.font.init()
+    pygame.mixer.init()
+
+    print("resource init")
+    resource.Initialise()
+
+    print("video init")
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode()
+    compatibility.last_resize = screen.get_rect().size
+    pygame.display.set_icon(resource.Load_Image(Images.i32))
+    compatibility.set_allow_screensaver(True)
+    pygame.display.flip()
+    pygame.display.set_caption(TITLE)
+    event = events.Events()
+    screen = event.resurface()
+    print("screen size is", screen.get_rect().size)
+
+    try:
+        print("procedural init")
+        mail.Set_Screen_Height(screen.get_rect().height)
+        alien_invasion.Init_Aliens()
+        quakes.Init_Quakes()
+
+        print("main loop")
+        while True:
+            await Main_Menu_Loop(TITLE, clock, event)
+            config.Save()
+
+        problem = ""
+    except Exception:
+        problem = traceback.format_exc()
+
+    print("exit handler")
+    print(problem)
+
+    # If it crashes or exits unexpectedly, show some information
+    screen = event.resurface()
+    screen.fill((0,0,0))
+    text_height = screen.get_rect().height // 50
+    y = text_height // 2
+    for text in problem.splitlines():
+        img = font.Get_Font(text_height).render(text, True, (100, 255, 100))
+        img_r = img.get_rect()
+        img_r.left = text_height // 2
+        img_r.top = y
+        screen.blit(img, img_r.topleft)
+        y += img_r.height
+
+    while True:
+        pygame.display.flip()
+        await asyncio.sleep(0.04)
+        pygame.event.poll()
