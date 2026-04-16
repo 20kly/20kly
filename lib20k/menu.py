@@ -271,7 +271,7 @@ async def Simple_Menu_Loop(screen: SurfaceType, current_menu: Menu,
 
         if config.Is_Desktop():
             e = event.wait()
-        else:
+        else: # NO-COV
             e = event.poll()
             while ( e.type == pygame.NOEVENT ):
                 await asyncio.sleep(0.04)

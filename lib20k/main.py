@@ -16,7 +16,7 @@ from .game_types import *
 from .game_random import PlaybackEOF
 
 
-async def Main(data_dir: str, args: List[str], event: events.Events) -> int:
+async def Async_Main(data_dir: str, args: List[str], event: events.Events) -> int:
 
     print("")
     print(TITLE)
@@ -361,6 +361,9 @@ async def Update_Feature(menu_image: SurfaceType, event: events.Events) -> bool:
         await Finish(None)
         return False
 
+def Main(data_dir: str, args: List[str], event: events.Events) -> int:
+    return asyncio.run(Async_Main(data_dir=data_dir, args=args, event=event))
+
 def PyInstaller_Main() -> None: # NO-COV
     data_dir = os.path.join(sys.prefix, "data")
     args = sys.argv[1:]
@@ -370,8 +373,7 @@ def PyInstaller_Main() -> None: # NO-COV
         print("")
         print("startup:", time.asctime(), flush=True)
         try:
-            return_code = asyncio.run(Main(data_dir=data_dir, args=args,
-                               event=events.Events()))
+            return_code = Main(data_dir=data_dir, args=args, event=events.Events())
         except Exception:
             print("")
             print("exception:", flush=True)
@@ -393,7 +395,7 @@ def PyInstaller_Main() -> None: # NO-COV
     open(crash_file, "at").write(all_log)
     sys.exit(return_code)
 
-async def Pygbag_Main() -> None:
+async def Pygbag_Main() -> None: # NO-COV
     # main for pygbag
     print("pygame init")
     pygame.init()

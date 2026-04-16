@@ -4,6 +4,7 @@
 #
 
 import pygame
+import asyncio
 from lib20k import events, menu
 from lib20k.primitives import *
 from lib20k.game_types import *
@@ -28,38 +29,38 @@ def test_Simple_Menu_Loop() -> None:
 
     # test quit by closing the window
     test_menu = menu.Menu(menu_options, force_width=0)
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([
                             Quit(),
                             NoEvent()
-                        ]))
+                        ])))
     assert quit
     assert cmd is None
 
     # test video resize
     test_menu = menu.Menu(menu_options, force_width=0)
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([
                             VideoResize(),
                             NoEvent(),
                             Quit(),
                             NoEvent()
-                        ]))
+                        ])))
     assert not quit
     assert cmd is None
 
     # test keypresses
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([
                             Push(pygame.K_1),
                             NoEvent()
-                        ]))
+                        ])))
     assert not quit
     assert cmd == MenuCommand.SAVE1
     assert test_menu.hover is None
     assert test_menu.Get_Command() is None
 
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([
                             Push(pygame.K_a), # ignored (not valid)
                             Other(),
@@ -69,17 +70,17 @@ def test_Simple_Menu_Loop() -> None:
                             NoEvent(),
                             Quit(),           # not reached
                             NoEvent(),
-                        ]))
+                        ])))
     assert not quit
     assert cmd == MenuCommand.SAVE3
 
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
                         (0, 0), Fake_Events([
                             Push(pygame.K_3),   # accepted
                             NoEvent(),
                             Push(pygame.K_1),   # not reached
                             NoEvent()
-                        ]))
+                        ])))
     assert not quit
     assert cmd == MenuCommand.SAVE3
 
@@ -89,8 +90,8 @@ def test_Simple_Menu_Loop() -> None:
     event_list.append(NoEvent())
     event_list.append(Quit())
     event_list.append(NoEvent())
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
-                        (0, 0), Fake_Events(event_list))
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
+                        (0, 0), Fake_Events(event_list)))
     assert cmd is None
     assert quit
     assert test_menu.hover == MenuCommand.SAVE3
@@ -102,8 +103,8 @@ def test_Simple_Menu_Loop() -> None:
 
     # test mouse click - select an option
     event_list = [Click(save2_pos), NoEvent()]
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
-                        (0, 0), Fake_Events(event_list))
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
+                        (0, 0), Fake_Events(event_list)))
     assert cmd == MenuCommand.SAVE2
     assert not quit
 
@@ -119,8 +120,8 @@ def test_Simple_Menu_Loop() -> None:
     event_list.append(NoEvent())
     event_list.append(Quit())
     event_list.append(NoEvent())
-    (quit, cmd) = menu.Simple_Menu_Loop(test_screen, test_menu,
-                        (0, 0), Fake_Events(event_list))
+    (quit, cmd) = asyncio.run(menu.Simple_Menu_Loop(test_screen, test_menu,
+                        (0, 0), Fake_Events(event_list)))
     assert cmd is None
     assert quit
     assert test_menu.hover is None
