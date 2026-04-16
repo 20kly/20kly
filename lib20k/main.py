@@ -395,10 +395,6 @@ def PyInstaller_Main() -> None: # NO-COV
 
 async def Pygbag_Main() -> None:
     # main for pygbag
-    assert sys.platform == "emscripten"
-    import platform
-    platform.console.log("logged message")
-
     print("pygame init")
     pygame.init()
     pygame.font.init()
