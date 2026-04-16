@@ -81,6 +81,15 @@ class Game:
         self.screen.fill((0,0,0))
         pygame.display.flip()
 
+        # User interface variables (not part of the game data, not saved)
+        self.flash = False
+        self.cur_time = 0.0
+        self.menu_open = False
+        self.paused = False
+        self.alarm_sound = sound.Persisting_Sound(Sounds.emergency)
+        self.current_menu = self.in_game_menu = menu.Menu([])
+        self.exit_options: List[MenuItem] = []
+
         # Game data holder
 
         if (self.restore_pos is not None) or (challenge is None):
@@ -250,12 +259,207 @@ class Game:
                                         self.g.game_time.Get_Day(), self.screen.get_rect().height)))
             New_Mail("SCREENSHOT CHEAT")
 
+    def Game_Tick(self) -> None:
+        g = self.g
+        if not self.paused:
+            self.flash = not self.flash
+            g.game_time.Advance(RT_FRAME_LENGTH)
+            draw_obj.Next_Frame() # Flashing lights on the various items
+
+        self.cur_time = g.game_time.time()
+        mail.Set_Day(g.game_time.Get_Day())
+
+        if not self.paused:
+            self.demo.timestamp(g)
+
+        self.ui.Draw_Game(self.game_screen_surf, g.season_fx, self.paused)
+
+        until_next: List[StatTuple]
+        if ( g.challenge == MenuCommand.TUTORIAL ):
+            until_next = []
+        elif ( g.challenge == MenuCommand.PEACEFUL ):
+            until_next = [ ((128,128,128), 12, "Peaceful mode") ]
+        else:
+            until_next = [ ((128,128,128), 12, "(%d days until next season)" %
+                        (( g.season_ends - self.cur_time ) + 1 )) ]
+
+        self.ui.Draw_Stats(self.stats_surf, typing.cast(List[StatTuple], [
+              ((128,0,128), 18, "Day %u" % g.game_time.Get_Day()),
+              ((128,128,0), 18, g.season_fx.name + " season") ]) +
+              until_next +
+                g.season_fx.Get_Extra_Info())
+        self.ui.Draw_Controls(self.controls_surf)
+
+        stats_back = (0,0,0)
+        supply = g.net.hub.Get_Steam_Supply()
+        demand = g.net.hub.Get_Steam_Demand()
+        if ( g.net.hub.Get_Pressure() < PRESSURE_DANGER ):
+            # You'll lose the game if you stay in this zone
+            # for longer than a timeout. Also, an
+            # alarm will sound.
+
+            if ( g.game_ends_at is None ):
+                sound.FX(Sounds.steamcrit)
+                g.warning_given = True
+
+                New_Mail("Danger! The City needs more steam!", (255,0,0))
+                g.game_ends_at = self.cur_time + DIFFICULTY.GRACE_TIME
+                assert g.game_ends_at is not None
+                New_Mail("Game will end on Day %u unless supplies are increased." % (
+                    int(g.game_ends_at) ), (255,0,0))
+
+            if ( self.flash ):
+                demand_colour = (255, 0, 0)
+                if not self.paused:  # NO-COV
+                    self.alarm_sound.Set(0.6)
+            else:
+                demand_colour = (128, 0, 0)
+                stats_back = (100, 0, 0)
+
+        elif ( g.net.hub.Get_Pressure() < PRESSURE_WARNING ):
+
+            g.game_ends_at = None
+            if ( self.flash ):
+                demand_colour = (255, 100, 0)
+                if not self.paused:  # NO-COV
+                    self.alarm_sound.Set(0.3)
+            else:
+                demand_colour = (128, 50, 0)
+                stats_back = (50, 25, 0)
+        else:
+
+            if ( g.warning_given ):
+                sound.FX(Sounds.steamres)
+                g.warning_given = False
+
+            if ( g.net.hub.Get_Pressure() < PRESSURE_OK ):
+                demand_colour = (128, 128, 0)
+            else:
+                demand_colour = (0, 128, 0)
+
+            g.game_ends_at = None
+            self.alarm_sound.Set(0.0)
+
+        avw = g.net.hub.Get_Avail_Work_Units()
+        wu_unused = avw - g.work_units_used
+        self.global_stats_surf.fill(stats_back)
+        stats.Draw_Stats_Window(self.global_stats_surf, [
+              (CITY_COLOUR, 18, "Work Units Available"),
+              (None, None, (wu_unused, (255,0,255),
+                          avw, (0,0,0))),
+              (CITY_COLOUR, 12, str(wu_unused) + " of " +
+                      str(avw) + " total"),
+              (CITY_COLOUR, 18, "City - Supply:Demand"),
+              (demand_colour, 24, "%1.1f U : %1.1f U" % (
+                        supply, demand)),
+              (CITY_COLOUR, 18, "City - Steam Pressure"),
+              (None, None, g.net.hub.Get_Pressure_Meter())])
+
+        tutor.Draw(self.screen, g)
+
+        if self.menu_open:
+            self.current_menu.Draw(self.screen)
+            self.alarm_sound.Set(0.0)
+
+        mail.Draw_Mail(self.game_screen_surf)
+        pygame.display.flip()
+        mail.Undraw_Mail(self.game_screen_surf)
+
+        if not self.paused:
+            g.season_fx.Per_Frame(RT_FRAME_LENGTH)
+            self.ui.Frame_Advance(RT_FRAME_LENGTH)
+
+        # Timing effects
+        if ( g.work_timer <= self.cur_time ):
+            # Fixed periodic effects
+            g.work_timer = self.cur_time + 0.1
+            g.wu_integral += wu_unused
+            g.work_units_used = g.net.Work_Pulse(g.net.hub.Get_Avail_Work_Units())
+
+            g.net.Steam_Think()
+            g.net.Expire_Popups()
+            mail.Expire_Messages()
+            tutor.Examine_Game(g)
+
+        if ( g.season_effect <= self.cur_time ):
+            # Seasonal periodic effects
+            g.season_effect = self.cur_time + g.season_fx.Get_Period()
+            g.season_fx.Per_Period()
+
+        if ((( not tutor.Permit_Season_Change() ) and ( g.season == Season.QUIET ))
+        or ( g.challenge == MenuCommand.PEACEFUL )):
+            # Never-ending season
+            g.season_ends = self.cur_time + 2.0
+
+        elif ( g.season_ends <= self.cur_time ):
+            # Season change
+            if (( g.season == Season.QUIET )
+            or ( g.season == Season.STORM )):
+                g.season = Season.ALIEN
+                g.season_fx = alien_invasion.Alien_Season(g.net, g.difficulty_level)
+                sound.FX(Sounds.aliensappr)
+            elif ( g.season == Season.ALIEN ):
+                g.season = Season.QUAKE
+                g.season_fx = Quake_Season(g.net, g.difficulty_level)
+                if ( not tutor.Active() ): # hack...
+                    sound.FX(Sounds.quakewarn)
+            elif ( g.season == Season.QUAKE ):
+                g.season = Season.STORM
+                g.season_fx = Storm_Season(g.net, g.difficulty_level)
+                g.difficulty_level *= 1.2 # 20% harder..
+                sound.FX(Sounds.stormwarn)
+            else:
+                assert g.season == Season.START
+                g.season = Season.QUIET
+                g.season_fx = Quiet_Season(g.net)
+
+            g.season_ends = self.cur_time + LENGTH_OF_SEASON
+            g.season_effect = self.cur_time + ( g.season_fx.Get_Period() / 2 )
+
+            # can't ever be PEACEFUL as seasons never end in peaceful mode
+            assert g.challenge != MenuCommand.PEACEFUL
+            New_Mail("The " + g.season_fx.name +
+                     " season has started.", (200,200,200))
+
+        just_ended = False
+        if (( g.game_ends_at is not None )
+        and ( g.game_ends_at <= self.cur_time )
+        and ( g.game_running )):
+            # Game over - you lose
+            New_Mail("The City ran out of steam.", (255,0,0))
+            New_Mail("Game Over!", (255,255,0))
+            sound.FX(Sounds.krankor)
+            just_ended = True
+
+        elif (( g.net.hub.tech_level >= DIFFICULTY.CITY_MAX_TECH_LEVEL )
+        and ( g.game_running )):
+            # Game over - you win!
+            g.win = True
+            New_Mail("The City is now fully upgraded!", (255,255,255))
+            New_Mail("You have won the game!", (255,255,255))
+            sound.FX(Sounds.applause)
+            just_ended = True
+
+        if ( just_ended ):
+            # Won or lost
+            self.current_menu = self.in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
+                (None, None, []),
+                (MenuCommand.REVIEW, "Review Statistics", [pygame.K_r])]) +
+                self.exit_options)
+            self.in_game_menu.Select(None)
+
+            # final record from the game:
+            g.game_running = False
+            g.historian.append(review.Analyse_Network(g))
+
+        if not self.paused:
+            self.demo.do_user_actions(self.ui, self)
+
     async def Main_Loop(self) -> bool:
-        alarm_sound = sound.Persisting_Sound(Sounds.emergency)
         g = self.g
 
         # menu setup
-        exit_options: List[MenuItem] = [
+        self.exit_options = [
             (MenuCommand.MENU, "Exit to Main Menu", [ pygame.K_q ]),
             (MenuCommand.QUIT, "Exit Game", [ pygame.K_F10 ])]
 
@@ -267,21 +471,21 @@ class Game:
         if ( g.challenge == MenuCommand.TUTORIAL ):
             save_available = []
 
-        in_game_menu: menu.Menu = menu.Toggle_Sound_Menu(typing.cast(List[MenuItem], [
+        self.in_game_menu = menu.Toggle_Sound_Menu(typing.cast(List[MenuItem], [
             (None, None, []),
             menu.TOGGLE_SOUND,
             (None, None, [])]) +
             save_available + [
             (MenuCommand.HIDE, "Return to Game", [pygame.K_ESCAPE])] +
-            exit_options)
+            self.exit_options)
 
-        current_menu = in_game_menu
+        self.current_menu = self.in_game_menu
 
-        flash = True
+        self.flash = True
         loop_running = True
         quit = False
         stats_review = False
-        in_game_menu.Select(None)
+        self.in_game_menu.Select(None)
         has_input_focus = True
 
         # These are for testing (forcing video resize event)
@@ -303,14 +507,13 @@ class Game:
             tutor.On()
 
         is_desktop = config.Is_Desktop()
-        cur_time = g.game_time.time()
+        self.cur_time = g.game_time.time()
 
         # Main loop
         while ( loop_running ):
 
-            menu_open = self.ui.Is_Menu_Open() or (not g.game_running)
-            paused = menu_open or (not has_input_focus)
-            
+            self.menu_open = self.ui.Is_Menu_Open() or (not g.game_running)
+            self.paused = self.menu_open or (not has_input_focus)
 
             if self.ui.Is_Fast_Forward():
                 self.clock.tick(FRAME_RATE * 10)
@@ -319,202 +522,10 @@ class Game:
             else:
                 self.clock.tick(FRAME_RATE)
 
-            if not paused:
-                flash = not flash
-                g.game_time.Advance(RT_FRAME_LENGTH)
-                draw_obj.Next_Frame() # Flashing lights on the various items
-
-            cur_time = g.game_time.time()
-            mail.Set_Day(g.game_time.Get_Day())
-
-            if not paused:
-                self.demo.timestamp(g)
-
-            self.ui.Draw_Game(self.game_screen_surf, g.season_fx, paused)
-
-            until_next: List[StatTuple]
-            if ( g.challenge == MenuCommand.TUTORIAL ):
-                until_next = []
-            elif ( g.challenge == MenuCommand.PEACEFUL ):
-                until_next = [ ((128,128,128), 12, "Peaceful mode") ]
-            else:
-                until_next = [ ((128,128,128), 12, "(%d days until next season)" %
-                            (( g.season_ends - cur_time ) + 1 )) ]
-
-            self.ui.Draw_Stats(self.stats_surf, typing.cast(List[StatTuple], [
-                  ((128,0,128), 18, "Day %u" % g.game_time.Get_Day()),
-                  ((128,128,0), 18, g.season_fx.name + " season") ]) +
-                  until_next +
-                    g.season_fx.Get_Extra_Info())
-            self.ui.Draw_Controls(self.controls_surf)
-
-            stats_back = (0,0,0)
-            supply = g.net.hub.Get_Steam_Supply()
-            demand = g.net.hub.Get_Steam_Demand()
-            if ( g.net.hub.Get_Pressure() < PRESSURE_DANGER ):
-                # You'll lose the game if you stay in this zone
-                # for longer than a timeout. Also, an
-                # alarm will sound.
-
-                if ( g.game_ends_at is None ):
-                    sound.FX(Sounds.steamcrit)
-                    g.warning_given = True
-
-                    New_Mail("Danger! The City needs more steam!", (255,0,0))
-                    g.game_ends_at = cur_time + DIFFICULTY.GRACE_TIME
-                    assert g.game_ends_at is not None
-                    New_Mail("Game will end on Day %u unless supplies are increased." % (
-                        int(g.game_ends_at) ), (255,0,0))
-
-                if ( flash ):
-                    demand_colour = (255, 0, 0)
-                    if not paused:  # NO-COV
-                        alarm_sound.Set(0.6)
-                else:
-                    demand_colour = (128, 0, 0)
-                    stats_back = (100, 0, 0)
-
-            elif ( g.net.hub.Get_Pressure() < PRESSURE_WARNING ):
-
-                g.game_ends_at = None
-                if ( flash ):
-                    demand_colour = (255, 100, 0)
-                    if not paused:  # NO-COV
-                        alarm_sound.Set(0.3)
-                else:
-                    demand_colour = (128, 50, 0)
-                    stats_back = (50, 25, 0)
-            else:
-
-                if ( g.warning_given ):
-                    sound.FX(Sounds.steamres)
-                    g.warning_given = False
-
-                if ( g.net.hub.Get_Pressure() < PRESSURE_OK ):
-                    demand_colour = (128, 128, 0)
-                else:
-                    demand_colour = (0, 128, 0)
-
-                g.game_ends_at = None
-                alarm_sound.Set(0.0)
-
-            avw = g.net.hub.Get_Avail_Work_Units()
-            wu_unused = avw - g.work_units_used
-            self.global_stats_surf.fill(stats_back)
-            stats.Draw_Stats_Window(self.global_stats_surf, [
-                  (CITY_COLOUR, 18, "Work Units Available"),
-                  (None, None, (wu_unused, (255,0,255),
-                              avw, (0,0,0))),
-                  (CITY_COLOUR, 12, str(wu_unused) + " of " +
-                          str(avw) + " total"),
-                  (CITY_COLOUR, 18, "City - Supply:Demand"),
-                  (demand_colour, 24, "%1.1f U : %1.1f U" % (
-                            supply, demand)),
-                  (CITY_COLOUR, 18, "City - Steam Pressure"),
-                  (None, None, g.net.hub.Get_Pressure_Meter())])
-
-            tutor.Draw(self.screen, g)
-
-            if menu_open:
-                current_menu.Draw(self.screen)
-                alarm_sound.Set(0.0)
-
-            mail.Draw_Mail(self.game_screen_surf)
-            pygame.display.flip()
-            mail.Undraw_Mail(self.game_screen_surf)
-
-            if not paused:
-                g.season_fx.Per_Frame(RT_FRAME_LENGTH)
-                self.ui.Frame_Advance(RT_FRAME_LENGTH)
-
-            # Timing effects
-            if ( g.work_timer <= cur_time ):
-                # Fixed periodic effects
-                g.work_timer = cur_time + 0.1
-                g.wu_integral += wu_unused
-                g.work_units_used = g.net.Work_Pulse(g.net.hub.Get_Avail_Work_Units())
-
-                g.net.Steam_Think()
-                g.net.Expire_Popups()
-                mail.Expire_Messages()
-                tutor.Examine_Game(g)
-
-            if ( g.season_effect <= cur_time ):
-                # Seasonal periodic effects
-                g.season_effect = cur_time + g.season_fx.Get_Period()
-                g.season_fx.Per_Period()
-
-            if ((( not tutor.Permit_Season_Change() ) and ( g.season == Season.QUIET ))
-            or ( g.challenge == MenuCommand.PEACEFUL )):
-                # Never-ending season
-                g.season_ends = cur_time + 2.0
-
-            elif ( g.season_ends <= cur_time ):
-                # Season change
-                if (( g.season == Season.QUIET )
-                or ( g.season == Season.STORM )):
-                    g.season = Season.ALIEN
-                    g.season_fx = alien_invasion.Alien_Season(g.net, g.difficulty_level)
-                    sound.FX(Sounds.aliensappr)
-                elif ( g.season == Season.ALIEN ):
-                    g.season = Season.QUAKE
-                    g.season_fx = Quake_Season(g.net, g.difficulty_level)
-                    if ( not tutor.Active() ): # hack...
-                        sound.FX(Sounds.quakewarn)
-                elif ( g.season == Season.QUAKE ):
-                    g.season = Season.STORM
-                    g.season_fx = Storm_Season(g.net, g.difficulty_level)
-                    g.difficulty_level *= 1.2 # 20% harder..
-                    sound.FX(Sounds.stormwarn)
-                else:
-                    assert g.season == Season.START
-                    g.season = Season.QUIET
-                    g.season_fx = Quiet_Season(g.net)
-
-                g.season_ends = cur_time + LENGTH_OF_SEASON
-                g.season_effect = cur_time + ( g.season_fx.Get_Period() / 2 )
-
-                # can't ever be PEACEFUL as seasons never end in peaceful mode
-                assert g.challenge != MenuCommand.PEACEFUL
-                New_Mail("The " + g.season_fx.name +
-                         " season has started.", (200,200,200))
-
-            just_ended = False
-            if (( g.game_ends_at is not None )
-            and ( g.game_ends_at <= cur_time )
-            and ( g.game_running )):
-                # Game over - you lose
-                New_Mail("The City ran out of steam.", (255,0,0))
-                New_Mail("Game Over!", (255,255,0))
-                sound.FX(Sounds.krankor)
-                just_ended = True
-
-            elif (( g.net.hub.tech_level >= DIFFICULTY.CITY_MAX_TECH_LEVEL )
-            and ( g.game_running )):
-                # Game over - you win!
-                g.win = True
-                New_Mail("The City is now fully upgraded!", (255,255,255))
-                New_Mail("You have won the game!", (255,255,255))
-                sound.FX(Sounds.applause)
-                just_ended = True
-
-            if ( just_ended ):
-                # Won or lost
-                current_menu = in_game_menu = menu.Menu(typing.cast(List[MenuItem], [
-                    (None, None, []),
-                    (MenuCommand.REVIEW, "Review Statistics", [pygame.K_r])]) +
-                    exit_options)
-                in_game_menu.Select(None)
-
-                # final record from the game:
-                g.game_running = False
-                g.historian.append(review.Analyse_Network(g))
-
-            if not paused:
-                self.demo.do_user_actions(self.ui, self)
+            self.Game_Tick()
 
             # Events
-            if paused and is_desktop:
+            if self.paused and is_desktop:
                 e = self.event.wait()
             else:
                 await asyncio.sleep(0)
@@ -540,10 +551,10 @@ class Game:
                 or ( e.type == pygame.MOUSEMOTION )):
                     if (( e.type == pygame.MOUSEBUTTONDOWN )
                     and ( e.button != 1 )):
-                        if not menu_open:
+                        if not self.menu_open:
                             self.ui.Right_Mouse_Down()
 
-                    elif not menu_open:
+                    elif not self.menu_open:
                         for (rect, click, move) in self.input_areas:
                             if ( rect.collidepoint(e.pos)):
                                 (x,y) = e.pos
@@ -555,19 +566,19 @@ class Game:
                                     click((x,y))
                     else:
                         if ( e.type == pygame.MOUSEMOTION ):
-                            current_menu.Mouse_Move(e.pos)
+                            self.current_menu.Mouse_Move(e.pos)
                         else:
-                            current_menu.Mouse_Down(e.pos)
+                            self.current_menu.Mouse_Down(e.pos)
 
                 elif e.type == pygame.MOUSEBUTTONUP:
                     self.ui.Cancel_Fast_Forward()
 
                 elif e.type == pygame.KEYDOWN:
-                    if not menu_open:
+                    if not self.menu_open:
                         self.ui.Key_Press(e.key)
 
                     else:
-                        current_menu.Key_Press(e.key)
+                        self.current_menu.Key_Press(e.key)
 
                     if ( self.event.is_testing ):  # NO-COV
                         # Cheats.
@@ -593,11 +604,11 @@ class Game:
                 e = self.event.poll()
 
             # Any commands from the menu?
-            if menu_open:
-                cmd = current_menu.Get_Command()
-                current_menu.Select(None) # consume command
+            if self.menu_open:
+                cmd = self.current_menu.Get_Command()
+                self.current_menu.Select(None) # consume command
 
-                if ( current_menu == in_game_menu ):
+                if ( self.current_menu == self.in_game_menu ):
 
                     # It's the normal menu.
                     if ( cmd == MenuCommand.QUIT ):
@@ -611,10 +622,10 @@ class Game:
 
                     elif ( cmd == MenuCommand.SAVE ):
                         # Switch to alternate menu
-                        current_menu = save_menu.Save_Menu(True)
+                        self.current_menu = save_menu.Save_Menu(True)
 
                     elif ( cmd == MenuCommand.LOAD ):
-                        current_menu = save_menu.Save_Menu(False)
+                        self.current_menu = save_menu.Save_Menu(False)
 
                     elif ( cmd == MenuCommand.REVIEW ):
                         loop_running = False
@@ -627,11 +638,11 @@ class Game:
 
                 else:
                     # It's another menu! That means it's the save menu.
-                    assert isinstance(current_menu, save_menu.Save_Menu)
+                    assert isinstance(self.current_menu, save_menu.Save_Menu)
                     if (( cmd is not None )
                     and ( cmd != MenuCommand.UNUSED )
                     and ( cmd != MenuCommand.CANCEL )):
-                        if ( not current_menu.Is_Saving() ):
+                        if ( not self.current_menu.Is_Saving() ):
                             g = self.Restore(cmd)
 
                         else:
@@ -647,13 +658,13 @@ class Game:
                     if ( cmd is not None ):
                         # Back to game.
                         self.Special_Refresh()
-                        current_menu = in_game_menu
+                        self.current_menu = self.in_game_menu
                         self.ui.Reset()
 
-            if (( g.historian_time <= cur_time )
-            and ( not paused )):
+            if (( g.historian_time <= self.cur_time )
+            and ( not self.paused )):
                 g.historian.append(review.Analyse_Network(g))
-                g.historian_time = cur_time + 4
+                g.historian_time = self.cur_time + 4
 
             if self.playback_mode == PlayMode.PLAYBACK:
                 test_resize_trigger += 1
